@@ -1,4 +1,30 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 export default function LandingPage() {
+  const [showUrf, setShowUrf] = useState(false);
+
+  useEffect(() => {
+    const closeUrf = () => setShowUrf(false);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeUrf();
+    };
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin === window.location.origin && event.data === "trip-close-urf") closeUrf();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("message", handleMessage);
+    if (showUrf) document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("message", handleMessage);
+      document.body.style.overflow = "";
+    };
+  }, [showUrf]);
+
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
       <div
@@ -15,10 +41,16 @@ export default function LandingPage() {
         <span>I&apos;m genuinely skitzofrenic</span>
       </p>
 
-      <a className="choice-portal choice-portal-earth" href="#planet-urf" aria-label="Enter through Planet Urf">
+      <button
+        className="choice-portal choice-portal-earth"
+        type="button"
+        onClick={() => setShowUrf(true)}
+        aria-label="Open the Planet Urf territory selector"
+        aria-haspopup="dialog"
+      >
         <strong>Planet Urf</strong>
         <small>reality phisico</small>
-      </a>
+      </button>
 
       <a
         className="choice-portal choice-portal-brain"
@@ -28,6 +60,12 @@ export default function LandingPage() {
         <strong>that fucking other thing</strong>
         <small>Enter the unknown</small>
       </a>
+
+      {showUrf && (
+        <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
+          <iframe className="urf-modal-frame" src="/urf" title="Planet Urf territory selector" />
+        </section>
+      )}
     </main>
   );
 }
