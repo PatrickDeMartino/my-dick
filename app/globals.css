@@ -230,6 +230,104 @@ button, input { font: inherit; }
 
 .vitals b { color: var(--acid); font-weight: 500; }
 
+.orangutan-widget {
+  position: fixed;
+  left: 22px;
+  bottom: 24px;
+  z-index: 20;
+  width: clamp(120px, 14vmin, 190px);
+  min-width: 120px;
+  max-width: min(480px, calc(100vw - 16px));
+  border: 1px solid rgba(185, 255, 57, .3);
+  border-radius: 6px;
+  background: rgba(2, 9, 7, .55);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34);
+}
+
+.orangutan-drag-handle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 25px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 1px solid rgba(185, 255, 57, .2);
+  background: rgba(185, 255, 57, .08);
+  color: rgba(185, 255, 57, .72);
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 8px;
+  letter-spacing: .12em;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.orangutan-drag-handle span { margin-right: 6px; font-size: 12px; line-height: 1; }
+
+.orangutan-drag-handle:hover,
+.orangutan-drag-handle:focus-visible {
+  background: rgba(185, 255, 57, .16);
+  color: var(--acid);
+  outline: none;
+}
+
+.orangutan-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(135deg, transparent 47%, rgba(185, 255, 57, .78) 48% 57%, transparent 58% 67%, rgba(185, 255, 57, .5) 68% 77%, transparent 78%);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.orangutan-resize-handle:hover,
+.orangutan-resize-handle:focus-visible {
+  filter: brightness(1.5);
+  outline: 1px solid rgba(185, 255, 57, .45);
+  outline-offset: -2px;
+}
+
+.orangutan-canvas { width: 100%; aspect-ratio: 1 / 1; touch-action: none; }
+.orangutan-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
+
+.orangutan-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 7px;
+  border-top: 1px solid rgba(185, 255, 57, .2);
+}
+
+.orangutan-controls button {
+  border: 1px solid rgba(185, 255, 57, .4);
+  border-radius: 3px;
+  background: rgba(185, 255, 57, .08);
+  color: var(--acid);
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: .04em;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+
+.orangutan-controls button:hover,
+.orangutan-controls button:focus-visible { background: rgba(185, 255, 57, .18); outline: none; }
+
+.orangutan-stat {
+  color: var(--muted);
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 8px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
 .neural-console {
   position: relative;
   z-index: 5;
@@ -420,6 +518,7 @@ button, input { font: inherit; }
   .neural-console { min-height: 74svh; border-top: 1px solid rgba(105, 248, 255, .25); border-left: 0; }
   .subject-identity h1 { font-size: clamp(48px, 15vw, 78px); }
   .vitals { right: 12px; bottom: 12px; }
+  .orangutan-widget { left: 12px; bottom: 12px; width: clamp(96px, 22vmin, 150px); }
   .brain-node { top: 43%; left: 51%; }
   .signal-path { width: 49%; }
   .transcript { min-height: 360px; max-height: 58svh; }
@@ -433,6 +532,7 @@ button, input { font: inherit; }
   .subject-identity p { max-width: 240px; line-height: 1.4; }
   .brain-node { width: 62px; }
   .vitals span:nth-child(2) { display: none; }
+  .orangutan-widget { width: clamp(90px, 26vmin, 130px); }
   .console-header { padding-top: 24px; }
   .status { position: absolute; top: 16px; right: 18px; }
   .input-deck { grid-template-columns: 1fr; }
@@ -601,3 +701,4 @@ button, input { font: inherit; }
   .choice-portal { min-width: 128px; padding: 12px 15px; }
   .choice-portal strong { font-size: 19px; }
 }
+
