@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import OrangutanWidget from "./OrangutanWidget";
 
 type Message = {
   role: "user" | "assistant";
@@ -93,6 +94,7 @@ export default function Home() {
           <span><b>K+</b> 03%</span>
           <span><b>MOOD</b> BANANA</span>
         </div>
+        <OrangutanWidget />
       </section>
 
       <section className="neural-console" aria-label="Neural chat console">
@@ -143,3 +145,4 @@ export default function Home() {
     </main>
   );
 }
+
