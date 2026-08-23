@@ -227,7 +227,9 @@ const buildings = [
 ];
 
 function PenguinTown({ onBack }: { onBack: () => void }) {
-  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
+  const [workersFed, setWorkersFed] = useState(false);
+  const isSweatshop = selectedBuilding?.id === "sweatshop";
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -267,7 +269,10 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               key={building.id}
               className="building-hotspot"
               style={building.style}
-              onClick={() => setSelectedBuilding(building.label)}
+              onClick={() => {
+                setSelectedBuilding(building);
+                if (building.id === "sweatshop") setWorkersFed(false);
+              }}
               aria-label={`Visit ${building.label}`}
             >
               <span className="building-label"><b>{building.label}</b><small>{building.hint}</small></span>
@@ -281,18 +286,49 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setSelectedBuilding(null);
         }}>
-          <section className="penguin-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
             <div className="dialog-character">
               <span className="bad-tape" aria-hidden="true" />
-              <img src="/evil-penguin.jpg" alt="The poorly drawn evil penguin" />
-              <div className="character-tag"><small>TUTORIAL GUIDE</small><b>PEN-GUIN</b></div>
+              <img
+                src={isSweatshop ? "/penguinaroo.png" : "/evil-penguin.jpg"}
+                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : "The poorly drawn evil penguin"}
+              />
+              <div className="character-tag">
+                <small>{isSweatshop ? "SWEATSHOP OWNER" : "TUTORIAL GUIDE"}</small>
+                <b>{isSweatshop ? "PENGUINAROO" : "PEN-GUIN"}</b>
+              </div>
             </div>
             <div className="speech-panel">
-              <div className="speech-meta"><span>UNFINISHED LOCATION</span><b>{selectedBuilding}</b></div>
-              <h2 id="dialog-title">Listen, pal.</h2>
-              <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
-              <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+              <div className="speech-meta">
+                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : "UNFINISHED LOCATION"}</span>
+                <b>{selectedBuilding.label}</b>
+              </div>
+              {isSweatshop ? (
+                <>
+                  <h2 id="dialog-title">Shift briefing.</h2>
+                  <p>&ldquo;a starving worker is a slow worker&rdquo;</p>
+                  <div className="worker-ration">
+                    <div className={`rat-meat-can${workersFed ? " rat-meat-can-fed" : ""}`} aria-label="A can of Rat Meat">
+                      <small>GENUINE</small>
+                      <b>RAT<br />MEAT</b>
+                      <span>WORKER RATION</span>
+                    </div>
+                    <button type="button" onClick={() => setWorkersFed(true)} disabled={workersFed}>
+                      {workersFed ? "WORKERS FED" : "FEED THE WORKERS"} <span>→</span>
+                    </button>
+                  </div>
+                  <div className="ration-status" role="status" aria-live="polite">
+                    {workersFed ? "RATION DISTRIBUTED · PRODUCTIVITY RESTORED" : "1 CAN · SERVES ENTIRE SHIFT"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 id="dialog-title">Listen, pal.</h2>
+                  <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
+                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+                </>
+              )}
             </div>
           </section>
         </div>

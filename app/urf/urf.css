@@ -119,6 +119,8 @@
 .dialog-character { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 46px 28px 25px; background: radial-gradient(circle at 50% 45%, rgba(54,70,179,.35), transparent 47%), repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 1px, transparent 1px 9px); border-right: 1px solid rgba(142,196,216,.17); }
 .dialog-character img { position: relative; z-index: 1; width: 100%; max-height: 380px; aspect-ratio: .88; object-fit: cover; border: 8px solid #eee; transform: rotate(-2deg); filter: contrast(1.08) saturate(1.12); box-shadow: 10px 15px 0 rgba(0,0,0,.24); }
 .bad-tape { position: absolute; z-index: 2; width: 92px; height: 24px; top: 38px; left: 50%; transform: translateX(-50%) rotate(5deg); background: rgba(220,213,160,.83); box-shadow: 0 2px 5px rgba(0,0,0,.2); }
+.sweatshop-dialog .bad-tape { display: none; }
+.sweatshop-dialog .dialog-character img { aspect-ratio: 1; object-fit: contain; background: white; }
 .character-tag { position: relative; z-index: 3; align-self: center; margin-top: -13px; min-width: 75%; padding: 8px 15px; transform: rotate(1deg); border-left: 3px solid #6fe4ed; background: #081522; box-shadow: 0 7px 20px rgba(0,0,0,.4); }
 .character-tag small { display: block; color: #69dfe9; font-size: 7px; letter-spacing: .2em; }
 .character-tag b { display: block; margin-top: 2px; font-size: 16px; letter-spacing: .08em; }
@@ -132,8 +134,24 @@
 .speech-panel > button { align-self: flex-start; margin-top: 34px; padding: 12px 16px; border: 1px solid #4a7180; border-radius: 3px; color: #d5e3e8; background: transparent; font-size: 9px; font-weight: 800; letter-spacing: .15em; cursor: pointer; }
 .speech-panel > button:hover { color: #051013; background: #67dfe8; border-color: #67dfe8; }
 .speech-panel > button span { margin-left: 12px; }
+.worker-ration { display: flex; align-items: center; gap: 24px; margin-top: 28px; }
+.rat-meat-can { position: relative; flex: 0 0 auto; width: 86px; height: 108px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #b8c5c5; border-radius: 11px 11px 14px 14px; background: linear-gradient(90deg, #2c3637, #6f7b78 20%, #313b3b 54%, #151d1e); color: #ffe9b9; text-align: center; box-shadow: inset 5px 0 9px rgba(255,255,255,.12), inset -7px 0 10px rgba(0,0,0,.42), 8px 10px 20px rgba(0,0,0,.36); transform: rotate(-3deg); }
+.rat-meat-can::before, .rat-meat-can::after { content: ""; position: absolute; left: -3px; right: -3px; height: 13px; border: 3px solid #c8d2d0; border-radius: 50%; background: linear-gradient(#788481, #293232); }
+.rat-meat-can::before { top: -6px; }
+.rat-meat-can::after { bottom: -6px; }
+.rat-meat-can small, .rat-meat-can b, .rat-meat-can span { position: relative; z-index: 1; }
+.rat-meat-can small { color: #d7c69d; font-size: 6px; letter-spacing: .16em; }
+.rat-meat-can b { margin: 5px 0 4px; color: #ff7b54; font-size: 19px; line-height: .8; letter-spacing: .04em; text-shadow: 1px 2px #31150d; }
+.rat-meat-can span { font-size: 5px; letter-spacing: .11em; }
+.rat-meat-can-fed { animation: ration-drop .42s cubic-bezier(.2,.8,.2,1); filter: saturate(.55); }
+.worker-ration > button { padding: 13px 16px; border: 1px solid #d47250; border-radius: 3px; color: #fff4e5; background: linear-gradient(#7b2f24, #4d1c18); font-size: 9px; font-weight: 800; letter-spacing: .13em; cursor: pointer; box-shadow: 0 8px 18px rgba(0,0,0,.28); }
+.worker-ration > button:hover:not(:disabled) { background: linear-gradient(#a3422e, #67241c); border-color: #ff9b72; transform: translateY(-1px); }
+.worker-ration > button:disabled { color: #9fd9c4; border-color: #487768; background: #17342d; cursor: default; }
+.worker-ration > button span { margin-left: 9px; }
+.ration-status { min-height: 14px; margin-top: 11px; color: #87a1a9; font-size: 7px; letter-spacing: .13em; }
 @keyframes backdrop-in { from { opacity: 0; } }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes ration-drop { 35% { transform: rotate(-7deg) translateY(5px) scale(.96); } 70% { transform: rotate(1deg) translateY(-2px); } }
 @keyframes chimney-puff {
   0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.42) rotate(-8deg); }
   10% { opacity: .72; }
@@ -168,6 +186,10 @@
   .speech-meta b { display: none; }
   .speech-panel p { font-size: clamp(16px, 4.7vw, 23px); }
   .speech-panel > button { margin-top: 24px; }
+  .worker-ration { gap: 14px; margin-top: 20px; }
+  .rat-meat-can { width: 62px; height: 81px; }
+  .rat-meat-can b { font-size: 14px; }
+  .worker-ration > button { padding: 11px 10px; font-size: 7px; }
 }
 
 @media (max-width: 430px) {
