@@ -230,6 +230,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
   const [workersFed, setWorkersFed] = useState(false);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
+  const isDogFighter = selectedBuilding?.id === "arena";
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -286,22 +287,22 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setSelectedBuilding(null);
         }}>
-          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
             <div className="dialog-character">
               <span className="bad-tape" aria-hidden="true" />
               <img
-                src={isSweatshop ? "/penguinaroo.png" : "/evil-penguin.jpg"}
-                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : "The poorly drawn evil penguin"}
+                src={isSweatshop ? "/penguinaroo.png" : isDogFighter ? "/vicheal-nic.jpg" : "/evil-penguin.jpg"}
+                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : isDogFighter ? "Vicheal Nic holding a dog" : "The poorly drawn evil penguin"}
               />
               <div className="character-tag">
-                <small>{isSweatshop ? "SWEATSHOP OWNER" : "TUTORIAL GUIDE"}</small>
-                <b>{isSweatshop ? "PENGUINAROO" : "PEN-GUIN"}</b>
+                <small>{isSweatshop ? "SWEATSHOP OWNER" : isDogFighter ? "DOG-FIGHTER" : "TUTORIAL GUIDE"}</small>
+                <b>{isSweatshop ? "PENGUINAROO" : isDogFighter ? "Vicheal Nic" : "PEN-GUIN"}</b>
               </div>
             </div>
             <div className="speech-panel">
               <div className="speech-meta">
-                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : "UNFINISHED LOCATION"}</span>
+                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : isDogFighter ? "FIGHTER MESSAGE" : "UNFINISHED LOCATION"}</span>
                 <b>{selectedBuilding.label}</b>
               </div>
               {isSweatshop ? (
@@ -321,6 +322,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                   <div className="ration-status" role="status" aria-live="polite">
                     {workersFed ? "RATION DISTRIBUTED · PRODUCTIVITY RESTORED" : "1 CAN · SERVES ENTIRE SHIFT"}
                   </div>
+                </>
+              ) : isDogFighter ? (
+                <>
+                  <h2 id="dialog-title">Pre-fight wisdom.</h2>
+                  <p>&ldquo;you can take the nigga out of the hood, but you can&apos;t take the hood out of the nigga&rdquo;</p>
+                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
                 </>
               ) : (
                 <>
