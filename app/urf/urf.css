@@ -14,12 +14,12 @@
   background-image: repeating-linear-gradient(90deg, transparent 0 119px, rgba(255,255,255,.035) 120px);
 }
 .stars { position: absolute; inset: 0; z-index: -1; opacity: .75; background-image: radial-gradient(circle, rgba(255,255,255,.85) 0 1px, transparent 1.5px); background-size: 113px 113px; background-position: 17px 31px; mask-image: linear-gradient(to bottom, black, transparent 82%); }
-.world-header { position: absolute; z-index: 5; top: clamp(28px, 6vh, 70px); left: clamp(24px, 6vw, 90px); }
+.world-header { position: absolute; z-index: 5; top: calc(var(--trip-banner-height, 0px) + clamp(28px, 6vh, 70px)); left: clamp(24px, 6vw, 90px); }
 .eyebrow { color: var(--cyan); letter-spacing: .23em; font-size: 12px; font-weight: 800; display: flex; gap: 10px; align-items: center; }
 .eyebrow span { width: 22px; height: 2px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
 .world-header h1 { margin: 14px 0 7px; font-size: clamp(30px, 4.4vw, 66px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; max-width: 560px; }
 .world-header p { margin: 0; color: var(--muted); font-size: clamp(13px, 1.2vw, 17px); }
-.quit-button { position: absolute; z-index: 6; top: 30px; right: 36px; border: 1px solid rgba(156,194,215,.25); background: rgba(5,17,29,.7); color: #95a9b7; width: 43px; height: 43px; border-radius: 50%; font-size: 27px; line-height: 1; cursor: pointer; transition: .2s; }
+.quit-button { position: absolute; z-index: 6; top: calc(var(--trip-banner-height, 0px) + 30px); right: 36px; border: 1px solid rgba(156,194,215,.25); background: rgba(5,17,29,.7); color: #95a9b7; width: 43px; height: 43px; border-radius: 50%; font-size: 27px; line-height: 1; cursor: pointer; transition: .2s; }
 .quit-button:hover { color: white; border-color: #a9c2cf; transform: rotate(90deg); }
 .globe-stage { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 5vh; }
 .globe-frame { width: min(68vw, 76vh, 780px); aspect-ratio: 1; position: relative; }
