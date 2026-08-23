@@ -31,7 +31,6 @@ jobs:
           curl -fsSL --retry 3 "$base/dog-fighting/assets/index-C6Ek0MLA.js" -o public/dog-fighting/assets/index-C6Ek0MLA.js
           curl -fsSL --retry 3 "$base/dog-fighting/assets/index-CkSpTFet.css" -o public/dog-fighting/assets/index-CkSpTFet.css
           curl -fsSL --retry 3 "$base/dog-fighting/favicon.svg" -o public/dog-fighting/favicon.svg
-          curl -fsSL --retry 3 "$base/dog-fighting/index.html" -o public/dog-fighting/index.html
           curl -fsSL --retry 3 "$base/dog-fighting/rat-meat-bridge.js" -o public/dog-fighting/rat-meat-bridge.js
           curl -fsSL --retry 3 "$base/media/cia-seal.svg" -o public/media/cia-seal.svg
           curl -fsSL --retry 3 "$base/media/rat-meat-can-v2.png" -o public/media/rat-meat-can-v2.png
@@ -44,7 +43,6 @@ jobs:
           bf3640fcdfe92caaaae164fa801d8675dc62421bb5c77985360c45f0cf64440a  public/dog-fighting/assets/index-C6Ek0MLA.js
           c77d44ed9c779efedec2dbb857054f0752785cbfffe107d4f5ff9d8d4d6cc53f  public/dog-fighting/assets/index-CkSpTFet.css
           d06f484e9d76e787ca136024da2f13327001cb14b6bd503f7ec1adecdd80af31  public/dog-fighting/favicon.svg
-          a1a9a7d00747d02efdc00cdef699d2ce90ebc961f41c3777bd44cc61065ecf21  public/dog-fighting/index.html
           bb8bca703b06a4370dff54c45f25e4d42eaa1bdbb86d03203999dfd6436ae8e7  public/dog-fighting/rat-meat-bridge.js
           7bac6ea2ef9e35142d1d7f145b6407ef8ea84b49c2dc855fdec703c5dff8394d  public/media/cia-seal.svg
           4dbd14847e99ac86f36badd7d5880e341b90e15e0f10de4f27608cf3ad01b3b1  public/media/rat-meat-can-v2.png
