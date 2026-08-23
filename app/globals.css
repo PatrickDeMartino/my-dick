@@ -95,7 +95,9 @@ html.trip-embedded .trip-banner { display: none; }
   flex: 0 0 auto;
   width: 52px;
   height: 66px;
-  overflow: visible;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
 }
 
 .trip-banner__can img {
@@ -104,6 +106,7 @@ html.trip-embedded .trip-banner { display: none; }
   display: block;
   object-fit: cover;
   object-position: center;
+  transform: scale(1.09);
   filter: contrast(1.08) saturate(1.08);
   mix-blend-mode: screen;
 }

@@ -109,3 +109,13 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   assert.match(town, /NOT ENOUGH RAT MEAT/);
   assert.match(banner, /trip-rat-meat-balance-changed/);
 });
+
+test("world globe clips coastlines cleanly and supports full rotation", async () => {
+  const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+
+  assert.match(town, /geoOrthographic/);
+  assert.match(town, /\.clipAngle\(90\)/);
+  assert.match(town, /lat: wrapAngle/);
+  assert.match(town, /roll: wrapAngle/);
+  assert.doesNotMatch(town, /Math\.max\(-55, Math\.min\(55/);
+});

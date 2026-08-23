@@ -1,10 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 
 type Point = [number, number];
 
-type LandFeature = { rings: Point[][]; antarctic: boolean };
+type PolygonGeometry = { type: "Polygon"; coordinates: Point[][] };
+type LandFeature = {
+  feature: { type: "Feature"; properties: null; geometry: PolygonGeometry };
+  antarctic: boolean;
+};
+
+const wrapAngle = (value: number) => ((value + 540) % 360) - 180;
 
 const continentMarkers: { name: string; center: Point }[] = [
   { name: "North America", center: [-105, 48] },
@@ -18,8 +25,8 @@ const continentMarkers: { name: string; center: Point }[] = [
 function Globe({ onEnter }: { onEnter: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef({ active: false, x: 0, y: 0 });
-  const [rotation, setRotation] = useState({ lon: 0, lat: -15 });
+  const dragRef = useRef({ active: false, x: 0, y: 0, mode: "orbit" as "orbit" | "roll" });
+  const [rotation, setRotation] = useState({ lon: 0, lat: -15, roll: 0 });
   const [zoom, setZoom] = useState(1);
   const [size, setSize] = useState({ width: 720, height: 720 });
   const [landFeatures, setLandFeatures] = useState<LandFeature[]>([]);
@@ -28,14 +35,14 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const controller = new AbortController();
     fetch("/ne-110m-land.geojson", { signal: controller.signal })
       .then((response) => response.json())
-      .then((data: { features: { geometry: { coordinates: number[][][] } }[] }) => {
+      .then((data: { features: { geometry: PolygonGeometry }[] }) => {
         const features = data.features.map(({ geometry }) => {
-          const rings = geometry.coordinates.map((ring) =>
-            ring.map(([lon, lat]) => [lon, lat] as Point),
-          );
-          const outerRing = rings[0] ?? [];
+          const outerRing = geometry.coordinates[0] ?? [];
           const averageLatitude = outerRing.reduce((sum, [, lat]) => sum + lat, 0) / Math.max(outerRing.length, 1);
-          return { rings, antarctic: averageLatitude < -60 };
+          return {
+            feature: { type: "Feature" as const, properties: null, geometry },
+            antarctic: averageLatitude < -60,
+          };
         });
         setLandFeatures(features);
       })
@@ -67,10 +74,13 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const z = Math.cos(phi) * Math.cos(lambda);
     const cameraY = y * Math.cos(tilt) - z * Math.sin(tilt);
     const cameraZ = y * Math.sin(tilt) + z * Math.cos(tilt);
+    const roll = rotation.roll * Math.PI / 180;
+    const cameraX = x * Math.cos(roll) - cameraY * Math.sin(roll);
+    const rolledY = x * Math.sin(roll) + cameraY * Math.cos(roll);
     const radius = size.width * 0.43 * zoom;
     return {
-      x: Math.round((size.width / 2 + radius * x) * 1000) / 1000,
-      y: Math.round((size.height / 2 - radius * cameraY) * 1000) / 1000,
+      x: Math.round((size.width / 2 + radius * cameraX) * 1000) / 1000,
+      y: Math.round((size.height / 2 - radius * rolledY) * 1000) / 1000,
       visible: cameraZ > 0.03,
     };
   }, [rotation, size, zoom]);
@@ -103,42 +113,25 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     ctx.fillStyle = ocean;
     ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
 
+    const projection = geoOrthographic()
+      .translate([cx, cy])
+      .scale(radius)
+      .rotate([-rotation.lon, -rotation.lat, rotation.roll])
+      .clipAngle(90)
+      .precision(.25);
+    const path = geoPath(projection, ctx);
+
     ctx.strokeStyle = "rgba(145, 181, 205, .12)";
     ctx.lineWidth = 1;
-    for (let lat = -60; lat <= 60; lat += 30) {
-      ctx.beginPath();
-      let started = false;
-      for (let lon = -180; lon <= 180; lon += 3) {
-        const p = project([lon, lat]);
-        if (!p.visible) { started = false; continue; }
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
-    for (let lon = -150; lon <= 180; lon += 30) {
-      ctx.beginPath();
-      let started = false;
-      for (let lat = -89; lat <= 89; lat += 2) {
-        const p = project([lon, lat]);
-        if (!p.visible) { started = false; continue; }
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
+    ctx.beginPath();
+    path(geoGraticule10());
+    ctx.stroke();
 
-    const drawLand = ({ rings, antarctic }: LandFeature) => {
+    const drawLand = (antarctic: boolean) => {
       ctx.beginPath();
-      rings.forEach((points) => {
-        let started = false;
-        let visiblePoints = 0;
-        points.forEach((point) => {
-          const p = project(point);
-          if (!p.visible) { started = false; return; }
-          visiblePoints += 1;
-          if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-        });
-        if (visiblePoints === points.length) ctx.closePath();
-      });
+      landFeatures
+        .filter((land) => land.antarctic === antarctic)
+        .forEach((land) => path(land.feature));
       ctx.fillStyle = antarctic ? "#bfe8ee" : "#53606b";
       ctx.strokeStyle = antarctic ? "#e9ffff" : "#71818d";
       ctx.lineWidth = 1.15;
@@ -146,7 +139,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       ctx.stroke();
     };
 
-    landFeatures.forEach(drawLand);
+    drawLand(false);
+    drawLand(true);
     ctx.restore();
 
     const rim = ctx.createRadialGradient(cx, cy, radius * .82, cx, cy, radius * 1.08);
@@ -156,7 +150,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     rim.addColorStop(1, "rgba(92,202,255,0)");
     ctx.fillStyle = rim;
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
-  }, [landFeatures, project, size, zoom]);
+  }, [landFeatures, rotation, size, zoom]);
 
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
@@ -165,11 +159,15 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     if (!dragRef.current.active) return;
     const dx = x - dragRef.current.x;
     const dy = y - dragRef.current.y;
-    dragRef.current = { active: true, x, y };
-    setRotation((value) => ({
-      lon: ((value.lon - dx * .32 + 540) % 360) - 180,
-      lat: Math.max(-55, Math.min(55, value.lat + dy * .22)),
-    }));
+    const mode = dragRef.current.mode;
+    dragRef.current = { active: true, x, y, mode };
+    setRotation((value) => mode === "roll"
+      ? { ...value, roll: wrapAngle(value.roll + (dx - dy) * .32) }
+      : {
+          ...value,
+          lon: wrapAngle(value.lon - dx * .32),
+          lat: wrapAngle(value.lat + dy * .32),
+        });
   };
 
   return (
@@ -177,14 +175,21 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       <canvas
         ref={canvasRef}
         className="globe-canvas"
-        aria-label="Rotatable globe. Drag to rotate and scroll to zoom."
+        aria-label="Rotatable globe. Drag in any direction for full 360 degree rotation, Shift-drag to roll, and scroll to zoom."
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
-          dragRef.current = { active: true, x: event.clientX, y: event.clientY };
+          dragRef.current = {
+            active: true,
+            x: event.clientX,
+            y: event.clientY,
+            mode: event.shiftKey || event.button === 2 ? "roll" : "orbit",
+          };
         }}
         onPointerMove={(event) => moveDrag(event.clientX, event.clientY)}
         onPointerUp={() => { dragRef.current.active = false; }}
         onPointerCancel={() => { dragRef.current.active = false; }}
+        onLostPointerCapture={() => { dragRef.current.active = false; }}
+        onContextMenu={(event) => event.preventDefault()}
         onWheel={(event) => {
           event.preventDefault();
           setZoom((value) => Math.max(.72, Math.min(1.16, value - event.deltaY * .0008)));
@@ -430,7 +435,7 @@ export default function Home() {
         <Globe onEnter={() => setScreen("town")} />
       </section>
       <footer className="world-footer">
-        <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>ROTATE</small></p></div>
+        <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>360° ROTATE · SHIFT TO ROLL</small></p></div>
         <div className="control-hint"><span>＋</span><p><b>SCROLL</b><small>ZOOM</small></p></div>
         <div className="status-pill"><i /> 1 / 7 TERRITORIES UNLOCKED</div>
       </footer>
