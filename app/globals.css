@@ -93,10 +93,9 @@ html.trip-embedded .trip-banner { display: none; }
 .trip-banner__can {
   position: relative;
   flex: 0 0 auto;
-  width: 48px;
-  height: 61px;
-  overflow: hidden;
-  clip-path: polygon(8% 7%, 92% 7%, 98% 14%, 95% 90%, 88% 98%, 12% 98%, 5% 90%, 2% 14%);
+  width: 52px;
+  height: 66px;
+  overflow: visible;
 }
 
 .trip-banner__can img {
@@ -104,9 +103,8 @@ html.trip-embedded .trip-banner { display: none; }
   height: 100%;
   display: block;
   object-fit: cover;
-  object-position: center 47%;
-  transform: scale(1.25);
-  filter: contrast(1.12) saturate(1.08);
+  object-position: center;
+  filter: contrast(1.08) saturate(1.08);
   mix-blend-mode: screen;
 }
 
@@ -211,7 +209,7 @@ html.trip-embedded .trip-banner { display: none; }
   :root { --trip-banner-height: 58px; }
   .trip-banner__inner { padding-inline: 8px; gap: 8px; }
   .trip-banner__currency { gap: 7px; }
-  .trip-banner__can { width: 38px; height: 49px; }
+  .trip-banner__can { width: 40px; height: 52px; }
   .trip-banner__currency strong { font-size: 19px; }
   .trip-banner__amount { min-width: 34px; height: 34px; padding-inline: 7px; font-size: 16px; }
   .trip-banner__links { gap: 6px; }

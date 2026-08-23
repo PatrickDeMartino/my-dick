@@ -98,3 +98,14 @@ test("dog-fight round wins award one can of Rat Meat", async () => {
   assert.equal(messages[0][0].amount, 1);
   assert.equal(messages[0][1], "https://triptotropic.com");
 });
+
+test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
+  const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+
+  assert.match(town, /const nextBalance = balance - 1/);
+  assert.match(town, /onClick=\{feedWorkers\}/);
+  assert.match(town, /trip-rat-meat-balance-changed/);
+  assert.match(town, /NOT ENOUGH RAT MEAT/);
+  assert.match(banner, /trip-rat-meat-balance-changed/);
+});

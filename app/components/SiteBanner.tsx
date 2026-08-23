@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
 const REWARD_EVENT = "trip-rat-meat-earned";
+const BALANCE_EVENT = "trip-rat-meat-balance-changed";
 
 function readRatMeat() {
   try {
@@ -36,7 +37,14 @@ export default function SiteBanner() {
 
     const onReward = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      if (!event.data || event.data.type !== REWARD_EVENT) return;
+      if (!event.data) return;
+
+      if (event.data.type === BALANCE_EVENT) {
+        setAmount(readRatMeat());
+        return;
+      }
+
+      if (event.data.type !== REWARD_EVENT) return;
 
       const reward = Number(event.data.amount);
       if (!Number.isFinite(reward) || reward <= 0) return;
@@ -75,7 +83,7 @@ export default function SiteBanner() {
       <div className="trip-banner__inner">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
-            <img src="/media/rat-meat-can.jpg" alt="" />
+            <img src="/media/rat-meat-can-v2.png" alt="" />
           </span>
           <strong>Rat Meat</strong>
           <span className="trip-banner__amount" aria-live="polite" aria-atomic="true">

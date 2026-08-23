@@ -226,9 +226,13 @@ const buildings = [
   { id: "arena", label: "DOG-FIGHT ARENA", hint: "Absolutely unfinished", style: { left: "48%", top: "61%", width: "42%", height: "23%" } },
 ];
 
+const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
+const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
+
 function PenguinTown({ onBack }: { onBack: () => void }) {
   const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
   const [workersFed, setWorkersFed] = useState(false);
+  const [rationError, setRationError] = useState(false);
   const [showDogFightGame, setShowDogFightGame] = useState(false);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
@@ -245,6 +249,29 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showDogFightGame]);
+
+  const feedWorkers = () => {
+    try {
+      const stored = Number.parseInt(window.localStorage.getItem(RAT_MEAT_STORAGE_KEY) ?? "0", 10);
+      const balance = Number.isFinite(stored) ? Math.max(0, stored) : 0;
+
+      if (balance < 1) {
+        setRationError(true);
+        return;
+      }
+
+      const nextBalance = balance - 1;
+      window.localStorage.setItem(RAT_MEAT_STORAGE_KEY, String(nextBalance));
+      window.top?.postMessage(
+        { type: RAT_MEAT_BALANCE_EVENT, balance: nextBalance },
+        window.location.origin,
+      );
+      setWorkersFed(true);
+      setRationError(false);
+    } catch {
+      setRationError(true);
+    }
+  };
 
   return (
     <main className="town-screen">
@@ -278,7 +305,10 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               style={building.style}
               onClick={() => {
                 setSelectedBuilding(building);
-                if (building.id === "sweatshop") setWorkersFed(false);
+                if (building.id === "sweatshop") {
+                  setWorkersFed(false);
+                  setRationError(false);
+                }
               }}
               aria-label={`Visit ${building.label}`}
             >
@@ -321,12 +351,16 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                       <b>RAT<br />MEAT</b>
                       <span>WORKER RATION</span>
                     </div>
-                    <button type="button" onClick={() => setWorkersFed(true)} disabled={workersFed}>
+                    <button type="button" onClick={feedWorkers} disabled={workersFed}>
                       {workersFed ? "WORKERS FED" : "FEED THE WORKERS"} <span>→</span>
                     </button>
                   </div>
                   <div className="ration-status" role="status" aria-live="polite">
-                    {workersFed ? "RATION DISTRIBUTED · PRODUCTIVITY RESTORED" : "1 CAN · SERVES ENTIRE SHIFT"}
+                    {workersFed
+                      ? "RATION DISTRIBUTED · PRODUCTIVITY RESTORED"
+                      : rationError
+                        ? "NOT ENOUGH RAT MEAT · WIN A DOG-FIGHT ROUND"
+                        : "1 CAN · SERVES ENTIRE SHIFT"}
                   </div>
                 </>
               ) : isDogFighter ? (
