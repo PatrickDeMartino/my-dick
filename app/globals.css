@@ -8,6 +8,7 @@
   --line: rgba(132, 255, 208, .22);
   --text: #eaffee;
   --muted: #8aa69a;
+  --trip-banner-height: 70px;
 }
 
 * { box-sizing: border-box; }
@@ -17,6 +18,207 @@ html, body { margin: 0; min-height: 100%; background: #020605; }
 body {
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html.trip-embedded { --trip-banner-height: 0px; }
+html.trip-embedded .trip-banner { display: none; }
+
+.trip-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5000;
+  height: var(--trip-banner-height);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 209, 255, .5);
+  background:
+    radial-gradient(circle at 7% 20%, rgba(255, 83, 234, .92), transparent 19%),
+    radial-gradient(circle at 36% 125%, rgba(79, 255, 226, .55), transparent 32%),
+    radial-gradient(circle at 75% -38%, rgba(255, 234, 77, .42), transparent 34%),
+    linear-gradient(105deg, #25004b 0%, #6813a1 32%, #a018ca 62%, #40006e 100%);
+  background-size: 150% 160%;
+  box-shadow: 0 7px 24px rgba(76, 0, 126, .56), inset 0 -1px rgba(255, 255, 255, .16);
+  animation: trip-banner-flow 9s ease-in-out infinite alternate;
+  isolation: isolate;
+}
+
+.trip-banner::before,
+.trip-banner::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 42%;
+  height: 190%;
+  top: -45%;
+  border-radius: 44% 56% 63% 37%;
+  filter: blur(11px);
+  opacity: .5;
+  pointer-events: none;
+}
+
+.trip-banner::before {
+  left: 13%;
+  background: conic-gradient(from 80deg, transparent, #ff43cb, #6b2cff, transparent 72%);
+  animation: trip-banner-blob 8s linear infinite;
+}
+
+.trip-banner::after {
+  right: 6%;
+  background: conic-gradient(from 220deg, transparent, #4cf9e8, #f53df1, transparent 68%);
+  animation: trip-banner-blob 11s linear infinite reverse;
+}
+
+.trip-banner__inner {
+  width: min(100%, 1500px);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2.8vw, 42px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.trip-banner__currency {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.2vw, 15px);
+  color: #fff8d4;
+  filter: drop-shadow(0 2px 1px rgba(35, 0, 54, .8));
+}
+
+.trip-banner__can {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 66px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+}
+
+.trip-banner__can img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.09);
+  filter: contrast(1.08) saturate(1.08);
+  mix-blend-mode: screen;
+}
+
+.trip-banner__currency strong {
+  overflow: hidden;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: clamp(20px, 2.3vw, 31px);
+  font-weight: 900;
+  letter-spacing: .018em;
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: none;
+  text-shadow: 2px 2px 0 #4a0067, -1px -1px 0 rgba(255,255,255,.25);
+}
+
+.trip-banner__amount {
+  min-width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 245, 185, .7);
+  border-radius: 999px;
+  background: rgba(27, 0, 48, .64);
+  color: #fff4a4;
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 19px;
+  font-weight: 900;
+  box-shadow: inset 0 0 14px rgba(255, 58, 221, .28), 0 0 15px rgba(242, 92, 255, .32);
+}
+
+.trip-banner--earned .trip-banner__can { animation: trip-can-pop .7s cubic-bezier(.2,.9,.2,1); }
+.trip-banner--earned .trip-banner__amount { animation: trip-amount-pop .7s cubic-bezier(.2,.9,.2,1); }
+
+.trip-banner__links { display: flex; align-items: center; gap: 10px; }
+
+.trip-banner__links a {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 14px;
+  background: rgba(28, 0, 54, .48);
+  box-shadow: inset 0 0 15px rgba(255,255,255,.08), 0 4px 12px rgba(29,0,45,.35);
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.trip-banner__links a:hover,
+.trip-banner__links a:focus-visible {
+  transform: translateY(-2px) rotate(-2deg) scale(1.06);
+  border-color: #fff9b5;
+  background: rgba(109, 13, 158, .75);
+  outline: none;
+}
+
+.trip-banner__cia { width: 37px; height: 37px; display: block; }
+
+.trip-banner__instagram {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: block;
+  border: 2.5px solid #fff;
+  border-radius: 9px;
+  background: radial-gradient(circle at 30% 110%, #ffd44a 0 25%, #ff515f 44%, #c22fd2 68%, #5655e9 100%);
+  box-shadow: 0 0 10px rgba(255, 103, 231, .45);
+}
+
+.trip-banner__instagram::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  top: 50%;
+  left: 50%;
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.trip-banner__instagram::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+@keyframes trip-banner-flow {
+  to { background-position: 100% 75%; filter: hue-rotate(16deg); }
+}
+
+@keyframes trip-banner-blob { to { transform: rotate(360deg) scale(1.08); } }
+@keyframes trip-can-pop { 40% { transform: translateY(-5px) rotate(-8deg) scale(1.18); } }
+@keyframes trip-amount-pop { 45% { transform: scale(1.24); color: white; box-shadow: 0 0 28px #ffdc4b; } }
+
+@media (max-width: 560px) {
+  :root { --trip-banner-height: 58px; }
+  .trip-banner__inner { padding-inline: 8px; gap: 8px; }
+  .trip-banner__currency { gap: 7px; }
+  .trip-banner__can { width: 40px; height: 52px; }
+  .trip-banner__currency strong { font-size: 19px; }
+  .trip-banner__amount { min-width: 34px; height: 34px; padding-inline: 7px; font-size: 16px; }
+  .trip-banner__links { gap: 6px; }
+  .trip-banner__links a { width: 37px; height: 37px; border-radius: 11px; }
+  .trip-banner__cia { width: 31px; height: 31px; }
+  .trip-banner__instagram { width: 27px; height: 27px; border-radius: 8px; }
 }
 
 button, input { font: inherit; }
@@ -32,7 +234,7 @@ button, input { font: inherit; }
 
 .return-gate {
   position: fixed;
-  top: 12px;
+  top: calc(var(--trip-banner-height) + 12px);
   left: 12px;
   z-index: 20;
   padding: 7px 9px;
@@ -93,7 +295,7 @@ button, input { font: inherit; }
 
 .subject-identity {
   position: absolute;
-  top: clamp(22px, 4vw, 52px);
+  top: calc(var(--trip-banner-height) + clamp(22px, 4vw, 52px));
   left: clamp(20px, 4vw, 54px);
   z-index: 3;
   max-width: min(90%, 520px);
@@ -593,7 +795,7 @@ button, input { font: inherit; }
 
 .choice-kicker {
   position: absolute;
-  top: clamp(24px, 5vw, 52px);
+  top: calc(var(--trip-banner-height) + clamp(24px, 5vw, 52px));
   left: 50%;
   z-index: 2;
   margin: 0;
@@ -673,7 +875,7 @@ button, input { font: inherit; }
 
 .urf-modal-shell {
   position: fixed;
-  inset: 0;
+  inset: var(--trip-banner-height) 0 0;
   z-index: 1000;
   background: #030912;
   animation: urf-modal-in .24s ease-out;
@@ -692,7 +894,7 @@ button, input { font: inherit; }
 }
 
 @media (max-width: 700px) {
-  .choice-kicker { top: 26px; max-width: calc(100% - 24px); white-space: normal; text-align: center; }
+  .choice-kicker { top: calc(var(--trip-banner-height) + 18px); max-width: calc(100% - 24px); white-space: normal; text-align: center; }
   .choice-portal-earth { top: 28%; left: 29%; }
   .choice-portal-brain { top: 78%; left: 57%; }
 }

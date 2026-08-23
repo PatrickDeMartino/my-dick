@@ -1,10 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 
 type Point = [number, number];
 
-type LandFeature = { rings: Point[][]; antarctic: boolean };
+type PolygonGeometry = { type: "Polygon"; coordinates: Point[][] };
+type LandFeature = {
+  feature: { type: "Feature"; properties: null; geometry: PolygonGeometry };
+  antarctic: boolean;
+};
+
+const wrapAngle = (value: number) => ((value + 540) % 360) - 180;
 
 const continentMarkers: { name: string; center: Point }[] = [
   { name: "North America", center: [-105, 48] },
@@ -18,8 +25,8 @@ const continentMarkers: { name: string; center: Point }[] = [
 function Globe({ onEnter }: { onEnter: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef({ active: false, x: 0, y: 0 });
-  const [rotation, setRotation] = useState({ lon: 0, lat: -15 });
+  const dragRef = useRef({ active: false, x: 0, y: 0, mode: "orbit" as "orbit" | "roll" });
+  const [rotation, setRotation] = useState({ lon: 0, lat: -15, roll: 0 });
   const [zoom, setZoom] = useState(1);
   const [size, setSize] = useState({ width: 720, height: 720 });
   const [landFeatures, setLandFeatures] = useState<LandFeature[]>([]);
@@ -28,14 +35,14 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const controller = new AbortController();
     fetch("/ne-110m-land.geojson", { signal: controller.signal })
       .then((response) => response.json())
-      .then((data: { features: { geometry: { coordinates: number[][][] } }[] }) => {
+      .then((data: { features: { geometry: PolygonGeometry }[] }) => {
         const features = data.features.map(({ geometry }) => {
-          const rings = geometry.coordinates.map((ring) =>
-            ring.map(([lon, lat]) => [lon, lat] as Point),
-          );
-          const outerRing = rings[0] ?? [];
+          const outerRing = geometry.coordinates[0] ?? [];
           const averageLatitude = outerRing.reduce((sum, [, lat]) => sum + lat, 0) / Math.max(outerRing.length, 1);
-          return { rings, antarctic: averageLatitude < -60 };
+          return {
+            feature: { type: "Feature" as const, properties: null, geometry },
+            antarctic: averageLatitude < -60,
+          };
         });
         setLandFeatures(features);
       })
@@ -67,10 +74,13 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const z = Math.cos(phi) * Math.cos(lambda);
     const cameraY = y * Math.cos(tilt) - z * Math.sin(tilt);
     const cameraZ = y * Math.sin(tilt) + z * Math.cos(tilt);
+    const roll = rotation.roll * Math.PI / 180;
+    const cameraX = x * Math.cos(roll) - cameraY * Math.sin(roll);
+    const rolledY = x * Math.sin(roll) + cameraY * Math.cos(roll);
     const radius = size.width * 0.43 * zoom;
     return {
-      x: Math.round((size.width / 2 + radius * x) * 1000) / 1000,
-      y: Math.round((size.height / 2 - radius * cameraY) * 1000) / 1000,
+      x: Math.round((size.width / 2 + radius * cameraX) * 1000) / 1000,
+      y: Math.round((size.height / 2 - radius * rolledY) * 1000) / 1000,
       visible: cameraZ > 0.03,
     };
   }, [rotation, size, zoom]);
@@ -103,42 +113,25 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     ctx.fillStyle = ocean;
     ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
 
+    const projection = geoOrthographic()
+      .translate([cx, cy])
+      .scale(radius)
+      .rotate([-rotation.lon, -rotation.lat, rotation.roll])
+      .clipAngle(90)
+      .precision(.25);
+    const path = geoPath(projection, ctx);
+
     ctx.strokeStyle = "rgba(145, 181, 205, .12)";
     ctx.lineWidth = 1;
-    for (let lat = -60; lat <= 60; lat += 30) {
-      ctx.beginPath();
-      let started = false;
-      for (let lon = -180; lon <= 180; lon += 3) {
-        const p = project([lon, lat]);
-        if (!p.visible) { started = false; continue; }
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
-    for (let lon = -150; lon <= 180; lon += 30) {
-      ctx.beginPath();
-      let started = false;
-      for (let lat = -89; lat <= 89; lat += 2) {
-        const p = project([lon, lat]);
-        if (!p.visible) { started = false; continue; }
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
+    ctx.beginPath();
+    path(geoGraticule10());
+    ctx.stroke();
 
-    const drawLand = ({ rings, antarctic }: LandFeature) => {
+    const drawLand = (antarctic: boolean) => {
       ctx.beginPath();
-      rings.forEach((points) => {
-        let started = false;
-        let visiblePoints = 0;
-        points.forEach((point) => {
-          const p = project(point);
-          if (!p.visible) { started = false; return; }
-          visiblePoints += 1;
-          if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
-        });
-        if (visiblePoints === points.length) ctx.closePath();
-      });
+      landFeatures
+        .filter((land) => land.antarctic === antarctic)
+        .forEach((land) => path(land.feature));
       ctx.fillStyle = antarctic ? "#bfe8ee" : "#53606b";
       ctx.strokeStyle = antarctic ? "#e9ffff" : "#71818d";
       ctx.lineWidth = 1.15;
@@ -146,7 +139,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       ctx.stroke();
     };
 
-    landFeatures.forEach(drawLand);
+    drawLand(false);
+    drawLand(true);
     ctx.restore();
 
     const rim = ctx.createRadialGradient(cx, cy, radius * .82, cx, cy, radius * 1.08);
@@ -156,7 +150,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     rim.addColorStop(1, "rgba(92,202,255,0)");
     ctx.fillStyle = rim;
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
-  }, [landFeatures, project, size, zoom]);
+  }, [landFeatures, rotation, size, zoom]);
 
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
@@ -165,11 +159,15 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     if (!dragRef.current.active) return;
     const dx = x - dragRef.current.x;
     const dy = y - dragRef.current.y;
-    dragRef.current = { active: true, x, y };
-    setRotation((value) => ({
-      lon: ((value.lon - dx * .32 + 540) % 360) - 180,
-      lat: Math.max(-55, Math.min(55, value.lat + dy * .22)),
-    }));
+    const mode = dragRef.current.mode;
+    dragRef.current = { active: true, x, y, mode };
+    setRotation((value) => mode === "roll"
+      ? { ...value, roll: wrapAngle(value.roll + (dx - dy) * .32) }
+      : {
+          ...value,
+          lon: wrapAngle(value.lon - dx * .32),
+          lat: wrapAngle(value.lat + dy * .32),
+        });
   };
 
   return (
@@ -177,14 +175,21 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       <canvas
         ref={canvasRef}
         className="globe-canvas"
-        aria-label="Rotatable globe. Drag to rotate and scroll to zoom."
+        aria-label="Rotatable globe. Drag in any direction for full 360 degree rotation, Shift-drag to roll, and scroll to zoom."
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
-          dragRef.current = { active: true, x: event.clientX, y: event.clientY };
+          dragRef.current = {
+            active: true,
+            x: event.clientX,
+            y: event.clientY,
+            mode: event.shiftKey || event.button === 2 ? "roll" : "orbit",
+          };
         }}
         onPointerMove={(event) => moveDrag(event.clientX, event.clientY)}
         onPointerUp={() => { dragRef.current.active = false; }}
         onPointerCancel={() => { dragRef.current.active = false; }}
+        onLostPointerCapture={() => { dragRef.current.active = false; }}
+        onContextMenu={(event) => event.preventDefault()}
         onWheel={(event) => {
           event.preventDefault();
           setZoom((value) => Math.max(.72, Math.min(1.16, value - event.deltaY * .0008)));
@@ -226,16 +231,52 @@ const buildings = [
   { id: "arena", label: "DOG-FIGHT ARENA", hint: "Absolutely unfinished", style: { left: "48%", top: "61%", width: "42%", height: "23%" } },
 ];
 
+const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
+const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
+
 function PenguinTown({ onBack }: { onBack: () => void }) {
-  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
+  const [workersFed, setWorkersFed] = useState(false);
+  const [rationError, setRationError] = useState(false);
+  const [showDogFightGame, setShowDogFightGame] = useState(false);
+  const isSweatshop = selectedBuilding?.id === "sweatshop";
+  const isDogFighter = selectedBuilding?.id === "arena";
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedBuilding(null);
+      if (event.key !== "Escape") return;
+      if (showDogFightGame) {
+        setShowDogFightGame(false);
+        return;
+      }
+      setSelectedBuilding(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [showDogFightGame]);
+
+  const feedWorkers = () => {
+    try {
+      const stored = Number.parseInt(window.localStorage.getItem(RAT_MEAT_STORAGE_KEY) ?? "0", 10);
+      const balance = Number.isFinite(stored) ? Math.max(0, stored) : 0;
+
+      if (balance < 1) {
+        setRationError(true);
+        return;
+      }
+
+      const nextBalance = balance - 1;
+      window.localStorage.setItem(RAT_MEAT_STORAGE_KEY, String(nextBalance));
+      window.top?.postMessage(
+        { type: RAT_MEAT_BALANCE_EVENT, balance: nextBalance },
+        window.location.origin,
+      );
+      setWorkersFed(true);
+      setRationError(false);
+    } catch {
+      setRationError(true);
+    }
+  };
 
   return (
     <main className="town-screen">
@@ -243,6 +284,14 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
       <div className="town-side town-side-right" aria-hidden="true"><i /><span>ICE SECTOR 01</span></div>
       <section className="town-map" aria-label="Penguin Town building map">
         <img className="town-art" src="/penguin-town-clean.webp" alt="A snowy penguin village with several strange buildings" draggable={false} />
+        <div className="sweatshop-smoke" aria-hidden="true">
+          <span className="smoke-puff smoke-puff-1" />
+          <span className="smoke-puff smoke-puff-2" />
+          <span className="smoke-puff smoke-puff-3" />
+          <span className="smoke-puff smoke-puff-4" />
+          <span className="smoke-puff smoke-puff-5" />
+          <span className="smoke-puff smoke-puff-6" />
+        </div>
         <div className="town-vignette" aria-hidden="true" />
         <header className="town-header">
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
@@ -259,7 +308,13 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               key={building.id}
               className="building-hotspot"
               style={building.style}
-              onClick={() => setSelectedBuilding(building.label)}
+              onClick={() => {
+                setSelectedBuilding(building);
+                if (building.id === "sweatshop") {
+                  setWorkersFed(false);
+                  setRationError(false);
+                }
+              }}
               aria-label={`Visit ${building.label}`}
             >
               <span className="building-label"><b>{building.label}</b><small>{building.hint}</small></span>
@@ -273,21 +328,80 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setSelectedBuilding(null);
         }}>
-          <section className="penguin-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
             <div className="dialog-character">
               <span className="bad-tape" aria-hidden="true" />
-              <img src="/evil-penguin.jpg" alt="The poorly drawn evil penguin" />
-              <div className="character-tag"><small>TUTORIAL GUIDE</small><b>PEN-GUIN</b></div>
+              <img
+                src={isSweatshop ? "/penguinaroo.png" : isDogFighter ? "/vicheal-nic.jpg" : "/evil-penguin.jpg"}
+                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : isDogFighter ? "Vicheal Nic holding a dog" : "The poorly drawn evil penguin"}
+              />
+              <div className="character-tag">
+                <small>{isSweatshop ? "SWEATSHOP OWNER" : isDogFighter ? "DOG-FIGHTER" : "TUTORIAL GUIDE"}</small>
+                <b>{isSweatshop ? "PENGUINAROO" : isDogFighter ? "Vicheal Nic" : "PEN-GUIN"}</b>
+              </div>
             </div>
             <div className="speech-panel">
-              <div className="speech-meta"><span>UNFINISHED LOCATION</span><b>{selectedBuilding}</b></div>
-              <h2 id="dialog-title">Listen, pal.</h2>
-              <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
-              <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+              <div className="speech-meta">
+                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : isDogFighter ? "FIGHTER MESSAGE" : "UNFINISHED LOCATION"}</span>
+                <b>{selectedBuilding.label}</b>
+              </div>
+              {isSweatshop ? (
+                <>
+                  <h2 id="dialog-title">Shift briefing.</h2>
+                  <p>&ldquo;a starving worker is a slow worker&rdquo;</p>
+                  <div className="worker-ration">
+                    <div className={`rat-meat-can${workersFed ? " rat-meat-can-fed" : ""}`} aria-label="A can of Rat Meat">
+                      <small>GENUINE</small>
+                      <b>RAT<br />MEAT</b>
+                      <span>WORKER RATION</span>
+                    </div>
+                    <button type="button" onClick={feedWorkers} disabled={workersFed}>
+                      {workersFed ? "WORKERS FED" : "FEED THE WORKERS"} <span>→</span>
+                    </button>
+                  </div>
+                  <div className="ration-status" role="status" aria-live="polite">
+                    {workersFed
+                      ? "RATION DISTRIBUTED · PRODUCTIVITY RESTORED"
+                      : rationError
+                        ? "NOT ENOUGH RAT MEAT · WIN A DOG-FIGHT ROUND"
+                        : "1 CAN · SERVES ENTIRE SHIFT"}
+                  </div>
+                </>
+              ) : isDogFighter ? (
+                <>
+                  <h2 id="dialog-title">Pre-fight wisdom.</h2>
+                  <p>&ldquo;you can take the nigga out of the hood, but you can&apos;t take the hood out of the nigga&rdquo;</p>
+                  <button type="button" onClick={() => {
+                    setSelectedBuilding(null);
+                    setShowDogFightGame(true);
+                  }}>FIGHT ! <span>→</span></button>
+                </>
+              ) : (
+                <>
+                  <h2 id="dialog-title">Listen, pal.</h2>
+                  <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
+                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+                </>
+              )}
             </div>
           </section>
         </div>
+      )}
+
+      {showDogFightGame && (
+        <section className="dog-game-overlay" role="dialog" aria-modal="true" aria-labelledby="dog-game-title">
+          <header className="dog-game-header">
+            <div><small>DOG-FIGHT ARENA</small><b id="dog-game-title">K9 KO!</b></div>
+            <button type="button" onClick={() => setShowDogFightGame(false)} aria-label="Return to Penguin Town">×</button>
+          </header>
+          <iframe
+            className="dog-game-frame"
+            src="/dog-fighting/index.html"
+            title="K9 KO dog-fighting mini-game"
+            allow="autoplay"
+          />
+        </section>
       )}
     </main>
   );
@@ -321,7 +435,7 @@ export default function Home() {
         <Globe onEnter={() => setScreen("town")} />
       </section>
       <footer className="world-footer">
-        <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>ROTATE</small></p></div>
+        <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>360° ROTATE · SHIFT TO ROLL</small></p></div>
         <div className="control-hint"><span>＋</span><p><b>SCROLL</b><small>ZOOM</small></p></div>
         <div className="status-pill"><i /> 1 / 7 TERRITORIES UNLOCKED</div>
       </footer>
