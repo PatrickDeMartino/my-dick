@@ -229,16 +229,22 @@ const buildings = [
 function PenguinTown({ onBack }: { onBack: () => void }) {
   const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
   const [workersFed, setWorkersFed] = useState(false);
+  const [showDogFightGame, setShowDogFightGame] = useState(false);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedBuilding(null);
+      if (event.key !== "Escape") return;
+      if (showDogFightGame) {
+        setShowDogFightGame(false);
+        return;
+      }
+      setSelectedBuilding(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [showDogFightGame]);
 
   return (
     <main className="town-screen">
@@ -327,7 +333,10 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 <>
                   <h2 id="dialog-title">Pre-fight wisdom.</h2>
                   <p>&ldquo;you can take the nigga out of the hood, but you can&apos;t take the hood out of the nigga&rdquo;</p>
-                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+                  <button type="button" onClick={() => {
+                    setSelectedBuilding(null);
+                    setShowDogFightGame(true);
+                  }}>FIGHT ! <span>→</span></button>
                 </>
               ) : (
                 <>
@@ -339,6 +348,21 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
             </div>
           </section>
         </div>
+      )}
+
+      {showDogFightGame && (
+        <section className="dog-game-overlay" role="dialog" aria-modal="true" aria-labelledby="dog-game-title">
+          <header className="dog-game-header">
+            <div><small>DOG-FIGHT ARENA</small><b id="dog-game-title">K9 KO!</b></div>
+            <button type="button" onClick={() => setShowDogFightGame(false)} aria-label="Return to Penguin Town">×</button>
+          </header>
+          <iframe
+            className="dog-game-frame"
+            src="/dog-fighting/index.html"
+            title="K9 KO dog-fighting mini-game"
+            allow="autoplay"
+          />
+        </section>
       )}
     </main>
   );

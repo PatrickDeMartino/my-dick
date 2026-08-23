@@ -111,6 +111,14 @@
 .building-label small { color: #84dce8; font-size: clamp(5px, .7svh, 7px); letter-spacing: .1em; text-transform: uppercase; }
 .town-prompt { position: absolute; z-index: 7; left: 50%; bottom: 1.5%; transform: translateX(-50%); white-space: nowrap; padding: 7px 12px; border: 1px solid rgba(166,220,239,.3); border-radius: 3px; background: rgba(2,12,31,.8); color: #c1d7df; font-size: clamp(6px, .8svh, 8px); letter-spacing: .12em; }
 .town-prompt i { display: inline-block; width: 5px; height: 5px; margin-right: 6px; border-radius: 50%; background: #68e4ed; box-shadow: 0 0 7px #68e4ed; }
+.dog-game-overlay { position: fixed; z-index: 100; inset: 0; overflow: hidden; background: #120b14; animation: dog-game-in .22s ease-out; }
+.dog-game-header { position: absolute; z-index: 2; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 7px 12px 7px 18px; border-bottom: 2px solid #e6493c; background: linear-gradient(90deg, #120b14, #241321); box-shadow: 0 5px 18px rgba(0,0,0,.45); }
+.dog-game-header > div { display: grid; gap: 1px; }
+.dog-game-header small { color: #e96d61; font-size: 7px; letter-spacing: .2em; }
+.dog-game-header b { color: #fff2d6; font-size: 19px; letter-spacing: .08em; }
+.dog-game-header button { width: 38px; height: 38px; border: 1px solid rgba(255,242,214,.38); border-radius: 50%; color: #fff2d6; background: #2a1c28; font-size: 25px; line-height: 1; cursor: pointer; }
+.dog-game-header button:hover { border-color: #e6493c; color: #ff8d83; }
+.dog-game-frame { position: absolute; top: 54px; left: 0; width: 100%; height: calc(100% - 54px); border: 0; background: #120b14; }
 .dialog-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,5,12,.68); backdrop-filter: blur(5px) saturate(.7); animation: backdrop-in .18s ease-out; }
 .penguin-dialog { position: relative; width: min(920px, 95vw); min-height: min(510px, 78svh); display: grid; grid-template-columns: .82fr 1.18fr; align-items: stretch; border: 1px solid rgba(148,221,238,.4); border-radius: 7px; background: linear-gradient(140deg, rgba(4,19,34,.97), rgba(2,8,17,.98)); box-shadow: 0 28px 90px #000, inset 0 1px rgba(255,255,255,.06); overflow: hidden; animation: dialog-in .28s cubic-bezier(.2,.9,.2,1); }
 .penguin-dialog::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: linear-gradient(90deg, #68e4ed, #5262da 60%, transparent); }
@@ -154,6 +162,7 @@
 .ration-status { min-height: 14px; margin-top: 11px; color: #87a1a9; font-size: 7px; letter-spacing: .13em; }
 @keyframes backdrop-in { from { opacity: 0; } }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes dog-game-in { from { opacity: 0; transform: scale(.985); } }
 @keyframes ration-drop { 35% { transform: rotate(-7deg) translateY(5px) scale(.96); } 70% { transform: rotate(1deg) translateY(-2px); } }
 @keyframes chimney-puff {
   0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.42) rotate(-8deg); }
