@@ -243,6 +243,14 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
       <div className="town-side town-side-right" aria-hidden="true"><i /><span>ICE SECTOR 01</span></div>
       <section className="town-map" aria-label="Penguin Town building map">
         <img className="town-art" src="/penguin-town-clean.webp" alt="A snowy penguin village with several strange buildings" draggable={false} />
+        <div className="sweatshop-smoke" aria-hidden="true">
+          <span className="smoke-puff smoke-puff-1" />
+          <span className="smoke-puff smoke-puff-2" />
+          <span className="smoke-puff smoke-puff-3" />
+          <span className="smoke-puff smoke-puff-4" />
+          <span className="smoke-puff smoke-puff-5" />
+          <span className="smoke-puff smoke-puff-6" />
+        </div>
         <div className="town-vignette" aria-hidden="true" />
         <header className="town-header">
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>

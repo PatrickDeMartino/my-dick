@@ -56,6 +56,34 @@
 .town-screen::before { content: ""; position: absolute; inset: 0; opacity: .16; background-image: linear-gradient(rgba(111,198,234,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(111,198,234,.2) 1px, transparent 1px); background-size: 46px 46px; }
 .town-map { position: relative; height: 100svh; width: min(100vw, 66.667svh); aspect-ratio: 2 / 3; overflow: hidden; background: #0b4d96; box-shadow: 0 0 90px #000, 0 0 0 1px rgba(151,216,242,.25); }
 .town-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; user-select: none; }
+.sweatshop-smoke { position: absolute; z-index: 2; left: 83.8%; top: 19.4%; width: 15%; height: 15.3%; pointer-events: none; }
+.smoke-puff {
+  --puff-drift: 130%;
+  position: absolute;
+  left: 2%;
+  bottom: 0;
+  width: 29%;
+  aspect-ratio: 1;
+  border-radius: 48% 52% 55% 45%;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 38% 35%, rgba(236,243,245,.82) 0 20%, rgba(183,193,198,.67) 47%, rgba(91,99,105,.15) 72%, transparent 74%);
+  filter: blur(.7px);
+  box-shadow:
+    -6px 3px 0 -3px rgba(200,208,211,.48),
+    6px 2px 0 -4px rgba(131,141,146,.4);
+  animation: chimney-puff 5.8s cubic-bezier(.2,.42,.42,1) infinite;
+  will-change: transform, opacity;
+}
+.smoke-puff::before, .smoke-puff::after { content: ""; position: absolute; border-radius: 50%; background: inherit; }
+.smoke-puff::before { width: 62%; height: 62%; left: -18%; top: 30%; }
+.smoke-puff::after { width: 74%; height: 74%; right: -22%; top: 18%; opacity: .72; }
+.smoke-puff-1 { --puff-drift: 120%; animation-delay: -5.6s; }
+.smoke-puff-2 { --puff-drift: 165%; animation-delay: -4.65s; animation-duration: 6.1s; }
+.smoke-puff-3 { --puff-drift: 105%; animation-delay: -3.7s; animation-duration: 5.6s; }
+.smoke-puff-4 { --puff-drift: 190%; animation-delay: -2.75s; animation-duration: 6.4s; }
+.smoke-puff-5 { --puff-drift: 145%; animation-delay: -1.8s; animation-duration: 5.9s; }
+.smoke-puff-6 { --puff-drift: 210%; animation-delay: -.85s; animation-duration: 6.3s; }
 .town-vignette { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(0,8,28,.5), transparent 18%, transparent 72%, rgba(0,5,19,.52)), linear-gradient(90deg, rgba(0,5,20,.28), transparent 14%, transparent 86%, rgba(0,5,20,.28)); }
 .town-side { position: absolute; top: 0; bottom: 0; width: calc((100vw - min(100vw, 66.667svh)) / 2); min-width: 0; display: flex; align-items: center; justify-content: center; gap: 18px; color: #557186; font-size: 9px; letter-spacing: .28em; writing-mode: vertical-rl; }
 .town-side i { height: 70px; width: 1px; background: linear-gradient(transparent, #456176, transparent); }
@@ -106,6 +134,13 @@
 .speech-panel > button span { margin-left: 12px; }
 @keyframes backdrop-in { from { opacity: 0; } }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes chimney-puff {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.42) rotate(-8deg); }
+  10% { opacity: .72; }
+  42% { opacity: .58; }
+  76% { opacity: .34; }
+  100% { opacity: 0; transform: translate3d(var(--puff-drift), -510%, 0) scale(1.72) rotate(18deg); }
+}
 
 @media (max-width: 700px) {
   .world-header { top: 24px; }
