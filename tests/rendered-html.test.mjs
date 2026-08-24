@@ -29,6 +29,7 @@ test("renders the Planet Urf landing page", async () => {
   const html = await response.text();
   assert.match(html, /<title>Planet Urf<\/title>/i);
   assert.match(html, /I(?:&#x27;|')m genuinely skitzofrenic/i);
+  assert.match(html, /href="\/anubis"/i);
   assert.match(html, /Planet Urf/);
   assert.match(html, /that fucking other thing/);
   assert.match(html, /href="\/bongo"/);

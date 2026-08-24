@@ -37,9 +37,13 @@ export default function LandingPage() {
       </div>
       <div className="choice-vignette" aria-hidden="true" />
 
-      <p className="choice-kicker">
+      <a
+        className="choice-kicker"
+        href="/anubis"
+        aria-label="Enter the Anubis television room"
+      >
         <span>I&apos;m genuinely skitzofrenic</span>
-      </p>
+      </a>
 
       <button
         className="choice-portal choice-portal-earth"
