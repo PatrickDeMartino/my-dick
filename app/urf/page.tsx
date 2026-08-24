@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 
 type Point = [number, number];
@@ -222,20 +223,223 @@ function Globe({ onEnter }: { onEnter: () => void }) {
 }
 
 const buildings = [
-  { id: "plane", label: "PLANE", hint: "Flight Deck", style: { left: "4%", top: "25%", width: "36%", height: "19%" } },
-  { id: "telescope", label: "TELESCOPE", hint: "Observatory", style: { left: "59%", top: "8%", width: "32%", height: "27%" } },
-  { id: "magic", label: "FUCKING MAGIC PLACE", hint: "Definitely magic", style: { left: "38%", top: "25%", width: "30%", height: "22%" } },
-  { id: "igloo", label: "IGLOO", hint: "Probably housing", style: { left: "23%", top: "42%", width: "29%", height: "19%" } },
-  { id: "sweatshop", label: "SWEATSHOP", hint: "Work hard", style: { left: "62%", top: "40%", width: "34%", height: "22%" } },
-  { id: "docks", label: "DOCKS & CARGO", hint: "Trade and transport", style: { left: "2%", top: "58%", width: "41%", height: "27%" } },
-  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Absolutely unfinished", style: { left: "48%", top: "61%", width: "42%", height: "23%" } },
-];
+  {
+    id: "plane", label: "PLANE", hint: "Flight Deck", labelAt: [22, 34],
+    points: "4,32 6,28 10,26 18,29 30,29 35,31 39,33 39,35 36,36 29,35 26,36 31,38 30,40 25,41 20,38 17,37 18,40 15,42 10,42 8,41 10,38 13,37 6,35",
+  },
+  {
+    id: "telescope", label: "TELESCOPE", hint: "Observatory", labelAt: [74, 22],
+    points: "61,16 62,13 65,12 66,9 69,7 72,8 74,11 75,13 78,13 79,15 81,16 81,18 79,20 78,21 81,23 82,26 85,29 84,32 82,33 70,33 67,31 65,27 66,23 65,20 62,19",
+  },
+  {
+    id: "magic", label: "FUCKING MAGIC PLACE", hint: "Definitely magic", labelAt: [54, 35],
+    points: "40,29 41,27 43,26 44,28 44,35 47,36 46,33 47,30 49,28 50,26 53,25 57,26 59,28 60,31 61,36 62,36 63,34 63,28 65,26 66,27 67,29 66,36 63,37 62,40 59,41 49,41 45,39 42,37 41,35",
+  },
+  {
+    id: "igloo", label: "IGLOO", hint: "Probably housing", labelAt: [35, 49],
+    points: "20,49 22,46 25,44 28,42 32,41 37,40 41,42 44,45 45,48 47,48 48,51 47,54 44,54 43,56 36,56 34,54 31,55 26,54 23,52 22,50",
+  },
+  {
+    id: "sweatshop", label: "SWEATSHOP", hint: "Work hard", labelAt: [78, 49],
+    points: "58,50 60,47 63,44 67,42 68,40 72,40 74,38 79,39 81,37 82,39 82,34 84,34 86,43 91,44 91,46 94,47 94,52 92,53 92,56 88,57 84,56 81,55 77,56 72,55 68,56 64,54 61,54",
+  },
+  {
+    id: "docks", label: "DOCKS & CARGO", hint: "Trade and transport", labelAt: [22, 69],
+    points: "2,68 3,63 7,61 9,59 10,57 12,56 14,56 16,58 20,59 22,58 24,56 26,56 28,58 29,62 32,64 35,68 39,70 40,74 38,77 35,77 32,80 26,81 23,79 18,79 15,77 10,77 7,74 4,72",
+  },
+  {
+    id: "arena", label: "DOG-FIGHT ARENA", hint: "Absolutely unfinished", labelAt: [68, 67],
+    points: "46,68 47,62 51,59 54,58 58,58 59,56 62,55 66,56 69,55 72,56 75,55 78,56 81,57 84,58 85,61 88,62 88,69 85,70 84,73 79,74 75,73 72,75 67,74 64,75 60,73 57,74 53,72 50,72 48,70",
+  },
+] as const;
+
+const snowflakes = Array.from({ length: 34 }, (_, index) => ({
+  left: `${(index * 37 + 9) % 101}%`,
+  delay: `${-((index * 1.13) % 8.5)}s`,
+  duration: `${6.5 + (index % 7) * .72}s`,
+  size: `${2 + (index % 4) * .85}px`,
+  drift: `${-24 + (index * 19) % 52}px`,
+}));
+
+const buildingClipPath = (points: string) => `polygon(${points
+  .split(" ")
+  .map((point) => point.split(",").map((value) => `${value}%`).join(" "))
+  .join(", ")})`;
+
+function Flipper({ mapRef }: { mapRef: RefObject<HTMLElement | null> }) {
+  const flipperRef = useRef<HTMLButtonElement>(null);
+  const motionRef = useRef({
+    x: 0, y: 0, vx: 34, vy: 4, initialized: false, dragging: false,
+    pointerId: -1, offsetX: 0, offsetY: 0, lastX: 0, lastY: 0,
+    lastPointerTime: 0, thrownUntil: 0, nextTurnAt: 0,
+  });
+
+  useEffect(() => {
+    const flipper = flipperRef.current;
+    const map = mapRef.current;
+    if (!flipper || !map) return;
+    const motion = motionRef.current;
+
+    const bounds = () => ({
+      minX: map.clientWidth * .045,
+      maxX: map.clientWidth * .93 - flipper.offsetWidth,
+      minY: map.clientHeight * .31,
+      maxY: map.clientHeight * .80 - flipper.offsetHeight,
+    });
+    const paint = () => {
+      flipper.style.transform = `translate3d(${motion.x}px, ${motion.y}px, 0)`;
+      flipper.style.setProperty("--flipper-facing", motion.vx < 0 ? "-1" : "1");
+    };
+    const place = () => {
+      const limit = bounds();
+      if (!motion.initialized) {
+        motion.x = map.clientWidth * .51;
+        motion.y = map.clientHeight * .52;
+        motion.initialized = true;
+      }
+      motion.x = Math.max(limit.minX, Math.min(limit.maxX, motion.x));
+      motion.y = Math.max(limit.minY, Math.min(limit.maxY, motion.y));
+      paint();
+    };
+
+    place();
+    const resizeObserver = new ResizeObserver(place);
+    resizeObserver.observe(map);
+    let animationFrame = 0;
+    let previousTime = performance.now();
+
+    const animate = (time: number) => {
+      const dt = Math.min(.034, Math.max(0, (time - previousTime) / 1000));
+      previousTime = time;
+      if (!motion.dragging) {
+        const airborne = time < motion.thrownUntil || Math.hypot(motion.vx, motion.vy) > 78;
+        flipper.dataset.motion = airborne ? "flying" : "waddling";
+        if (airborne) {
+          const friction = Math.pow(.983, dt * 60);
+          motion.vx *= friction;
+          motion.vy *= friction;
+        } else if (time > motion.nextTurnAt) {
+          const keepDirection = Math.random() > .28 ? (motion.vx < 0 ? -1 : 1) : (Math.random() > .5 ? 1 : -1);
+          motion.vx = keepDirection * (19 + Math.random() * 20);
+          motion.vy = (Math.random() - .5) * 18;
+          motion.nextTurnAt = time + 1800 + Math.random() * 2600;
+        }
+
+        motion.x += motion.vx * dt;
+        motion.y += motion.vy * dt;
+        const limit = bounds();
+        if (motion.x <= limit.minX || motion.x >= limit.maxX) {
+          motion.x = Math.max(limit.minX, Math.min(limit.maxX, motion.x));
+          motion.vx *= -.72;
+        }
+        if (motion.y <= limit.minY || motion.y >= limit.maxY) {
+          motion.y = Math.max(limit.minY, Math.min(limit.maxY, motion.y));
+          motion.vy *= -.72;
+        }
+        paint();
+      }
+      animationFrame = requestAnimationFrame(animate);
+    };
+    animationFrame = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+    };
+  }, [mapRef]);
+
+  const moveFlipper = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const motion = motionRef.current;
+    const map = mapRef.current;
+    if (!motion.dragging || event.pointerId !== motion.pointerId || !map) return;
+    const rect = map.getBoundingClientRect();
+    const now = performance.now();
+    const x = event.clientX - rect.left - motion.offsetX;
+    const y = event.clientY - rect.top - motion.offsetY;
+    const dt = Math.max(8, now - motion.lastPointerTime) / 1000;
+    motion.vx = Math.max(-900, Math.min(900, (x - motion.x) / dt));
+    motion.vy = Math.max(-900, Math.min(900, (y - motion.y) / dt));
+    motion.x = x;
+    motion.y = y;
+    motion.lastX = event.clientX;
+    motion.lastY = event.clientY;
+    motion.lastPointerTime = now;
+    event.currentTarget.style.transform = `translate3d(${motion.x}px, ${motion.y}px, 0)`;
+  };
+
+  const releaseFlipper = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const motion = motionRef.current;
+    if (!motion.dragging || event.pointerId !== motion.pointerId) return;
+    motion.dragging = false;
+    motion.thrownUntil = performance.now() + 1700;
+    if (Math.hypot(motion.vx, motion.vy) < 90) {
+      motion.vx = (motion.vx < 0 ? -1 : 1) * 130;
+      motion.vy = -45;
+    }
+    event.currentTarget.dataset.motion = "flying";
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  return (
+    <button
+      ref={flipperRef}
+      type="button"
+      className="flipper-character"
+      data-motion="waddling"
+      aria-label="Flipper Flappington. Drag him to pick him up, then throw him across town."
+      onPointerDown={(event) => {
+        if (!event.isPrimary || !mapRef.current) return;
+        event.preventDefault();
+        const motion = motionRef.current;
+        const rect = mapRef.current.getBoundingClientRect();
+        motion.dragging = true;
+        motion.pointerId = event.pointerId;
+        motion.offsetX = event.clientX - rect.left - motion.x;
+        motion.offsetY = event.clientY - rect.top - motion.y;
+        motion.lastX = event.clientX;
+        motion.lastY = event.clientY;
+        motion.lastPointerTime = performance.now();
+        motion.vx = 0;
+        motion.vy = 0;
+        event.currentTarget.dataset.motion = "dragging";
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={moveFlipper}
+      onPointerUp={releaseFlipper}
+      onPointerCancel={releaseFlipper}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        const motion = motionRef.current;
+        motion.vx = (motion.vx < 0 ? -1 : 1) * 220;
+        motion.vy = -180;
+        motion.thrownUntil = performance.now() + 1500;
+      }}
+    >
+      <span className="flipper-ground-shadow" aria-hidden="true" />
+      <span className="flipper-sprite" aria-hidden="true">
+        <i className="flipper-wing flipper-wing-left" />
+        <i className="flipper-wing flipper-wing-right" />
+        <i className="flipper-belly" />
+        <i className="flipper-eye flipper-eye-left" />
+        <i className="flipper-eye flipper-eye-right" />
+        <i className="flipper-beak" />
+        <i className="flipper-foot flipper-foot-left" />
+        <i className="flipper-foot flipper-foot-right" />
+      </span>
+      <span className="flipper-tag">FLIPPER</span>
+    </button>
+  );
+}
 
 const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
 const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
 
 function PenguinTown({ onBack }: { onBack: () => void }) {
+  const mapRef = useRef<HTMLElement>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
+  const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [workersFed, setWorkersFed] = useState(false);
   const [rationError, setRationError] = useState(false);
   const [showDogFightGame, setShowDogFightGame] = useState(false);
@@ -282,8 +486,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     <main className="town-screen">
       <div className="town-side town-side-left" aria-hidden="true"><span>90° S</span><i /></div>
       <div className="town-side town-side-right" aria-hidden="true"><i /><span>ICE SECTOR 01</span></div>
-      <section className="town-map" aria-label="Penguin Town building map">
+      <section ref={mapRef} className="town-map" aria-label="Penguin Town building map">
         <img className="town-art" src="/penguin-town-clean.webp" alt="A snowy penguin village with several strange buildings" draggable={false} />
+        <div className="town-aurora" aria-hidden="true" />
+        <div className="town-water-glint" aria-hidden="true" />
+        <div className="magic-pulse" aria-hidden="true"><i /><i /><i /></div>
+        <div className="observatory-beam" aria-hidden="true" />
         <div className="sweatshop-smoke" aria-hidden="true">
           <span className="smoke-puff smoke-puff-1" />
           <span className="smoke-puff smoke-puff-2" />
@@ -292,6 +500,37 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           <span className="smoke-puff smoke-puff-5" />
           <span className="smoke-puff smoke-puff-6" />
         </div>
+        <div className="town-snow" aria-hidden="true">
+          {snowflakes.map((snowflake, index) => (
+            <i key={index} style={{
+              left: snowflake.left,
+              width: snowflake.size,
+              height: snowflake.size,
+              animationDelay: snowflake.delay,
+              animationDuration: snowflake.duration,
+              "--snow-drift": snowflake.drift,
+            } as CSSProperties} />
+          ))}
+        </div>
+        <Flipper mapRef={mapRef} />
+        <svg className="town-building-occluders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <clipPath id="town-building-occlusion" clipPathUnits="userSpaceOnUse">
+              {buildings.map((building) => <polygon key={building.id} points={building.points} />)}
+            </clipPath>
+          </defs>
+          <image href="/penguin-town-clean.webp" width="100" height="100" preserveAspectRatio="none" clipPath="url(#town-building-occlusion)" />
+        </svg>
+        <svg className="town-building-outlines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {buildings.map((building) => (
+            <polygon
+              key={building.id}
+              className={hoveredBuilding === building.id ? "is-active" : ""}
+              points={building.points}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
         <div className="town-vignette" aria-hidden="true" />
         <header className="town-header">
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
@@ -299,7 +538,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         </header>
         <div className="town-guide" aria-label="Tutorial guide">
           <div className="guide-portrait"><img src="/evil-penguin.jpg" alt="Poorly drawn evil penguin tutorial guide" /></div>
-          <div className="guide-copy"><small>FLIPPER FLAPPINGTON · DEFINITELY EVIL</small><p>Suck my penguin cock</p></div>
+          <div className="guide-copy"><small>FLIPPER FLAPPINGTON · DEFINITELY EVIL</small><p>Grab me. Throw me. I dare you.</p></div>
         </div>
         <div className="building-layer">
           {buildings.map((building) => (
@@ -307,7 +546,15 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               type="button"
               key={building.id}
               className="building-hotspot"
-              style={building.style}
+              style={{
+                clipPath: buildingClipPath(building.points),
+                "--label-x": `${building.labelAt[0]}%`,
+                "--label-y": `${building.labelAt[1]}%`,
+              } as CSSProperties}
+              onPointerEnter={() => setHoveredBuilding(building.id)}
+              onPointerLeave={() => setHoveredBuilding(null)}
+              onFocus={() => setHoveredBuilding(building.id)}
+              onBlur={() => setHoveredBuilding(null)}
               onClick={() => {
                 setSelectedBuilding(building);
                 if (building.id === "sweatshop") {
@@ -321,7 +568,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
-        <div className="town-prompt" aria-hidden="true"><i /> HOVER TO IDENTIFY · CLICK TO VISIT</div>
+        <div className="town-prompt" aria-hidden="true"><i /> HOVER / TAP A BUILDING · DRAG + THROW FLIPPER</div>
       </section>
 
       {selectedBuilding && (
