@@ -851,16 +851,18 @@ button, input { font: inherit; }
 
 .choice-object-earth {
   top: calc(var(--trip-banner-height) + 1.5vh);
-  left: 2%;
+  left: 0;
   width: min(56.7vw, 972px);
   aspect-ratio: 1 / 1.03;
+  transform: translateX(calc(-6.505% + 2.9px));
 }
 
 .choice-object-brain {
-  right: 1.5%;
+  right: 0;
   bottom: 1%;
   width: min(59.4vw, 1026px);
   aspect-ratio: 1.18 / 1;
+  transform: translateX(calc(3.87% - 2.1px));
 }
 
 .choice-object-visual {
@@ -880,10 +882,12 @@ button, input { font: inherit; }
 
 .choice-object-earth .choice-object-visual {
   background-image: url("/media/planet-urf-cutout.png");
+  background-position: left center;
 }
 
 .choice-object-brain .choice-object-visual {
   background-image: url("/media/brain-cutout.png");
+  background-position: right center;
   animation-duration: 5.6s;
   animation-direction: reverse;
 }
@@ -980,6 +984,9 @@ button, input { font: inherit; }
   text-transform: uppercase;
 }
 
+.choice-object-earth .choice-object-label { bottom: 12%; }
+.choice-object-brain .choice-object-label { bottom: 7%; }
+
 .choice-object:hover::before,
 .choice-object:focus-visible::before,
 .choice-object.is-active::before { opacity: 1; transform: scale(1.08); }
@@ -1053,7 +1060,7 @@ button, input { font: inherit; }
     left: 0;
     width: min(82.35vw, 40.5svh, 324px);
     aspect-ratio: 1 / 1;
-    transform: none;
+    transform: translateX(calc(-6.3158% + 2.4px));
   }
   .choice-object-brain {
     top: calc(var(--trip-banner-height) + 49svh);
@@ -1062,10 +1069,12 @@ button, input { font: inherit; }
     left: auto;
     width: min(94.5vw, 43.2svh, 375.3px);
     aspect-ratio: 1.18 / 1;
-    transform: none;
+    transform: translateX(calc(3.87% - 1.7px));
   }
   .choice-object-visual { inset: 0 0 38px; }
-  .choice-object-label { gap: 2px; bottom: 2px; }
+  .choice-object-label { gap: 2px; }
+  .choice-object-earth .choice-object-label { bottom: 13%; }
+  .choice-object-brain .choice-object-label { bottom: 8%; }
   .choice-object-label strong { font-size: clamp(14px, 4.4vw, 17px); }
   .choice-object-label small { font-size: clamp(6px, 2vw, 8px); }
   .choice-smoke { inset: -16% -17% -1%; }
