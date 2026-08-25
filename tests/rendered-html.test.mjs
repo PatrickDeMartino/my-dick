@@ -46,6 +46,21 @@ test("renders the Dr. Bongo neural-link scene", async () => {
   assert.match(html, /Dr\. Bongo Neural Link/);
   assert.match(html, /Talk to the ape/);
   assert.match(html, /orangutan-aliens\.jpg/);
+  assert.match(html, /Fuck this Noise/);
+  assert.match(html, /dr-bongo-v3\.png/);
+});
+
+test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
+  const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+
+  assert.match(widget, /className="bongo-playfield"/);
+  assert.match(widget, /current \+ 0\.05/);
+  assert.match(widget, /current - 0\.05/);
+  assert.match(widget, /bongo-baseball-bat/);
+  assert.match(banner, /interactWithBongo\("feed"\)/);
+  assert.match(banner, /interactWithBongo\("beat"\)/);
+  assert.match(banner, /dr-bongo-icon-v3\.png/);
 });
 
 test("chat remains interactive without an API key", async () => {

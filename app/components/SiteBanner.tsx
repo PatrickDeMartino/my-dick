@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
 const REWARD_EVENT = "trip-rat-meat-earned";
 const BALANCE_EVENT = "trip-rat-meat-balance-changed";
+const BONGO_ACTION_EVENT = "trip-bongo-action";
 
 function readRatMeat() {
   try {
@@ -16,10 +18,14 @@ function readRatMeat() {
 }
 
 export default function SiteBanner() {
+  const pathname = usePathname();
+  const isBongo = pathname.startsWith("/bongo");
   const [amount, setAmount] = useState(0);
   const [visible, setVisible] = useState(true);
   const [earned, setEarned] = useState(false);
+  const [bongoMenuOpen, setBongoMenuOpen] = useState(false);
   const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bongoMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const embedded = window.self !== window.top;
@@ -76,10 +82,35 @@ export default function SiteBanner() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isBongo) {
+      setBongoMenuOpen(false);
+      return;
+    }
+
+    const closeMenu = (event: PointerEvent) => {
+      if (!bongoMenuRef.current?.contains(event.target as Node)) setBongoMenuOpen(false);
+    };
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setBongoMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", closeMenu);
+    window.addEventListener("keydown", closeWithEscape);
+    return () => {
+      window.removeEventListener("pointerdown", closeMenu);
+      window.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [isBongo]);
+
+  const interactWithBongo = (action: "feed" | "beat") => {
+    window.dispatchEvent(new CustomEvent(BONGO_ACTION_EVENT, { detail: { action } }));
+    setBongoMenuOpen(false);
+  };
+
   if (!visible) return null;
 
   return (
-    <header className={`trip-banner${earned ? " trip-banner--earned" : ""}`}>
+    <header className={`trip-banner${earned ? " trip-banner--earned" : ""}${isBongo ? " trip-banner--bongo" : ""}`}>
       <div className="trip-banner__inner">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
@@ -90,6 +121,37 @@ export default function SiteBanner() {
             {amount}
           </span>
         </div>
+
+        {isBongo && (
+          <div className="trip-bongo-menu" ref={bongoMenuRef}>
+            <button
+              className="trip-bongo-menu__trigger"
+              type="button"
+              aria-label="Open Dr. Bongo interaction menu"
+              aria-expanded={bongoMenuOpen}
+              aria-haspopup="menu"
+              onClick={() => setBongoMenuOpen((open) => !open)}
+            >
+              <span className="trip-bongo-menu__portrait" aria-hidden="true">
+                <img src="/media/dr-bongo-icon-v3.png" alt="" />
+              </span>
+              <span>Dr. Bongo</span>
+              <i aria-hidden="true">⌄</i>
+            </button>
+            {bongoMenuOpen && (
+              <div className="trip-bongo-menu__dropdown" role="menu" aria-label="Interact with Dr. Bongo">
+                <button type="button" role="menuitem" onClick={() => interactWithBongo("feed")}>
+                  <span className="trip-bongo-action__banana" aria-hidden="true" />
+                  <span><strong>Feed</strong><small>Banana makes him grow</small></span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => interactWithBongo("beat")}>
+                  <span className="trip-bongo-action__bat" aria-hidden="true" />
+                  <span><strong>Beat</strong><small>Baseball bat makes him shrink</small></span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <nav className="trip-banner__links" aria-label="External links">
           <a href="https://www.cia.gov/" target="_blank" rel="noreferrer" aria-label="CIA website">
