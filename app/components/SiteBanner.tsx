@@ -84,8 +84,8 @@ export default function SiteBanner() {
 
   useEffect(() => {
     if (!isBongo) {
-      setBongoMenuOpen(false);
-      return;
+      const closeFrame = window.requestAnimationFrame(() => setBongoMenuOpen(false));
+      return () => window.cancelAnimationFrame(closeFrame);
     }
 
     const closeMenu = (event: PointerEvent) => {
@@ -133,7 +133,13 @@ export default function SiteBanner() {
               onClick={() => setBongoMenuOpen((open) => !open)}
             >
               <span className="trip-bongo-menu__portrait" aria-hidden="true">
-                <img src="/media/dr-bongo-icon-v3.png" alt="" />
+                <span className="trip-bongo-avatar">
+                  <i className="trip-bongo-avatar__brain" />
+                  <i className="trip-bongo-avatar__implant" />
+                  <i className="trip-bongo-avatar__face" />
+                  <i className="trip-bongo-avatar__muzzle" />
+                  <i className="trip-bongo-avatar__eyes" />
+                </span>
               </span>
               <span>Dr. Bongo</span>
               <i aria-hidden="true">⌄</i>

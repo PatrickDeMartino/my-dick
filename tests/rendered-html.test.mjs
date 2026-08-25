@@ -47,20 +47,22 @@ test("renders the Dr. Bongo neural-link scene", async () => {
   assert.match(html, /Talk to the ape/);
   assert.match(html, /orangutan-aliens\.jpg/);
   assert.match(html, /Fuck this Noise/);
-  assert.match(html, /dr-bongo-v3\.png/);
 });
 
 test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
   const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
 
-  assert.match(widget, /className="bongo-playfield"/);
-  assert.match(widget, /current \+ 0\.05/);
-  assert.match(widget, /current - 0\.05/);
-  assert.match(widget, /bongo-baseball-bat/);
+  assert.match(widget, /className="orangutan-playfield"/);
+  assert.match(widget, /new THREE\.WebGLRenderer/);
+  assert.match(widget, /spawnBananaRef\.current = spawnBanana/);
+  assert.match(widget, /beatBongoRef\.current = swingBat/);
+  assert.match(widget, /chewTimer/);
+  assert.match(widget, /targetScale \+ 0\.05/);
+  assert.match(widget, /targetScale - 0\.05/);
   assert.match(banner, /interactWithBongo\("feed"\)/);
   assert.match(banner, /interactWithBongo\("beat"\)/);
-  assert.match(banner, /dr-bongo-icon-v3\.png/);
+  assert.match(banner, /trip-bongo-avatar__brain/);
 });
 
 test("chat remains interactive without an API key", async () => {
