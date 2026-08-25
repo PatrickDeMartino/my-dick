@@ -754,36 +754,13 @@ button, input { font: inherit; }
   perspective: 1200px;
 }
 
-.choice-world-stage,
-.choice-world-layer {
+.choice-world-stage {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.choice-world-stage {
-  pointer-events: none;
   transform-style: preserve-3d;
-}
-
-.choice-world-layer {
-  object-fit: cover;
-  object-position: center;
-  will-change: transform, filter;
-  backface-visibility: hidden;
-}
-
-.choice-world-earth {
-  clip-path: ellipse(28% 42% at 14% 32%);
-  transform-origin: 14% 32%;
-  animation: choice-earth-tilt 4.6s ease-in-out infinite;
-}
-
-.choice-world-brain {
-  clip-path: ellipse(31% 40% at 88% 68%);
-  transform-origin: 88% 68%;
-  animation: choice-brain-tilt 5.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .choice-vignette {
@@ -854,41 +831,174 @@ button, input { font: inherit; }
   background: #050207;
 }
 
-.choice-portal {
+.choice-object {
+  --portal-glow: rgba(177, 70, 255, .86);
   position: absolute;
   z-index: 2;
-  display: grid;
-  gap: 5px;
-  min-width: 150px;
-  padding: 15px 19px;
-  border: 1px solid rgba(255, 255, 255, .45);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, .52);
+  display: block;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
   color: #fff;
   text-decoration: none;
-  backdrop-filter: blur(10px);
-  transition: background .2s, border-color .2s, transform .2s;
   cursor: pointer;
-  text-align: left;
+  pointer-events: auto;
+  touch-action: manipulation;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.choice-portal strong {
+.choice-object-earth {
+  top: calc(var(--trip-banner-height) + 1.5vh);
+  left: 2%;
+  width: min(42vw, 720px);
+  aspect-ratio: 1 / 1.03;
+}
+
+.choice-object-brain {
+  right: 1.5%;
+  bottom: 1%;
+  width: min(44vw, 760px);
+  aspect-ratio: 1.18 / 1;
+}
+
+.choice-object-visual {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 46px;
+  display: block;
+  background-image: url("/media/brain-earth.jpg");
+  background-repeat: no-repeat;
+  will-change: transform, filter;
+  backface-visibility: hidden;
+  transition: filter .35s ease, transform .35s ease;
+  animation: choice-object-float 5s ease-in-out infinite;
+}
+
+.choice-object-earth .choice-object-visual {
+  background-size: 286% auto;
+  background-position: 7.5% 16%;
+  clip-path: ellipse(48% 48% at 50% 50%);
+}
+
+.choice-object-brain .choice-object-visual {
+  background-size: 255% auto;
+  background-position: 92% 84%;
+  clip-path: polygon(3% 34%, 8% 21%, 21% 10%, 39% 4%, 60% 7%, 78% 18%, 91% 35%, 96% 52%, 91% 69%, 80% 79%, 65% 84%, 62% 96%, 54% 100%, 51% 84%, 35% 80%, 18% 71%, 7% 58%);
+  animation-duration: 5.6s;
+  animation-direction: reverse;
+}
+
+.choice-object::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 6% 4% 13%;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(ellipse, rgba(189, 69, 255, .43), rgba(72, 35, 188, .2) 42%, transparent 72%);
+  filter: blur(22px);
+  transform: scale(.74);
+  transition: opacity .3s ease, transform .45s ease;
+}
+
+.choice-smoke {
+  position: absolute;
+  z-index: 0;
+  inset: -13% -12% 2%;
+  display: block;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(.76);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transition: opacity .35s ease, transform .5s ease;
+}
+
+.choice-smoke::after {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 45% 55% 60% 40%;
+  opacity: .42;
+  background:
+    repeating-conic-gradient(from 17deg, rgba(214, 98, 255, .28) 0 7deg, transparent 7deg 21deg),
+    radial-gradient(circle, rgba(81, 39, 185, .32), transparent 68%);
+  mask-image: radial-gradient(ellipse, transparent 28%, black 46%, transparent 72%);
+  filter: blur(7px);
+  animation: choice-smoke-pattern 8s linear infinite;
+}
+
+.choice-smoke i {
+  position: absolute;
+  left: 30%;
+  top: 48%;
+  width: 35%;
+  aspect-ratio: 1;
+  border-radius: 43% 57% 61% 39%;
+  opacity: 0;
+  background:
+    repeating-conic-gradient(from 30deg, rgba(245, 126, 255, .34) 0 9deg, rgba(87, 42, 190, .16) 9deg 20deg, transparent 20deg 31deg),
+    radial-gradient(circle at 38% 35%, rgba(204, 91, 255, .62), rgba(81, 38, 184, .22) 48%, transparent 72%);
+  filter: blur(8px);
+  animation: choice-smoke-rise 4.8s ease-out infinite;
+}
+
+.choice-smoke i:nth-child(2) { left: 55%; top: 36%; animation-delay: -.7s; animation-duration: 5.4s; }
+.choice-smoke i:nth-child(3) { left: 13%; top: 39%; animation-delay: -1.4s; animation-duration: 4.3s; }
+.choice-smoke i:nth-child(4) { left: 65%; top: 58%; animation-delay: -2.1s; animation-duration: 5.8s; }
+.choice-smoke i:nth-child(5) { left: 22%; top: 65%; animation-delay: -2.8s; animation-duration: 5.1s; }
+.choice-smoke i:nth-child(6) { left: 42%; top: 18%; animation-delay: -3.5s; animation-duration: 4.6s; }
+.choice-smoke i:nth-child(7) { left: 4%; top: 56%; animation-delay: -4.2s; animation-duration: 5.6s; }
+
+.choice-object-label {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 0;
+  display: grid;
+  gap: 4px;
+  min-width: max-content;
+  opacity: 0;
+  transform: translate(-50%, 11px) scale(.94);
+  text-align: center;
+  text-shadow: 0 2px 10px #000, 0 0 12px rgba(168, 66, 255, .75);
+  pointer-events: none;
+  transition: opacity .22s ease, transform .28s ease;
+}
+
+.choice-object-label strong {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 22px;
+  font-size: clamp(18px, 2vw, 27px);
   font-weight: 400;
   line-height: 1.1;
 }
 
-.choice-portal small {
-  color: rgba(255, 255, 255, .7);
-  font-size: 11px;
+.choice-object-label small {
+  color: rgba(225, 200, 255, .88);
+  font-size: clamp(8px, .8vw, 11px);
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.choice-portal-earth { top: 35%; left: 22%; transform: translate(-50%, -50%); }
-.choice-portal-brain { top: 77%; left: 58%; transform: translate(-50%, -50%); }
-.choice-portal:hover, .choice-portal:focus-visible { border-color: #fff; outline: none; background: rgba(16, 20, 32, .8); transform: translate(-50%, -50%) scale(1.04); }
+.choice-object:hover::before,
+.choice-object:focus-visible::before,
+.choice-object.is-active::before { opacity: 1; transform: scale(1.08); }
+
+.choice-object:hover .choice-object-visual,
+.choice-object:focus-visible .choice-object-visual,
+.choice-object.is-active .choice-object-visual {
+  filter: saturate(1.4) brightness(1.12) drop-shadow(0 0 10px #c55eff) drop-shadow(0 0 28px rgba(94, 62, 255, .78));
+}
+
+.choice-object:hover .choice-smoke,
+.choice-object:focus-visible .choice-smoke,
+.choice-object.is-active .choice-smoke { opacity: .76; transform: scale(1); }
+
+.choice-object:hover .choice-object-label,
+.choice-object:focus-visible .choice-object-label,
+.choice-object.is-active .choice-object-label { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
 @keyframes choice-slime-pulse {
   0%, 100% { transform: scale(.94) rotate(-1deg); border-radius: 48% 52% 42% 58% / 56% 42% 58% 44%; }
@@ -896,15 +1006,19 @@ button, input { font: inherit; }
 }
 
 @keyframes choice-slime-flow { to { background-position: 220% 0; } }
-@keyframes choice-earth-tilt {
-  0%, 100% { transform: rotateX(-2deg) rotateY(-6deg) rotateZ(-.7deg) scale(1); filter: saturate(1) brightness(1); }
-  50% { transform: rotateX(3deg) rotateY(6deg) rotateZ(.8deg) scale(1.045); filter: saturate(1.16) brightness(1.08); }
+@keyframes choice-object-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-.55deg) scale(.985); }
+  50% { transform: translate3d(0, -1.4%, 18px) rotate(.65deg) scale(1.018); }
 }
 
-@keyframes choice-brain-tilt {
-  0%, 100% { transform: rotateX(3deg) rotateY(6deg) rotateZ(.7deg) scale(1); filter: saturate(1) brightness(1); }
-  50% { transform: rotateX(-3deg) rotateY(-6deg) rotateZ(-.8deg) scale(1.045); filter: saturate(1.16) brightness(1.08); }
+@keyframes choice-smoke-rise {
+  0% { opacity: 0; transform: translate3d(0, 10%, 0) scale(.45) rotate(0); }
+  18% { opacity: .5; }
+  70% { opacity: .23; }
+  100% { opacity: 0; transform: translate3d(-18%, -84%, 0) scale(1.45) rotate(105deg); }
 }
+
+@keyframes choice-smoke-pattern { to { transform: rotate(360deg) scale(1.08); } }
 
 .urf-modal-shell {
   position: fixed;
@@ -927,13 +1041,35 @@ button, input { font: inherit; }
 }
 
 @media (max-width: 700px) {
-  .choice-kicker { top: calc(var(--trip-banner-height) + 18px); max-width: calc(100% - 24px); white-space: normal; text-align: center; }
-  .choice-portal-earth { top: 28%; left: 29%; }
-  .choice-portal-brain { top: 78%; left: 57%; }
-}
-
-@media (max-width: 520px) {
-  .choice-portal { min-width: 128px; padding: 12px 15px; }
-  .choice-portal strong { font-size: 19px; }
+  .choice-kicker {
+    top: calc(var(--trip-banner-height) + 38px);
+    left: 55%;
+    max-width: calc(100% - 24px);
+    transform: translateX(-50%) rotate(3.5deg);
+    white-space: normal;
+    text-align: center;
+  }
+  .choice-kicker span { font-size: clamp(15px, 4.7vw, 19px); }
+  .choice-object-earth {
+    top: calc(var(--trip-banner-height) + 11svh);
+    left: 50%;
+    width: min(61vw, 30svh, 240px);
+    aspect-ratio: 1 / 1;
+    transform: translateX(-50%);
+  }
+  .choice-object-brain {
+    top: calc(var(--trip-banner-height) + 44svh);
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: min(70vw, 32svh, 278px);
+    aspect-ratio: 1.18 / 1;
+    transform: translateX(-50%);
+  }
+  .choice-object-visual { inset: 0 0 38px; }
+  .choice-object-label { gap: 2px; bottom: 2px; }
+  .choice-object-label strong { font-size: clamp(14px, 4.4vw, 17px); }
+  .choice-object-label small { font-size: clamp(6px, 2vw, 8px); }
+  .choice-smoke { inset: -16% -17% -1%; }
 }
 
