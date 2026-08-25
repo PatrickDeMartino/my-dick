@@ -852,14 +852,14 @@ button, input { font: inherit; }
 .choice-object-earth {
   top: calc(var(--trip-banner-height) + 1.5vh);
   left: 2%;
-  width: min(42vw, 720px);
+  width: min(56.7vw, 972px);
   aspect-ratio: 1 / 1.03;
 }
 
 .choice-object-brain {
   right: 1.5%;
   bottom: 1%;
-  width: min(44vw, 760px);
+  width: min(59.4vw, 1026px);
   aspect-ratio: 1.18 / 1;
 }
 
@@ -879,11 +879,11 @@ button, input { font: inherit; }
 }
 
 .choice-object-earth .choice-object-visual {
-  background-image: url("/media/planet-urf-crop.png");
+  background-image: url("/media/planet-urf-cutout.png");
 }
 
 .choice-object-brain .choice-object-visual {
-  background-image: url("/media/brain-crop.png");
+  background-image: url("/media/brain-cutout.png");
   animation-duration: 5.6s;
   animation-direction: reverse;
 }
@@ -1051,7 +1051,7 @@ button, input { font: inherit; }
   .choice-object-earth {
     top: calc(var(--trip-banner-height) + 11svh);
     left: 0;
-    width: min(61vw, 30svh, 240px);
+    width: min(82.35vw, 40.5svh, 324px);
     aspect-ratio: 1 / 1;
     transform: none;
   }
@@ -1060,7 +1060,7 @@ button, input { font: inherit; }
     right: 0;
     bottom: auto;
     left: auto;
-    width: min(70vw, 32svh, 278px);
+    width: min(94.5vw, 43.2svh, 375.3px);
     aspect-ratio: 1.18 / 1;
     transform: none;
   }
