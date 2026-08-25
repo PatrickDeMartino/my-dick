@@ -868,8 +868,10 @@ button, input { font: inherit; }
   z-index: 1;
   inset: 0 0 46px;
   display: block;
-  background-image: url("/media/brain-earth.jpg");
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: auto;
   will-change: transform, filter;
   backface-visibility: hidden;
   transition: filter .35s ease, transform .35s ease;
@@ -877,15 +879,11 @@ button, input { font: inherit; }
 }
 
 .choice-object-earth .choice-object-visual {
-  background-size: 286% auto;
-  background-position: 7.5% 16%;
-  clip-path: ellipse(48% 48% at 50% 50%);
+  background-image: url("/media/planet-urf-crop.png");
 }
 
 .choice-object-brain .choice-object-visual {
-  background-size: 255% auto;
-  background-position: 92% 84%;
-  clip-path: polygon(3% 34%, 8% 21%, 21% 10%, 39% 4%, 60% 7%, 78% 18%, 91% 35%, 96% 52%, 91% 69%, 80% 79%, 65% 84%, 62% 96%, 54% 100%, 51% 84%, 35% 80%, 18% 71%, 7% 58%);
+  background-image: url("/media/brain-crop.png");
   animation-duration: 5.6s;
   animation-direction: reverse;
 }
@@ -989,7 +987,7 @@ button, input { font: inherit; }
 .choice-object:hover .choice-object-visual,
 .choice-object:focus-visible .choice-object-visual,
 .choice-object.is-active .choice-object-visual {
-  filter: saturate(1.4) brightness(1.12) drop-shadow(0 0 10px #c55eff) drop-shadow(0 0 28px rgba(94, 62, 255, .78));
+  filter: saturate(1.18) brightness(1.06);
 }
 
 .choice-object:hover .choice-smoke,
@@ -1007,8 +1005,8 @@ button, input { font: inherit; }
 
 @keyframes choice-slime-flow { to { background-position: 220% 0; } }
 @keyframes choice-object-float {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-.55deg) scale(.985); }
-  50% { transform: translate3d(0, -1.4%, 18px) rotate(.65deg) scale(1.018); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -4px, 0); }
 }
 
 @keyframes choice-smoke-rise {
@@ -1052,19 +1050,19 @@ button, input { font: inherit; }
   .choice-kicker span { font-size: clamp(15px, 4.7vw, 19px); }
   .choice-object-earth {
     top: calc(var(--trip-banner-height) + 11svh);
-    left: 50%;
+    left: 0;
     width: min(61vw, 30svh, 240px);
     aspect-ratio: 1 / 1;
-    transform: translateX(-50%);
+    transform: none;
   }
   .choice-object-brain {
-    top: calc(var(--trip-banner-height) + 44svh);
-    right: auto;
+    top: calc(var(--trip-banner-height) + 49svh);
+    right: 0;
     bottom: auto;
-    left: 50%;
+    left: auto;
     width: min(70vw, 32svh, 278px);
     aspect-ratio: 1.18 / 1;
-    transform: translateX(-50%);
+    transform: none;
   }
   .choice-object-visual { inset: 0 0 38px; }
   .choice-object-label { gap: 2px; bottom: 2px; }
