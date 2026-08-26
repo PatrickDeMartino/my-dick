@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
-
-type PortalId = "earth" | "brain";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
 
 export default function LandingPage() {
   const [showUrf, setShowUrf] = useState(false);
-  const [activePortal, setActivePortal] = useState<PortalId | null>(null);
 
   useEffect(() => {
     const closeUrf = () => setShowUrf(false);
@@ -31,27 +27,16 @@ export default function LandingPage() {
     };
   }, [showUrf]);
 
-  const isFirstTouch = (portal: PortalId, event: ReactMouseEvent<HTMLElement>) => {
-    const touchLike = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-    if (!touchLike || event.detail === 0 || activePortal === portal) return false;
-    event.preventDefault();
-    setActivePortal(portal);
-    return true;
-  };
-
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
       <div className="choice-world-stage" aria-label="Choose between Planet Urf and Dr. Bongo">
         <button
-          className={`choice-object choice-object-earth${activePortal === "earth" ? " is-active" : ""}`}
+          className="choice-object choice-object-earth"
           type="button"
           data-portal="earth"
-          aria-label="Planet Urf. On a phone, tap once to reveal it and tap again to enter."
+          aria-label="Open the Planet Urf world selector"
           aria-haspopup="dialog"
-          onClick={(event) => {
-            if (isFirstTouch("earth", event)) return;
-            setShowUrf(true);
-          }}
+          onClick={() => setShowUrf(true)}
         >
           <span className="choice-object-visual" aria-hidden="true" />
           <span className="choice-smoke" aria-hidden="true">
@@ -64,11 +49,10 @@ export default function LandingPage() {
         </button>
 
         <a
-          className={`choice-object choice-object-brain${activePortal === "brain" ? " is-active" : ""}`}
+          className="choice-object choice-object-brain"
           href="/bongo"
           data-portal="brain"
-          aria-label="That fucking other thing. On a phone, tap once to reveal it and tap again to enter Dr. Bongo."
-          onClick={(event) => { isFirstTouch("brain", event); }}
+          aria-label="Open Dr. Bongo"
         >
           <span className="choice-object-visual" aria-hidden="true" />
           <span className="choice-smoke" aria-hidden="true">

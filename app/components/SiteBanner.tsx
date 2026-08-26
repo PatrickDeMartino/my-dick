@@ -104,7 +104,6 @@ export default function SiteBanner() {
 
   const interactWithBongo = (action: "feed" | "beat") => {
     window.dispatchEvent(new CustomEvent(BONGO_ACTION_EVENT, { detail: { action } }));
-    setBongoMenuOpen(false);
   };
 
   if (!visible) return null;

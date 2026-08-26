@@ -1183,5 +1183,9 @@ button, input { font: inherit; }
   .choice-object-label strong { font-size: clamp(14px, 4.4vw, 17px); }
   .choice-object-label small { font-size: clamp(6px, 2vw, 8px); }
   .choice-smoke { inset: -16% -17% -1%; }
+  .choice-object::before { opacity: 1; transform: scale(1.08); }
+  .choice-object .choice-object-visual { filter: saturate(1.18) brightness(1.06); }
+  .choice-object .choice-smoke { opacity: .76; transform: scale(1); }
+  .choice-object .choice-object-label { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 

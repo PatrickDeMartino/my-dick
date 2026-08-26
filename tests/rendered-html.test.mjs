@@ -38,6 +38,16 @@ test("renders the Planet Urf landing page", async () => {
   assert.match(html, /patrick_allan_demartino/);
 });
 
+test("mobile landing choices are active and open with one tap", async () => {
+  const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.doesNotMatch(landing, /isFirstTouch/);
+  assert.match(landing, /onClick=\{\(\) => setShowUrf\(true\)\}/);
+  assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.choice-object \.choice-smoke \{ opacity: \.76;/);
+  assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.choice-object \.choice-object-label \{ opacity: 1;/);
+});
+
 test("renders the Dr. Bongo neural-link scene", async () => {
   const response = await request("/bongo");
   assert.equal(response.status, 200);
@@ -64,11 +74,15 @@ test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
   assert.match(widget, /PROPERTY OF/);
   assert.match(widget, /THE CIA/);
   assert.match(widget, /triggerBloodSpatter\(\)/);
+  assert.match(widget, /textureLoader\.load\("\/media\/bongo-banana-cutout-v1\.png"\)/);
+  assert.match(widget, /textureLoader\.load\("\/media\/bongo-bat-cutout-v1\.png"\)/);
   assert.match(banner, /interactWithBongo\("feed"\)/);
   assert.match(banner, /interactWithBongo\("beat"\)/);
   assert.match(banner, /dr-bongo-model-icon-v1\.png/);
   assert.match(banner, /bongo-banana-cutout-v1\.png/);
   assert.match(banner, /bongo-bat-cutout-v1\.png/);
+  const actionHandler = banner.match(/const interactWithBongo[\s\S]*?\n {2}};/)?.[0] ?? "";
+  assert.doesNotMatch(actionHandler, /setBongoMenuOpen\(false\)/);
   assert.match(styles, /bongo-blood-flash \.5s/);
 });
 

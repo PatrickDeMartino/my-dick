@@ -6,11 +6,11 @@ import * as THREE from "three";
 /**
  * A full-screen, articulated 3D Dr. Bongo prototype.
  *
- * - Built entirely from primitive geometry (no external model files to fetch).
+ * - Built from primitive geometry with textured interaction props.
  * - Drag him around with mouse or touch; release while moving to throw him.
  * - He's bound by gravity + the whole viewport and
  *   bounces/tumbles with simple rigid-body-style physics.
- * - Banner actions feed him bananas or swing a low-poly baseball bat.
+ * - Banner actions feed him bananas or swing a baseball bat.
  */
 
 const GRAVITY = -9.2;
@@ -619,26 +619,26 @@ export default function OrangutanWidget() {
     window.addEventListener("touchmove", stopTouchScroll, { passive: false });
 
     // ---------------- Bananas ----------------
-    const bananaGeo = new THREE.TorusGeometry(0.16, 0.052, 8, 24, Math.PI * 1.42);
-    const bananaMat = new THREE.MeshStandardMaterial({ color: 0xf6d43c, roughness: 0.48, emissive: 0x594400, emissiveIntensity: 0.3 });
-    const bananaTipGeo = new THREE.SphereGeometry(0.038, 8, 6);
-    const bananaTipMat = new THREE.MeshStandardMaterial({ color: 0x5b3b10, roughness: 0.9 });
+    const textureLoader = new THREE.TextureLoader();
+    const bananaTexture = textureLoader.load("/media/bongo-banana-cutout-v1.png");
+    bananaTexture.colorSpace = THREE.SRGBColorSpace;
+    const bananaGeo = new THREE.PlaneGeometry(0.48, 0.32);
+    const bananaMat = new THREE.MeshBasicMaterial({
+      map: bananaTexture,
+      transparent: true,
+      alphaTest: 0.02,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
     const bananas: Banana[] = [];
     let activeSnack: Banana | null = null;
 
     function spawnBanana() {
       const group = new THREE.Group();
       const mesh = new THREE.Mesh(bananaGeo, bananaMat);
-      mesh.rotation.z = Math.PI / 5;
-      mesh.scale.y = 0.78;
-      mesh.castShadow = true;
+      mesh.rotation.z = -0.08;
       group.add(mesh);
-      const tipA = new THREE.Mesh(bananaTipGeo, bananaTipMat);
-      tipA.position.set(0.16, 0.005, 0);
-      tipA.castShadow = true;
-      const tipB = tipA.clone();
-      tipB.position.set(-0.105, 0.12, 0);
-      group.add(tipA, tipB);
       const startX = THREE.MathUtils.clamp(
         ape.position.x + (Math.random() - 0.5) * 0.6,
         bounds.left,
@@ -661,15 +661,22 @@ export default function OrangutanWidget() {
     // A real scene object, not a DOM animation. The bat follows through, applies
     // an impulse to the ragdoll, kicks its joints and changes its physical scale.
     const batRig = new THREE.Group();
-    const batWoodMat = new THREE.MeshStandardMaterial({ color: 0xb36a2d, roughness: 0.58, metalness: 0.05 });
-    const batTapeMat = new THREE.MeshStandardMaterial({ color: 0x22120b, roughness: 0.9 });
-    const batBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.055, 0.75, 10), batWoodMat);
-    batBarrel.position.y = -0.42;
-    const batHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.48, 8), batTapeMat);
-    batHandle.position.y = -0.99;
-    const batKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.08, 8), batWoodMat);
-    batKnob.position.y = -1.27;
-    batRig.add(batBarrel, batHandle, batKnob);
+    const batTexture = textureLoader.load("/media/bongo-bat-cutout-v1.png");
+    batTexture.colorSpace = THREE.SRGBColorSpace;
+    const batVisual = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.28, 0.853),
+      new THREE.MeshBasicMaterial({
+        map: batTexture,
+        transparent: true,
+        alphaTest: 0.02,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
+    );
+    batVisual.position.y = -0.65;
+    batVisual.rotation.z = Math.PI * 0.31;
+    batRig.add(batVisual);
     batRig.visible = false;
     scene.add(batRig);
     let batAge = 0;
@@ -1106,6 +1113,8 @@ export default function OrangutanWidget() {
       if (bloodTimerRef.current) window.clearTimeout(bloodTimerRef.current);
       chipLabelTexture.dispose();
       brainBumpTexture.dispose();
+      bananaTexture.dispose();
+      batTexture.dispose();
       for (const b of bananas) scene.remove(b.group);
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
