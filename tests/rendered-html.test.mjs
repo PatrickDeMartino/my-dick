@@ -52,6 +52,7 @@ test("renders the Dr. Bongo neural-link scene", async () => {
 test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
   const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(widget, /className="orangutan-playfield"/);
   assert.match(widget, /new THREE\.WebGLRenderer/);
@@ -60,9 +61,15 @@ test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
   assert.match(widget, /chewTimer/);
   assert.match(widget, /targetScale \+ 0\.05/);
   assert.match(widget, /targetScale - 0\.05/);
+  assert.match(widget, /PROPERTY OF/);
+  assert.match(widget, /THE CIA/);
+  assert.match(widget, /triggerBloodSpatter\(\)/);
   assert.match(banner, /interactWithBongo\("feed"\)/);
   assert.match(banner, /interactWithBongo\("beat"\)/);
-  assert.match(banner, /trip-bongo-avatar__brain/);
+  assert.match(banner, /dr-bongo-model-icon-v1\.png/);
+  assert.match(banner, /bongo-banana-cutout-v1\.png/);
+  assert.match(banner, /bongo-bat-cutout-v1\.png/);
+  assert.match(styles, /bongo-blood-flash \.5s/);
 });
 
 test("chat remains interactive without an API key", async () => {

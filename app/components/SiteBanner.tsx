@@ -133,13 +133,7 @@ export default function SiteBanner() {
               onClick={() => setBongoMenuOpen((open) => !open)}
             >
               <span className="trip-bongo-menu__portrait" aria-hidden="true">
-                <span className="trip-bongo-avatar">
-                  <i className="trip-bongo-avatar__brain" />
-                  <i className="trip-bongo-avatar__implant" />
-                  <i className="trip-bongo-avatar__face" />
-                  <i className="trip-bongo-avatar__muzzle" />
-                  <i className="trip-bongo-avatar__eyes" />
-                </span>
+                <img className="trip-bongo-avatar" src="/media/dr-bongo-model-icon-v1.png" alt="" />
               </span>
               <span>Dr. Bongo</span>
               <i aria-hidden="true">⌄</i>
@@ -147,11 +141,15 @@ export default function SiteBanner() {
             {bongoMenuOpen && (
               <div className="trip-bongo-menu__dropdown" role="menu" aria-label="Interact with Dr. Bongo">
                 <button type="button" role="menuitem" onClick={() => interactWithBongo("feed")}>
-                  <span className="trip-bongo-action__banana" aria-hidden="true" />
+                  <span className="trip-bongo-action__image trip-bongo-action__banana" aria-hidden="true">
+                    <img src="/media/bongo-banana-cutout-v1.png" alt="" />
+                  </span>
                   <span><strong>Feed</strong><small>Banana makes him grow</small></span>
                 </button>
                 <button type="button" role="menuitem" onClick={() => interactWithBongo("beat")}>
-                  <span className="trip-bongo-action__bat" aria-hidden="true" />
+                  <span className="trip-bongo-action__image trip-bongo-action__bat" aria-hidden="true">
+                    <img src="/media/bongo-bat-cutout-v1.png" alt="" />
+                  </span>
                   <span><strong>Beat</strong><small>Baseball bat makes him shrink</small></span>
                 </button>
               </div>
