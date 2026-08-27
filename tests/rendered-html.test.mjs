@@ -141,12 +141,15 @@ test("dog-fight round wins award one can of Rat Meat", async () => {
 test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+  const townStyles = await readFile(new URL("../app/urf/urf.css", import.meta.url), "utf8");
 
   assert.match(town, /const nextBalance = balance - 1/);
   assert.match(town, /onClick=\{feedWorkers\}/);
   assert.match(town, /trip-rat-meat-balance-changed/);
   assert.match(town, /NOT ENOUGH RAT MEAT/);
   assert.match(banner, /trip-rat-meat-balance-changed/);
+  assert.doesNotMatch(townStyles, /\.dialog-character\s*\{\s*display:\s*none/);
+  assert.match(townStyles, /bottom: calc\(100% - 8px\)/);
 });
 
 test("world globe clips coastlines cleanly and supports full rotation", async () => {

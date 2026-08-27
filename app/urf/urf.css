@@ -186,14 +186,30 @@
   .town-side { display: none; }
   .town-header > div { padding-right: 7px; }
   .town-guide { width: 78%; }
-  .dialog-backdrop { padding: 12px; align-items: end; }
-  .penguin-dialog { width: 100%; min-height: auto; max-height: 92svh; grid-template-columns: 118px 1fr; }
-  .dialog-character { padding: 52px 12px 18px; }
-  .dialog-character img { border-width: 4px; max-height: 190px; }
-  .bad-tape { width: 58px; height: 17px; top: 43px; }
-  .character-tag { width: 110%; padding: 6px 8px; }
+  .dialog-backdrop { padding: min(28svh, 230px) 12px 12px; align-items: end; }
+  .penguin-dialog { display: block; width: 100%; min-height: auto; max-height: 60svh; overflow: visible; }
+  .dialog-character {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: calc(100% - 8px);
+    width: min(72vw, 290px);
+    height: min(31svh, 250px);
+    padding: 0 28px 14px;
+    transform: translateX(-50%);
+    background: transparent;
+    border-right: 0;
+  }
+  .dialog-character img {
+    align-self: center;
+    width: min(100%, 220px);
+    max-height: min(25svh, 210px);
+    border-width: 6px;
+  }
+  .bad-tape { width: 72px; height: 19px; top: 7px; }
+  .character-tag { width: 88%; padding: 7px 10px; }
   .character-tag b { font-size: 11px; }
-  .speech-panel { padding: 55px 25px 28px; }
+  .speech-panel { min-height: min(420px, 56svh); max-height: 60svh; overflow-y: auto; padding: 58px 25px 28px; }
   .speech-meta { margin-bottom: 18px; }
   .speech-meta b { display: none; }
   .speech-panel p { font-size: clamp(16px, 4.7vw, 23px); }
@@ -205,9 +221,8 @@
 }
 
 @media (max-width: 430px) {
-  .penguin-dialog { display: block; }
-  .dialog-character { display: none; }
-  .speech-panel { min-height: 420px; padding: 68px 30px 34px; }
+  .dialog-character { width: min(78vw, 270px); }
+  .speech-panel { padding-right: 22px; padding-left: 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
