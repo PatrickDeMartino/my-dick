@@ -221,26 +221,206 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   );
 }
 
-const buildings = [
-  { id: "plane", label: "PLANE", hint: "Flight Deck", style: { left: "4%", top: "25%", width: "36%", height: "19%" } },
-  { id: "telescope", label: "TELESCOPE", hint: "Observatory", style: { left: "59%", top: "8%", width: "32%", height: "27%" } },
-  { id: "magic", label: "FUCKING MAGIC PLACE", hint: "Definitely magic", style: { left: "38%", top: "25%", width: "30%", height: "22%" } },
-  { id: "igloo", label: "IGLOO", hint: "Probably housing", style: { left: "23%", top: "42%", width: "29%", height: "19%" } },
-  { id: "sweatshop", label: "SWEATSHOP", hint: "Work hard", style: { left: "62%", top: "40%", width: "34%", height: "22%" } },
-  { id: "docks", label: "DOCKS & CARGO", hint: "Trade and transport", style: { left: "2%", top: "58%", width: "41%", height: "27%" } },
-  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Absolutely unfinished", style: { left: "48%", top: "61%", width: "42%", height: "23%" } },
+type TownBuilding = {
+  id: string;
+  label: string;
+  hint: string;
+  terrain: "land" | "ocean";
+  footprint: { width: number; height: number };
+  sheet: { column: number; row: number };
+  image?: string;
+  upgradeImage?: string;
+  start: { column: number; row: number };
+  visualScale: number;
+};
+
+const GRID_COLUMNS = 16;
+const GRID_ROWS = 18;
+const ISO_ORIGIN_X = 50;
+const ISO_ORIGIN_Y = 28.5;
+const ISO_CELL_X = 2.65;
+const ISO_CELL_Y = 1.85;
+
+const buildings: TownBuilding[] = [
+  { id: "plane", label: "PLANE", hint: "Flight deck · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 0 }, image: "/buildings/plane.png", start: { column: 3, row: 5 }, visualScale: 2.05 },
+  { id: "telescope", label: "TELESCOPE", hint: "Observatory · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 0 }, image: "/buildings/telescope-wood.png", upgradeImage: "/buildings/telescope-metal.png", start: { column: 9, row: 3 }, visualScale: 2.18 },
+  { id: "magic", label: "CIRCUS", hint: "Questionable entertainment · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 1 }, image: "/buildings/circus.png", start: { column: 11, row: 5 }, visualScale: 1.9 },
+  { id: "igloo", label: "IGLOO", hint: "Housing · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 1 }, image: "/buildings/igloo.png", start: { column: 4, row: 8 }, visualScale: 1.9 },
+  { id: "sweatshop", label: "SWEATSHOP", hint: "Production · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 2 }, image: "/buildings/sweatshop.png", start: { column: 14, row: 8 }, visualScale: 2.15 },
+  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, start: { column: 1, row: 15 }, visualScale: 2.3 },
+  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Fight club · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 3 }, image: "/buildings/dogfight-arena.png", start: { column: 5, row: 11 }, visualScale: 2.2 },
 ];
+
+type GridPosition = { column: number; row: number };
+type TownLayout = Record<string, GridPosition & { stored: boolean }>;
+type PlacementPreview = GridPosition & { id: string; valid: boolean };
+
+const createDefaultTownLayout = (): TownLayout => Object.fromEntries(
+  buildings.map((building) => [building.id, { ...building.start, stored: false }]),
+);
+
+const terrainAt = (column: number, row: number): "land" | "ocean" | "blocked" => {
+  const screenX = ISO_ORIGIN_X + (column - row) * ISO_CELL_X;
+  const screenY = ISO_ORIGIN_Y + (column + row + 1) * ISO_CELL_Y;
+  if (screenY < 35) return "blocked";
+
+  const landRange = screenY < 44
+    ? [41, 79]
+    : screenY < 58
+      ? [22, 84]
+      : screenY < 72
+        ? [20, 95]
+        : [35, 94];
+  return screenX >= landRange[0] && screenX <= landRange[1] ? "land" : "ocean";
+};
+
+const placementIssue = (building: TownBuilding, position: GridPosition, layout: TownLayout): string | null => {
+  const cells: string[] = [];
+  for (let row = position.row; row < position.row + building.footprint.height; row += 1) {
+    for (let column = position.column; column < position.column + building.footprint.width; column += 1) {
+      if (column < 0 || row < 0 || column >= GRID_COLUMNS || row >= GRID_ROWS) return "OUTSIDE THE BUILD GRID";
+      if (terrainAt(column, row) !== building.terrain) {
+        return building.terrain === "ocean" ? "THE CARGO BOAT NEEDS OPEN OCEAN" : "LAND BUILDINGS NEED SOLID SNOW";
+      }
+      cells.push(`${column}:${row}`);
+    }
+  }
+
+  const occupied = new Set<string>();
+  for (const other of buildings) {
+    if (other.id === building.id || layout[other.id]?.stored) continue;
+    const placed = layout[other.id];
+    if (!placed) continue;
+    for (let row = placed.row; row < placed.row + other.footprint.height; row += 1) {
+      for (let column = placed.column; column < placed.column + other.footprint.width; column += 1) {
+        occupied.add(`${column}:${row}`);
+      }
+    }
+  }
+  return cells.some((cell) => occupied.has(cell)) ? "THAT SPACE IS OCCUPIED" : null;
+};
+
+const isCellAvailable = (building: TownBuilding, column: number, row: number, layout: TownLayout): boolean => {
+  if (terrainAt(column, row) !== building.terrain) return false;
+  return !buildings.some((other) => {
+    if (other.id === building.id || layout[other.id]?.stored) return false;
+    const placed = layout[other.id];
+    if (!placed) return false;
+    return column >= placed.column
+      && column < placed.column + other.footprint.width
+      && row >= placed.row
+      && row < placed.row + other.footprint.height;
+  });
+};
+
+const gridPositionFromPointer = (building: TownBuilding, clientX: number, clientY: number, map: DOMRect): GridPosition => {
+  const screenX = ((clientX - map.left) / map.width) * 100;
+  const screenY = ((clientY - map.top) / map.height) * 100;
+  const deltaX = (screenX - ISO_ORIGIN_X) / ISO_CELL_X;
+  const deltaY = (screenY - ISO_ORIGIN_Y) / ISO_CELL_Y;
+  const centerColumn = (deltaY + deltaX) / 2;
+  const centerRow = (deltaY - deltaX) / 2;
+  return {
+    column: Math.max(0, Math.min(GRID_COLUMNS - building.footprint.width, Math.round(centerColumn - building.footprint.width / 2))),
+    row: Math.max(0, Math.min(GRID_ROWS - building.footprint.height, Math.round(centerRow - building.footprint.height / 2))),
+  };
+};
+
+const buildingScreenPosition = (building: TownBuilding, position: GridPosition) => {
+  const centerColumn = position.column + building.footprint.width / 2;
+  const centerRow = position.row + building.footprint.height / 2;
+  return {
+    left: ISO_ORIGIN_X + (centerColumn - centerRow) * ISO_CELL_X,
+    top: ISO_ORIGIN_Y + (centerColumn + centerRow) * ISO_CELL_Y,
+    width: (building.footprint.width + building.footprint.height) * ISO_CELL_X,
+    height: (building.footprint.width + building.footprint.height) * ISO_CELL_Y,
+    depth: Math.round((centerColumn + centerRow) * 10),
+  };
+};
+
+const isValidSavedTownLayout = (layout: TownLayout): boolean => buildings.every((building) => {
+  const position = layout[building.id];
+  if (!position || !Number.isInteger(position.column) || !Number.isInteger(position.row) || typeof position.stored !== "boolean") return false;
+  return position.stored || placementIssue(building, position, layout) === null;
+});
+
+function BuildingSprite({ building, telescopeUpgraded = false }: { building: TownBuilding; telescopeUpgraded?: boolean }) {
+  const { sheet } = building;
+  const directImage = telescopeUpgraded && building.upgradeImage ? building.upgradeImage : building.image;
+  if (directImage) {
+    return (
+      <span className="building-sprite is-direct" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
+        <img src={directImage} alt="" draggable={false} />
+      </span>
+    );
+  }
+  return (
+    <span className="building-sprite" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
+      <img
+        src="/penguin-building-sprites-alpha-v2.png"
+        alt=""
+        draggable={false}
+        style={{
+          width: "200%",
+          height: "400%",
+          left: `${-100 * sheet.column}%`,
+          top: `${-100 * sheet.row}%`,
+        }}
+      />
+    </span>
+  );
+}
 
 const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
 const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
+const TELESCOPE_UPGRADE_STORAGE_KEY = "trip.telescope-upgrade.v1";
 
 function PenguinTown({ onBack }: { onBack: () => void }) {
-  const [selectedBuilding, setSelectedBuilding] = useState<(typeof buildings)[number] | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<TownBuilding | null>(null);
+  const [activeBuildingId, setActiveBuildingId] = useState<string | null>(null);
+  const [placingBuildingId, setPlacingBuildingId] = useState<string | null>(null);
+  const [placementPreview, setPlacementPreview] = useState<PlacementPreview | null>(null);
+  const [editorMessage, setEditorMessage] = useState<string | null>(null);
+  const [townLayout, setTownLayout] = useState<TownLayout>(createDefaultTownLayout);
+  const [telescopeUpgraded, setTelescopeUpgraded] = useState(false);
   const [workersFed, setWorkersFed] = useState(false);
   const [rationError, setRationError] = useState(false);
   const [showDogFightGame, setShowDogFightGame] = useState(false);
+  const dragRef = useRef<{ id: string; pointerId: number; map: DOMRect; preview: PlacementPreview } | null>(null);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
+  const activeBuilding = buildings.find((building) => building.id === activeBuildingId) ?? null;
+  const placingBuilding = buildings.find((building) => building.id === placingBuildingId) ?? null;
+  const movingBuilding = placementPreview ? buildings.find((building) => building.id === placementPreview.id) ?? null : null;
+  const storedBuildings = buildings.filter((building) => townLayout[building.id]?.stored);
+  const displayBuildingLabel = (building: TownBuilding) => building.id === "telescope" && telescopeUpgraded ? "METAL TELESCOPE" : building.label;
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("trip.penguin-town-layout.v7");
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as TownLayout;
+      if (isValidSavedTownLayout(parsed)) setTownLayout(parsed);
+    } catch {
+      // Keep the safe default layout if an old local save is malformed.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      setTelescopeUpgraded(window.localStorage.getItem(TELESCOPE_UPGRADE_STORAGE_KEY) === "metal");
+    } catch {
+      // Keep the wooden telescope when storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("trip.penguin-town-layout.v7", JSON.stringify(townLayout));
+    } catch {
+      // The editor still works for this session when storage is unavailable.
+    }
+  }, [townLayout]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -249,11 +429,120 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         setShowDogFightGame(false);
         return;
       }
-      setSelectedBuilding(null);
+      if (selectedBuilding) setSelectedBuilding(null);
+      else if (placingBuildingId) {
+        setPlacingBuildingId(null);
+        setPlacementPreview(null);
+        setEditorMessage(null);
+      } else setActiveBuildingId(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showDogFightGame]);
+  }, [placingBuildingId, selectedBuilding, showDogFightGame]);
+
+  const beginBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>, id: string) => {
+    if (placingBuildingId) return;
+    event.stopPropagation();
+    const map = event.currentTarget.closest(".town-map")?.getBoundingClientRect();
+    const building = buildings.find((candidate) => candidate.id === id);
+    const current = townLayout[id];
+    if (!map || !building || !current) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const preview = { id, column: current.column, row: current.row, valid: true };
+    dragRef.current = { id, pointerId: event.pointerId, map, preview };
+    setPlacementPreview(preview);
+    setEditorMessage(null);
+    setActiveBuildingId(id);
+  };
+
+  const continueBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const building = buildings.find((candidate) => candidate.id === drag.id);
+    if (!building) return;
+    const position = gridPositionFromPointer(building, event.clientX, event.clientY, drag.map);
+    const issue = placementIssue(building, position, townLayout);
+    const preview = { id: drag.id, ...position, valid: !issue };
+    drag.preview = preview;
+    setPlacementPreview(preview);
+    setEditorMessage(issue);
+  };
+
+  const finishBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.preview.valid) {
+      setTownLayout((current) => ({
+        ...current,
+        [drag.id]: { column: drag.preview.column, row: drag.preview.row, stored: false },
+      }));
+      setEditorMessage("PLACED ON GRID");
+    }
+    dragRef.current = null;
+    setPlacementPreview(null);
+  };
+
+  const previewInventoryPlacement = (event: React.PointerEvent<HTMLElement>) => {
+    if (!placingBuildingId) return;
+    const building = buildings.find((candidate) => candidate.id === placingBuildingId);
+    if (!building) return;
+    const position = gridPositionFromPointer(building, event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+    const issue = placementIssue(building, position, townLayout);
+    setPlacementPreview({ id: building.id, ...position, valid: !issue });
+    setEditorMessage(issue);
+  };
+
+  const placeFromInventory = (event: React.PointerEvent<HTMLElement>) => {
+    if (!placingBuildingId) {
+      if (event.target === event.currentTarget) setActiveBuildingId(null);
+      return;
+    }
+    const building = buildings.find((candidate) => candidate.id === placingBuildingId);
+    if (!building) return;
+    const position = gridPositionFromPointer(building, event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+    const issue = placementIssue(building, position, townLayout);
+    if (issue) {
+      setEditorMessage(issue);
+      setPlacementPreview({ id: building.id, ...position, valid: false });
+      return;
+    }
+    setTownLayout((current) => ({ ...current, [placingBuildingId]: { ...position, stored: false } }));
+    setActiveBuildingId(placingBuildingId);
+    setPlacingBuildingId(null);
+    setPlacementPreview(null);
+    setEditorMessage("PLACED ON GRID");
+  };
+
+  const visitBuilding = (building: TownBuilding) => {
+    setSelectedBuilding(building);
+    setActiveBuildingId(null);
+    if (building.id === "sweatshop") {
+      setWorkersFed(false);
+      setRationError(false);
+    }
+  };
+
+  const moveBuildingWithKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>, building: TownBuilding) => {
+    const direction = {
+      ArrowLeft: { column: -1, row: 0 },
+      ArrowRight: { column: 1, row: 0 },
+      ArrowUp: { column: 0, row: -1 },
+      ArrowDown: { column: 0, row: 1 },
+    }[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    const current = townLayout[building.id];
+    if (!current) return;
+    const position = { column: current.column + direction.column, row: current.row + direction.row };
+    const issue = placementIssue(building, position, townLayout);
+    if (issue) {
+      setEditorMessage(issue);
+      return;
+    }
+    setTownLayout((layout) => ({ ...layout, [building.id]: { ...position, stored: false } }));
+    setActiveBuildingId(building.id);
+    setEditorMessage("MOVED ONE GRID CELL");
+  };
 
   const feedWorkers = () => {
     try {
@@ -278,50 +567,170 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const upgradeTelescope = () => {
+    try {
+      const stored = Number.parseInt(window.localStorage.getItem(RAT_MEAT_STORAGE_KEY) ?? "0", 10);
+      const balance = Number.isFinite(stored) ? Math.max(0, stored) : 0;
+      if (balance < 69) {
+        setEditorMessage(`NEED ${69 - balance} MORE CANS OF RAT MEAT`);
+        return;
+      }
+
+      const nextBalance = balance - 69;
+      window.localStorage.setItem(RAT_MEAT_STORAGE_KEY, String(nextBalance));
+      window.localStorage.setItem(TELESCOPE_UPGRADE_STORAGE_KEY, "metal");
+      window.top?.postMessage(
+        { type: RAT_MEAT_BALANCE_EVENT, balance: nextBalance },
+        window.location.origin,
+      );
+      setTelescopeUpgraded(true);
+      setEditorMessage("METAL TELESCOPE INSTALLED · 69 CANS SPENT");
+    } catch {
+      setEditorMessage("UPGRADE STORAGE UNAVAILABLE");
+    }
+  };
+
   return (
     <main className="town-screen">
-      <div className="town-side town-side-left" aria-hidden="true"><span>90° S</span><i /></div>
-      <div className="town-side town-side-right" aria-hidden="true"><i /><span>ICE SECTOR 01</span></div>
-      <section className="town-map" aria-label="Penguin Town building map">
-        <img className="town-art" src="/penguin-town-clean.webp" alt="A snowy penguin village with several strange buildings" draggable={false} />
-        <div className="sweatshop-smoke" aria-hidden="true">
-          <span className="smoke-puff smoke-puff-1" />
-          <span className="smoke-puff smoke-puff-2" />
-          <span className="smoke-puff smoke-puff-3" />
-          <span className="smoke-puff smoke-puff-4" />
-          <span className="smoke-puff smoke-puff-5" />
-          <span className="smoke-puff smoke-puff-6" />
-        </div>
+      <section
+        className={`town-map${placingBuildingId ? " is-placing" : ""}`}
+        aria-label="Penguin Town base editor"
+        onPointerDown={placeFromInventory}
+        onPointerMove={previewInventoryPlacement}
+      >
+        <img className="town-art" src="/penguin-town-ground-v4.png" alt="A snowy Antarctic island with an expanded southeastern building shelf surrounded by open ocean" draggable={false} />
         <div className="town-vignette" aria-hidden="true" />
-        <header className="town-header">
+        <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
-          <div><small>ANTARCTICA · 90° S</small><h1>PENGUIN TOWN</h1></div>
+          <div><small>16 × 18 ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
+          <span className="town-edit-status"><i /> SNAP MODE</span>
         </header>
         <div className="town-guide" aria-label="Tutorial guide">
           <div className="guide-portrait"><img src="/evil-penguin.jpg" alt="Poorly drawn evil penguin tutorial guide" /></div>
           <div className="guide-copy"><small>FLIPPER FLAPPINGTON · DEFINITELY EVIL</small><p>Suck my penguin cock</p></div>
         </div>
+        <div className={`town-grid${placementPreview ? " is-active" : ""}`} aria-hidden="true">
+          {Array.from({ length: GRID_COLUMNS * GRID_ROWS }, (_, index) => {
+            const column = index % GRID_COLUMNS;
+            const row = Math.floor(index / GRID_COLUMNS);
+            const isCandidate = Boolean(placementPreview
+              && column >= placementPreview.column
+              && column < placementPreview.column + (movingBuilding?.footprint.width ?? 0)
+              && row >= placementPreview.row
+              && row < placementPreview.row + (movingBuilding?.footprint.height ?? 0));
+            const cellState = movingBuilding ? (isCellAvailable(movingBuilding, column, row, townLayout) ? " is-placeable" : " is-blocked") : "";
+            const candidateState = isCandidate ? (placementPreview?.valid ? " is-candidate-valid" : " is-candidate-invalid") : "";
+            return (
+              <span
+                key={index}
+                className={`terrain-${terrainAt(column, row)}${cellState}${candidateState}`}
+                style={{
+                  left: `${ISO_ORIGIN_X + (column - row) * ISO_CELL_X - ISO_CELL_X}%`,
+                  top: `${ISO_ORIGIN_Y + (column + row) * ISO_CELL_Y}%`,
+                  width: `${ISO_CELL_X * 2}%`,
+                  height: `${ISO_CELL_Y * 2}%`,
+                }}
+              />
+            );
+          })}
+        </div>
         <div className="building-layer">
-          {buildings.map((building) => (
+          {buildings.filter((building) => !townLayout[building.id]?.stored).map((building) => {
+            const savedPosition = townLayout[building.id] ?? { ...building.start, stored: false };
+            const position = placementPreview?.id === building.id ? placementPreview : savedPosition;
+            const screen = buildingScreenPosition(building, position);
+            const isInvalid = placementPreview?.id === building.id && !placementPreview.valid;
+            return (
             <button
               type="button"
               key={building.id}
-              className="building-hotspot"
-              style={building.style}
-              onClick={() => {
-                setSelectedBuilding(building);
-                if (building.id === "sweatshop") {
-                  setWorkersFed(false);
-                  setRationError(false);
-                }
+              className={`building-hotspot${activeBuildingId === building.id ? " is-selected" : ""}${placementPreview?.id === building.id ? " is-moving" : ""}${isInvalid ? " is-invalid" : ""}`}
+              data-building={building.id}
+              style={{
+                left: `${screen.left}%`,
+                top: `${screen.top}%`,
+                width: `${screen.width}%`,
+                height: `${screen.height}%`,
+                zIndex: placementPreview?.id === building.id ? 900 : screen.depth,
               }}
-              aria-label={`Visit ${building.label}`}
+              onPointerDown={(event) => beginBuildingDrag(event, building.id)}
+              onPointerMove={continueBuildingDrag}
+              onPointerUp={finishBuildingDrag}
+              onPointerCancel={finishBuildingDrag}
+              onKeyDown={(event) => moveBuildingWithKeyboard(event, building)}
+              aria-label={`Select and move ${building.label}`}
+              aria-pressed={activeBuildingId === building.id}
             >
-              <span className="building-label"><b>{building.label}</b><small>{building.hint}</small></span>
+              <BuildingSprite building={building} telescopeUpgraded={telescopeUpgraded} />
+              <span className="building-label"><b>{displayBuildingLabel(building)}</b><small>{building.hint}</small></span>
             </button>
-          ))}
+          );})}
+          {placingBuilding && placementPreview && townLayout[placingBuilding.id]?.stored && (
+            (() => {
+              const screen = buildingScreenPosition(placingBuilding, placementPreview);
+              return <div
+              className={`building-hotspot placement-ghost${placementPreview.valid ? " is-valid" : " is-invalid"}`}
+              data-building={placingBuilding.id}
+              style={{
+                left: `${screen.left}%`,
+                top: `${screen.top}%`,
+                width: `${screen.width}%`,
+                height: `${screen.height}%`,
+                zIndex: 900,
+              }}
+            >
+              <BuildingSprite building={placingBuilding} telescopeUpgraded={telescopeUpgraded} />
+            </div>;
+            })()
+          )}
         </div>
-        <div className="town-prompt" aria-hidden="true"><i /> HOVER TO IDENTIFY · CLICK TO VISIT</div>
+
+        {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
+          <aside className="town-editor-card" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
+            <div><small>SELECTED</small><b>{displayBuildingLabel(activeBuilding)}</b></div>
+            {activeBuilding.id === "telescope" && !telescopeUpgraded && (
+              <button type="button" className="upgrade-building" onClick={upgradeTelescope}>UPGRADE · 69</button>
+            )}
+            <button type="button" onClick={() => visitBuilding(activeBuilding)}>ENTER</button>
+            <button type="button" className="remove-building" onClick={() => {
+              setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
+              setActiveBuildingId(null);
+              setPlacementPreview(null);
+              setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
+            }}>REMOVE</button>
+          </aside>
+        )}
+
+        {(placingBuildingId || editorMessage) && (
+          <div className={`placement-hint${activeBuilding ? " with-editor" : ""}${placementPreview && !placementPreview.valid ? " is-error" : ""}`} aria-live="polite">
+            {editorMessage ?? (placingBuilding?.terrain === "ocean" ? "MOVE OVER OPEN OCEAN · TAP TO PLACE" : "MOVE OVER OPEN SNOW · TAP TO PLACE")}
+          </div>
+        )}
+
+        <nav className="town-inventory" aria-label="Building inventory" onPointerDown={(event) => event.stopPropagation()}>
+          <div className="inventory-title"><span>BUILD</span><small>{storedBuildings.length ? `${storedBuildings.length} STORED` : "INVENTORY EMPTY"}</small></div>
+          <div className="inventory-items">
+            {storedBuildings.map((building) => (
+              <button
+                type="button"
+                key={building.id}
+                className={placingBuildingId === building.id ? "is-active" : ""}
+                onClick={() => {
+                  setPlacingBuildingId(building.id);
+                  setActiveBuildingId(null);
+                  const position = townLayout[building.id] ?? building.start;
+                  setPlacementPreview({ id: building.id, column: position.column, row: position.row, valid: !placementIssue(building, position, townLayout) });
+                  setEditorMessage(building.terrain === "ocean" ? "THE CARGO BOAT CAN ONLY USE OCEAN CELLS" : "LAND BUILDINGS REQUIRE OPEN SNOW CELLS");
+                }}
+                aria-label={`Place ${building.label}`}
+              >
+                <BuildingSprite building={building} telescopeUpgraded={telescopeUpgraded} />
+                <span>{displayBuildingLabel(building)}</span>
+              </button>
+            ))}
+            {!storedBuildings.length && <p>Select a building, then choose <b>Remove</b> to store it here.</p>}
+          </div>
+        </nav>
       </section>
 
       {selectedBuilding && (
