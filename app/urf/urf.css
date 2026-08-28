@@ -96,12 +96,6 @@
 .town-header > div { padding: 7px 12px; border-left: 2px solid #72e6f0; background: linear-gradient(90deg, rgba(3,16,43,.92), rgba(3,16,43,.62)); }
 .town-header small { display: block; color: #82dce5; font-size: 7px; letter-spacing: .18em; }
 .town-header h1 { margin: 2px 0 0; font-size: clamp(17px, 2.4svh, 26px); letter-spacing: -.02em; }
-.town-guide { position: absolute; z-index: 7; top: 7%; left: 2%; display: flex; width: 60%; align-items: center; gap: 8px; pointer-events: none; }
-.guide-portrait { width: clamp(45px, 7svh, 68px); aspect-ratio: 1; flex: 0 0 auto; padding: 3px; transform: rotate(-3deg); background: white; box-shadow: 0 5px 14px rgba(0,0,0,.35); overflow: hidden; }
-.guide-portrait img { width: 100%; height: 100%; object-fit: cover; }
-.guide-copy { padding: 7px 10px; border-radius: 3px; border: 1px solid rgba(168,224,243,.5); background: rgba(2,12,31,.9); box-shadow: 0 5px 15px rgba(0,0,0,.22); }
-.guide-copy small { color: #63e0ee; font-size: 6px; letter-spacing: .13em; }
-.guide-copy p { margin: 3px 0 0; font-size: clamp(9px, 1.15svh, 12px); font-weight: 700; }
 .building-layer { position: absolute; z-index: 5; inset: 0; }
 .building-hotspot { position: absolute; display: grid; place-items: end center; padding: 8px; border: 0; outline: 1px dashed transparent; background: transparent; cursor: pointer; border-radius: 48%; transition: background .18s, outline-color .18s; }
 .building-hotspot:hover, .building-hotspot:focus-visible { outline-color: rgba(139,247,255,.8); background: rgba(73,216,231,.12); }
@@ -131,24 +125,6 @@
   backdrop-filter: blur(10px);
 }
 .town-header button { border-radius: 9px; backdrop-filter: blur(10px); }
-.town-edit-status {
-  margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 8px 10px;
-  border: 1px solid rgba(119, 234, 241, .26); border-radius: 999px; background: rgba(3, 17, 41, .76);
-  color: #b8eef2; font-size: 7px; font-weight: 800; letter-spacing: .14em; white-space: nowrap;
-}
-.town-edit-status i { width: 6px; height: 6px; border-radius: 50%; background: #72e6f0; box-shadow: 0 0 9px #72e6f0; }
-.town-guide { z-index: 18; top: calc(var(--trip-banner-height, 0px) + 56px); left: 2.5%; width: min(71%, 380px); gap: 0; }
-.guide-portrait {
-  z-index: 1; width: clamp(42px, 6.5svh, 62px); padding: 3px; transform: rotate(-2deg);
-  border-radius: 9px; background: #dce9ea; box-shadow: 0 8px 20px rgba(0, 0, 0, .38);
-}
-.guide-copy {
-  margin-left: -5px; padding: 9px 12px 9px 15px; border-color: rgba(168, 224, 243, .3); border-radius: 0 9px 9px 0;
-  background: linear-gradient(100deg, rgba(3, 17, 42, .94), rgba(5, 23, 47, .82));
-  box-shadow: 0 8px 22px rgba(0, 0, 0, .28); backdrop-filter: blur(9px);
-}
-.guide-copy small { color: #78e8ee; font-size: clamp(5px, .67svh, 7px); }
-.guide-copy p { color: #eaf7f8; font-size: clamp(8px, 1.05svh, 11px); line-height: 1.25; }
 .town-grid {
   position: absolute; z-index: 4; inset: 0;
   pointer-events: none; opacity: 0; transition: opacity .18s ease-out;
@@ -160,6 +136,11 @@
 }
 .town-grid.is-active > span.is-placeable { border-color: rgba(137, 255, 194, .36); background: rgba(39, 220, 129, .26); }
 .town-grid.is-active > span.is-blocked { border-color: rgba(255, 163, 153, .36); background: rgba(239, 50, 60, .38); }
+.town-grid.is-active > span.terrain-cliff.is-blocked {
+  border-color: rgba(255, 191, 100, .62);
+  background: repeating-linear-gradient(135deg, rgba(239, 50, 60, .48) 0 4px, rgba(255, 156, 54, .4) 4px 8px);
+  box-shadow: inset 0 0 6px rgba(255, 194, 105, .2);
+}
 .town-grid.is-active > span.is-candidate-valid { background: rgba(38, 240, 139, .48); box-shadow: inset 0 0 7px rgba(172, 255, 213, .45); }
 .town-grid.is-active > span.is-candidate-invalid { background: rgba(244, 54, 60, .54); box-shadow: inset 0 0 7px rgba(255, 173, 168, .38); }
 .building-layer { z-index: 5; pointer-events: none; }
@@ -188,6 +169,7 @@
 .building-sprite img { position: absolute; max-width: none; user-select: none; pointer-events: none; }
 .building-sprite.is-direct { aspect-ratio: 1 / 1; overflow: visible; }
 .building-sprite.is-direct img { inset: 0; width: 100%; height: 100%; max-width: 100%; object-fit: contain; }
+.ship-sprite-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .building-hotspot > .building-sprite {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -70%); transform-origin: 50% 100%;
 }
@@ -215,7 +197,7 @@
 .town-editor-card .upgrade-building { border-color: rgba(255, 209, 99, .54); color: #ffe6a1; background: rgba(145, 94, 23, .38); }
 .town-editor-card .upgrade-building:hover { color: #251500; background: #f8c84f; }
 .placement-hint {
-  position: absolute; z-index: 31; left: 50%; bottom: 101px; transform: translateX(-50%); padding: 8px 12px;
+  position: absolute; z-index: 31; left: 2.5%; bottom: 101px; transform: none; padding: 8px 12px;
   border: 1px solid rgba(112, 236, 243, .55); border-radius: 999px; background: rgba(3, 17, 40, .92); color: #d9fbfc;
   font-size: 7px; font-weight: 800; letter-spacing: .12em; white-space: nowrap; box-shadow: 0 0 22px rgba(74, 224, 234, .2);
 }
@@ -238,6 +220,7 @@
 }
 .inventory-items > button:hover, .inventory-items > button.is-active { border-color: #71e5ec; background: rgba(47, 132, 148, .48); box-shadow: inset 0 0 18px rgba(75, 224, 234, .12); }
 .inventory-items .building-sprite { width: 80%; max-height: 44px; }
+.inventory-character img { width: 80%; height: 44px; object-fit: cover; border: 2px solid #e6f5f7; border-radius: 7px; transform: rotate(-2deg); }
 .inventory-items > button > span:last-child { position: absolute; left: 3px; right: 3px; bottom: 4px; overflow: hidden; font-size: 5px; font-weight: 800; letter-spacing: .06em; text-overflow: ellipsis; white-space: nowrap; }
 
 .dog-game-overlay { position: fixed; z-index: 100; inset: 0; overflow: hidden; background: #120b14; animation: dog-game-in .22s ease-out; }
@@ -255,6 +238,7 @@
 .dialog-close:hover { color: white; border-color: white; }
 .dialog-character { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 46px 28px 25px; background: radial-gradient(circle at 50% 45%, rgba(54,70,179,.35), transparent 47%), repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 1px, transparent 1px 9px); border-right: 1px solid rgba(142,196,216,.17); }
 .dialog-character img { position: relative; z-index: 1; width: 100%; max-height: 380px; aspect-ratio: .88; object-fit: cover; border: 8px solid #eee; transform: rotate(-2deg); filter: contrast(1.08) saturate(1.12); box-shadow: 10px 15px 0 rgba(0,0,0,.24); }
+.flipper-dialog .dialog-character img { object-fit: contain; background: #e7f2f3; }
 .bad-tape { position: absolute; z-index: 2; width: 92px; height: 24px; top: 38px; left: 50%; transform: translateX(-50%) rotate(5deg); background: rgba(220,213,160,.83); box-shadow: 0 2px 5px rgba(0,0,0,.2); }
 .sweatshop-dialog .bad-tape, .dog-fighter-dialog .bad-tape { display: none; }
 .sweatshop-dialog .dialog-character img { aspect-ratio: 1; object-fit: contain; background: white; }
@@ -314,9 +298,7 @@
   .town-map { width: 100vw; height: min(150vw, 100svh); }
   .town-side { display: none; }
   .town-header { top: 8px; }
-  .town-guide { top: 56px; }
   .town-header > div { padding-right: 7px; }
-  .town-guide { width: 78%; }
   .dialog-backdrop { padding: 12px; align-items: end; }
   .penguin-dialog { width: 100%; min-height: auto; max-height: 92svh; grid-template-columns: 118px 1fr; }
   .dialog-character { padding: 52px 12px 18px; }

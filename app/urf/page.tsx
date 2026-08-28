@@ -225,7 +225,7 @@ type TownBuilding = {
   id: string;
   label: string;
   hint: string;
-  terrain: "land" | "ocean";
+  terrain: PlaceableTerrain;
   footprint: { width: number; height: number };
   sheet: { column: number; row: number };
   image?: string;
@@ -234,22 +234,58 @@ type TownBuilding = {
   visualScale: number;
 };
 
-const GRID_COLUMNS = 16;
-const GRID_ROWS = 18;
+const GRID_COLUMN_MIN = -12;
+const GRID_COLUMN_MAX = 47;
+const GRID_ROW_MIN = -12;
+const GRID_ROW_MAX = 47;
+const GRID_COLUMNS = GRID_COLUMN_MAX - GRID_COLUMN_MIN;
+const GRID_ROWS = GRID_ROW_MAX - GRID_ROW_MIN;
 const ISO_ORIGIN_X = 50;
 const ISO_ORIGIN_Y = 28.5;
 const ISO_CELL_X = 2.65;
-const ISO_CELL_Y = 1.85;
+// This 2.94:1 percentage ratio renders as a roughly 2:1 isometric diamond
+// inside the map's 2:3 portrait frame, matching the painted cliff edges.
+const ISO_CELL_Y = 0.9;
+
+type TerrainType = "land" | "ocean" | "cliff" | "blocked";
+type PlaceableTerrain = Exclude<TerrainType, "blocked">;
+type TerrainPoint = readonly [x: number, y: number];
+
+type TerrainRegion = Readonly<{
+  surface: readonly TerrainPoint[];
+  bounds: readonly TerrainPoint[];
+}>;
+
+const BACKGROUND_OCEAN_EDGE: readonly TerrainPoint[] = [
+  [0, 32], [15, 31.5], [30, 29.5], [45, 28], [60, 26.5], [75, 26], [90, 29], [100, 32],
+];
+// The editor controls occupy the foreground below this line on both desktop
+// and the shorter mobile map, so those covered tiles are intentionally blocked.
+const FOREGROUND_BUILD_LIMIT_Y = 84.5;
+
+const TERRAIN_REGIONS = {
+  upperPlateau: {
+    surface: [[58.5, 33.5], [61, 30.5], [66, 28], [72, 29], [76, 32.5], [78, 36.5], [76, 39.5], [70, 39], [64, 36.5], [59, 36]],
+    bounds: [[57, 34], [60, 29.5], [66, 27.5], [72.5, 28.5], [77.5, 32.5], [80, 39], [79, 44], [75, 46], [69, 42], [63, 39], [58, 38.5]],
+  },
+  lowerIsland: {
+    surface: [[43, 36], [56, 34.5], [63, 36.5], [70, 38.5], [76, 40], [78, 43], [80, 50], [79, 56], [83, 61], [89, 65.5], [94, 69], [94, 73], [88, 75.5], [80, 79], [72, 86], [64, 86], [57, 83], [51, 79], [44, 78], [41, 75], [45, 70], [45, 67], [37, 68], [31, 66], [28, 63], [26, 59], [24, 54], [22, 51], [20, 47], [20, 43], [28, 40], [37, 38.5]],
+    bounds: [[42, 36], [56, 33.5], [64, 36], [71, 38], [77, 39], [80, 42], [82, 50], [81, 57], [85, 62], [92, 66], [96, 70], [96, 74], [90, 78], [82, 81], [73, 88], [64, 89], [56, 85], [50, 82], [43, 81], [39, 78], [40, 73], [43, 69], [36, 71], [30, 69], [26, 66], [24, 62], [22, 57], [20, 53], [18, 49], [17, 45], [20, 41], [28, 39], [36, 37.5]],
+  },
+} as const satisfies Record<string, TerrainRegion>;
 
 const buildings: TownBuilding[] = [
-  { id: "plane", label: "PLANE", hint: "Flight deck · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 0 }, image: "/buildings/plane.png", start: { column: 3, row: 5 }, visualScale: 2.05 },
-  { id: "telescope", label: "TELESCOPE", hint: "Observatory · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 0 }, image: "/buildings/telescope-wood.png", upgradeImage: "/buildings/telescope-metal.png", start: { column: 9, row: 3 }, visualScale: 2.18 },
-  { id: "magic", label: "CIRCUS", hint: "Questionable entertainment · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 1 }, image: "/buildings/circus.png", start: { column: 11, row: 5 }, visualScale: 1.9 },
-  { id: "igloo", label: "IGLOO", hint: "Housing · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 1 }, image: "/buildings/igloo.png", start: { column: 4, row: 8 }, visualScale: 1.9 },
-  { id: "sweatshop", label: "SWEATSHOP", hint: "Production · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 2 }, image: "/buildings/sweatshop.png", start: { column: 14, row: 8 }, visualScale: 2.15 },
-  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, start: { column: 1, row: 15 }, visualScale: 2.3 },
-  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Fight club · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 3 }, image: "/buildings/dogfight-arena.png", start: { column: 5, row: 11 }, visualScale: 2.2 },
+  { id: "plane", label: "PLANE", hint: "Flight deck · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 0 }, image: "/buildings/plane.png", start: { column: 3, row: 12 }, visualScale: 2.05 },
+  { id: "telescope", label: "TELESCOPE", hint: "Observatory · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 0 }, image: "/buildings/telescope-wood.png", upgradeImage: "/buildings/telescope-metal.png", start: { column: 3, row: -4 }, visualScale: 2.18 },
+  { id: "magic", label: "CIRCUS", hint: "Questionable entertainment · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 1 }, image: "/buildings/circus.png", start: { column: 15, row: 6 }, visualScale: 1.9 },
+  { id: "igloo", label: "IGLOO", hint: "Housing · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 1 }, image: "/buildings/igloo.png", start: { column: 28, row: 16 }, visualScale: 1.9 },
+  { id: "sweatshop", label: "SWEATSHOP", hint: "Production · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 2 }, image: "/buildings/sweatshop.png", start: { column: 14, row: 19 }, visualScale: 2.15 },
+  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, start: { column: 10, row: -6 }, visualScale: 2.3 },
+  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Fight club · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 3 }, image: "/buildings/dogfight-arena.png", start: { column: 31, row: 27 }, visualScale: 2.2 },
 ];
+
+type TownDialogSubject = Pick<TownBuilding, "id" | "label">;
+const flipperFlappington: TownDialogSubject = { id: "flipper", label: "FLIPPER FLAPPINGTON" };
 
 type GridPosition = { column: number; row: number };
 type TownLayout = Record<string, GridPosition & { stored: boolean }>;
@@ -259,28 +295,69 @@ const createDefaultTownLayout = (): TownLayout => Object.fromEntries(
   buildings.map((building) => [building.id, { ...building.start, stored: false }]),
 );
 
-const terrainAt = (column: number, row: number): "land" | "ocean" | "blocked" => {
+const pointInPolygon = ([x, y]: TerrainPoint, polygon: readonly TerrainPoint[]): boolean => {
+  let inside = false;
+  for (let current = 0, previous = polygon.length - 1; current < polygon.length; previous = current, current += 1) {
+    const [currentX, currentY] = polygon[current];
+    const [previousX, previousY] = polygon[previous];
+    const crossesRay = (currentY > y) !== (previousY > y)
+      && x < ((previousX - currentX) * (y - currentY)) / (previousY - currentY) + currentX;
+    if (crossesRay) inside = !inside;
+  }
+  return inside;
+};
+
+const backgroundOceanEdgeAt = (screenX: number): number => {
+  const clampedX = Math.max(0, Math.min(100, screenX));
+  for (let index = 1; index < BACKGROUND_OCEAN_EDGE.length; index += 1) {
+    const [leftX, leftY] = BACKGROUND_OCEAN_EDGE[index - 1];
+    const [rightX, rightY] = BACKGROUND_OCEAN_EDGE[index];
+    if (clampedX <= rightX) {
+      const progress = (clampedX - leftX) / (rightX - leftX);
+      return leftY + (rightY - leftY) * progress;
+    }
+  }
+  return BACKGROUND_OCEAN_EDGE[BACKGROUND_OCEAN_EDGE.length - 1][1];
+};
+
+const terrainAt = (column: number, row: number): TerrainType => {
   const screenX = ISO_ORIGIN_X + (column - row) * ISO_CELL_X;
   const screenY = ISO_ORIGIN_Y + (column + row + 1) * ISO_CELL_Y;
-  if (screenY < 35) return "blocked";
+  const point: TerrainPoint = [screenX, screenY];
 
-  const landRange = screenY < 44
-    ? [41, 79]
-    : screenY < 58
-      ? [22, 84]
-      : screenY < 72
-        ? [20, 95]
-        : [35, 94];
-  return screenX >= landRange[0] && screenX <= landRange[1] ? "land" : "ocean";
+  if (pointInPolygon(point, TERRAIN_REGIONS.upperPlateau.surface)) return "land";
+  if (pointInPolygon(point, TERRAIN_REGIONS.upperPlateau.bounds)) return "cliff";
+  if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.surface)) return "land";
+  if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.bounds)) return "cliff";
+  if (screenX < 0 || screenX > 100 || screenY < backgroundOceanEdgeAt(screenX) || screenY > FOREGROUND_BUILD_LIMIT_Y) return "blocked";
+  return "ocean";
+};
+
+const terrainPlacementIssue = (terrain: PlaceableTerrain): string => {
+  if (terrain === "ocean") return "THE CARGO BOAT NEEDS OPEN OCEAN";
+  if (terrain === "cliff") return "THIS STRUCTURE NEEDS AN OPEN CLIFF TILE";
+  return "LAND BUILDINGS NEED SOLID SNOW";
+};
+
+const terrainMoveInstruction = (terrain: PlaceableTerrain): string => {
+  if (terrain === "ocean") return "MOVE OVER OPEN OCEAN · TAP TO PLACE";
+  if (terrain === "cliff") return "MOVE OVER AN OPEN CLIFF TILE · TAP TO PLACE";
+  return "MOVE OVER OPEN SNOW · TAP TO PLACE";
+};
+
+const terrainInventoryInstruction = (terrain: PlaceableTerrain): string => {
+  if (terrain === "ocean") return "THE CARGO BOAT CAN ONLY USE OCEAN CELLS";
+  if (terrain === "cliff") return "THIS STRUCTURE CAN ONLY USE CLIFF CELLS";
+  return "LAND BUILDINGS REQUIRE OPEN SNOW CELLS";
 };
 
 const placementIssue = (building: TownBuilding, position: GridPosition, layout: TownLayout): string | null => {
   const cells: string[] = [];
   for (let row = position.row; row < position.row + building.footprint.height; row += 1) {
     for (let column = position.column; column < position.column + building.footprint.width; column += 1) {
-      if (column < 0 || row < 0 || column >= GRID_COLUMNS || row >= GRID_ROWS) return "OUTSIDE THE BUILD GRID";
+      if (column < GRID_COLUMN_MIN || row < GRID_ROW_MIN || column >= GRID_COLUMN_MAX || row >= GRID_ROW_MAX) return "OUTSIDE THE BUILD GRID";
       if (terrainAt(column, row) !== building.terrain) {
-        return building.terrain === "ocean" ? "THE CARGO BOAT NEEDS OPEN OCEAN" : "LAND BUILDINGS NEED SOLID SNOW";
+        return terrainPlacementIssue(building.terrain);
       }
       cells.push(`${column}:${row}`);
     }
@@ -321,8 +398,8 @@ const gridPositionFromPointer = (building: TownBuilding, clientX: number, client
   const centerColumn = (deltaY + deltaX) / 2;
   const centerRow = (deltaY - deltaX) / 2;
   return {
-    column: Math.max(0, Math.min(GRID_COLUMNS - building.footprint.width, Math.round(centerColumn - building.footprint.width / 2))),
-    row: Math.max(0, Math.min(GRID_ROWS - building.footprint.height, Math.round(centerRow - building.footprint.height / 2))),
+    column: Math.max(GRID_COLUMN_MIN, Math.min(GRID_COLUMN_MAX - building.footprint.width, Math.round(centerColumn - building.footprint.width / 2))),
+    row: Math.max(GRID_ROW_MIN, Math.min(GRID_ROW_MAX - building.footprint.height, Math.round(centerRow - building.footprint.height / 2))),
   };
 };
 
@@ -354,6 +431,13 @@ function BuildingSprite({ building, telescopeUpgraded = false }: { building: Tow
       </span>
     );
   }
+  if (building.id === "docks") {
+    return (
+      <span className="building-sprite ship-sprite" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
+        <TransparentShipSprite />
+      </span>
+    );
+  }
   return (
     <span className="building-sprite" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
       <img
@@ -371,12 +455,47 @@ function BuildingSprite({ building, telescopeUpgraded = false }: { building: Tow
   );
 }
 
+function TransparentShipSprite() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const image = new Image();
+    image.src = "/penguin-building-sprites-alpha-v2.png";
+    image.onload = () => {
+      const sourceX = image.naturalWidth / 2;
+      const sourceY = image.naturalHeight / 2;
+      const sourceWidth = image.naturalWidth / 2;
+      const sourceHeight = image.naturalHeight / 4;
+      canvas.width = Math.round(sourceWidth);
+      canvas.height = Math.round(sourceHeight);
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      for (let index = 0; index < pixels.data.length; index += 4) {
+        const red = pixels.data[index];
+        const green = pixels.data[index + 1];
+        const blue = pixels.data[index + 2];
+        const brightest = Math.max(red, green, blue);
+        const darkest = Math.min(red, green, blue);
+        if (darkest >= 235 && brightest - darkest <= 7) pixels.data[index + 3] = 0;
+      }
+      context.putImageData(pixels, 0, 0);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="ship-sprite-canvas" />;
+}
+
 const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
 const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
 const TELESCOPE_UPGRADE_STORAGE_KEY = "trip.telescope-upgrade.v1";
 
 function PenguinTown({ onBack }: { onBack: () => void }) {
-  const [selectedBuilding, setSelectedBuilding] = useState<TownBuilding | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<TownDialogSubject | null>(null);
   const [activeBuildingId, setActiveBuildingId] = useState<string | null>(null);
   const [placingBuildingId, setPlacingBuildingId] = useState<string | null>(null);
   const [placementPreview, setPlacementPreview] = useState<PlacementPreview | null>(null);
@@ -389,6 +508,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const dragRef = useRef<{ id: string; pointerId: number; map: DOMRect; preview: PlacementPreview } | null>(null);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
+  const isFlipper = selectedBuilding?.id === "flipper";
   const activeBuilding = buildings.find((building) => building.id === activeBuildingId) ?? null;
   const placingBuilding = buildings.find((building) => building.id === placingBuildingId) ?? null;
   const movingBuilding = placementPreview ? buildings.find((building) => building.id === placementPreview.id) ?? null : null;
@@ -397,7 +517,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem("trip.penguin-town-layout.v7");
+      const saved = window.localStorage.getItem("trip.penguin-town-layout.v10");
       if (!saved) return;
       const parsed = JSON.parse(saved) as TownLayout;
       if (isValidSavedTownLayout(parsed)) setTownLayout(parsed);
@@ -416,7 +536,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem("trip.penguin-town-layout.v7", JSON.stringify(townLayout));
+      window.localStorage.setItem("trip.penguin-town-layout.v10", JSON.stringify(townLayout));
     } catch {
       // The editor still works for this session when storage is unavailable.
     }
@@ -598,21 +718,18 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         onPointerDown={placeFromInventory}
         onPointerMove={previewInventoryPlacement}
       >
-        <img className="town-art" src="/penguin-town-ground-v4.png" alt="A snowy Antarctic island with an expanded southeastern building shelf surrounded by open ocean" draggable={false} />
+        <img className="town-art" src="/penguin-town-ground-v4.png" alt="A snowy Antarctic island with a broad lower snowfield, an elevated plateau, exposed cliff walls, and open ocean" draggable={false} />
         <div className="town-vignette" aria-hidden="true" />
         <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
-          <div><small>16 × 18 ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
-          <span className="town-edit-status"><i /> SNAP MODE</span>
+          <div><small>FULL-TERRAIN ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
         </header>
-        <div className="town-guide" aria-label="Tutorial guide">
-          <div className="guide-portrait"><img src="/evil-penguin.jpg" alt="Poorly drawn evil penguin tutorial guide" /></div>
-          <div className="guide-copy"><small>FLIPPER FLAPPINGTON · DEFINITELY EVIL</small><p>Suck my penguin cock</p></div>
-        </div>
         <div className={`town-grid${placementPreview ? " is-active" : ""}`} aria-hidden="true">
           {Array.from({ length: GRID_COLUMNS * GRID_ROWS }, (_, index) => {
-            const column = index % GRID_COLUMNS;
-            const row = Math.floor(index / GRID_COLUMNS);
+            const column = GRID_COLUMN_MIN + (index % GRID_COLUMNS);
+            const row = GRID_ROW_MIN + Math.floor(index / GRID_COLUMNS);
+            const terrain = terrainAt(column, row);
+            if (terrain === "blocked") return null;
             const isCandidate = Boolean(placementPreview
               && column >= placementPreview.column
               && column < placementPreview.column + (movingBuilding?.footprint.width ?? 0)
@@ -622,8 +739,9 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
             const candidateState = isCandidate ? (placementPreview?.valid ? " is-candidate-valid" : " is-candidate-invalid") : "";
             return (
               <span
-                key={index}
-                className={`terrain-${terrainAt(column, row)}${cellState}${candidateState}`}
+                key={`${column}:${row}`}
+                className={`terrain-${terrain}${cellState}${candidateState}`}
+                data-terrain={terrain}
                 style={{
                   left: `${ISO_ORIGIN_X + (column - row) * ISO_CELL_X - ISO_CELL_X}%`,
                   top: `${ISO_ORIGIN_Y + (column + row) * ISO_CELL_Y}%`,
@@ -703,13 +821,26 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
 
         {(placingBuildingId || editorMessage) && (
           <div className={`placement-hint${activeBuilding ? " with-editor" : ""}${placementPreview && !placementPreview.valid ? " is-error" : ""}`} aria-live="polite">
-            {editorMessage ?? (placingBuilding?.terrain === "ocean" ? "MOVE OVER OPEN OCEAN · TAP TO PLACE" : "MOVE OVER OPEN SNOW · TAP TO PLACE")}
+            {editorMessage ?? (placingBuilding ? terrainMoveInstruction(placingBuilding.terrain) : "SELECT A BUILDING TO MOVE")}
           </div>
         )}
 
         <nav className="town-inventory" aria-label="Building inventory" onPointerDown={(event) => event.stopPropagation()}>
           <div className="inventory-title"><span>BUILD</span><small>{storedBuildings.length ? `${storedBuildings.length} STORED` : "INVENTORY EMPTY"}</small></div>
           <div className="inventory-items">
+            <button
+              type="button"
+              className="inventory-character"
+              onClick={() => {
+                setSelectedBuilding(flipperFlappington);
+                setActiveBuildingId(null);
+                setPlacementPreview(null);
+              }}
+              aria-label="Talk to Flipper Flappington"
+            >
+              <img src="/evil-penguin.jpg" alt="Flipper Flappington" />
+              <span>FLIPPER</span>
+            </button>
             {storedBuildings.map((building) => (
               <button
                 type="button"
@@ -720,7 +851,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                   setActiveBuildingId(null);
                   const position = townLayout[building.id] ?? building.start;
                   setPlacementPreview({ id: building.id, column: position.column, row: position.row, valid: !placementIssue(building, position, townLayout) });
-                  setEditorMessage(building.terrain === "ocean" ? "THE CARGO BOAT CAN ONLY USE OCEAN CELLS" : "LAND BUILDINGS REQUIRE OPEN SNOW CELLS");
+                  setEditorMessage(terrainInventoryInstruction(building.terrain));
                 }}
                 aria-label={`Place ${building.label}`}
               >
@@ -737,22 +868,22 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setSelectedBuilding(null);
         }}>
-          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}${isFlipper ? " flipper-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
             <div className="dialog-character">
               <span className="bad-tape" aria-hidden="true" />
               <img
                 src={isSweatshop ? "/penguinaroo.png" : isDogFighter ? "/vicheal-nic.jpg" : "/evil-penguin.jpg"}
-                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : isDogFighter ? "Vicheal Nic holding a dog" : "The poorly drawn evil penguin"}
+                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : isDogFighter ? "Vicheal Nic holding a dog" : isFlipper ? "Flipper Flappington" : "The poorly drawn evil penguin"}
               />
               <div className="character-tag">
-                <small>{isSweatshop ? "SWEATSHOP OWNER" : isDogFighter ? "DOG-FIGHTER" : "TUTORIAL GUIDE"}</small>
-                <b>{isSweatshop ? "PENGUINAROO" : isDogFighter ? "Vicheal Nic" : "PEN-GUIN"}</b>
+                <small>{isSweatshop ? "SWEATSHOP OWNER" : isDogFighter ? "DOG-FIGHTER" : isFlipper ? "TUTORIAL GUIDE" : "LOCAL RESIDENT"}</small>
+                <b>{isSweatshop ? "PENGUINAROO" : isDogFighter ? "Vicheal Nic" : isFlipper ? "FLIPPER FLAPPINGTON" : "PEN-GUIN"}</b>
               </div>
             </div>
             <div className="speech-panel">
               <div className="speech-meta">
-                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : isDogFighter ? "FIGHTER MESSAGE" : "UNFINISHED LOCATION"}</span>
+                <span>{isSweatshop ? "MANAGEMENT MESSAGE" : isDogFighter ? "FIGHTER MESSAGE" : isFlipper ? "TUTORIAL MESSAGE" : "UNFINISHED LOCATION"}</span>
                 <b>{selectedBuilding.label}</b>
               </div>
               {isSweatshop ? (
@@ -785,6 +916,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                     setSelectedBuilding(null);
                     setShowDogFightGame(true);
                   }}>FIGHT ! <span>→</span></button>
+                </>
+              ) : isFlipper ? (
+                <>
+                  <h2 id="dialog-title">Flipper Flappington.</h2>
+                  <p>&ldquo;Suck my penguin cock&rdquo;</p>
+                  <button type="button" onClick={() => setSelectedBuilding(null)}>BACK TO TOWN <span>→</span></button>
                 </>
               ) : (
                 <>
