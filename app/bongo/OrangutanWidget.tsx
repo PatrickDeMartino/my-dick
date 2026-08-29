@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * A small (roughly 1/10th of the screen), self-contained 3D orangutan.
+ * A full-screen, articulated 3D Dr. Bongo prototype.
  *
- * - Built entirely from primitive geometry (no external model files to fetch).
+ * - Built from primitive geometry with textured interaction props.
  * - Drag him around with mouse or touch; release while moving to throw him.
- * - He's bound by gravity + walls/floor inside his little glass box and
+ * - He's bound by gravity + the whole viewport and
  *   bounces/tumbles with simple rigid-body-style physics.
- * - Hit "Feed" to drop a banana in; if it reaches him, he eats it.
+ * - Banner actions feed him bananas or swing a baseball bat.
  */
 
 const GRAVITY = -9.2;
@@ -22,6 +21,7 @@ const ANGULAR_DAMPING = 0.94;
 const BODY_RADIUS = 0.62;
 const THROW_MULTIPLIER = 1.15;
 const MAX_THROW_SPEED = 9;
+const ACTION_EVENT = "trip-bongo-action";
 
 type Banana = {
   group: THREE.Group;
@@ -35,122 +35,22 @@ type Banana = {
 
 type RagdollPart = "head" | "torso" | "left-arm" | "right-arm" | "left-leg" | "right-leg";
 
-type WidgetLayout = {
-  x: number;
-  y: number;
-  width: number;
-};
-
-type PanelGesture = {
-  mode: "move" | "resize";
-  pointerId: number;
-  startX: number;
-  startY: number;
-  layout: WidgetLayout;
-};
-
-const PANEL_GUTTER = 8;
-const MIN_PANEL_WIDTH = 120;
-const MAX_PANEL_WIDTH = 480;
-
-function constrainWidgetLayout(next: WidgetLayout, panel: HTMLDivElement | null): WidgetLayout {
-  const chromeHeight = panel ? Math.max(panel.offsetHeight - panel.offsetWidth, 0) : 66;
-  const maxWidth = Math.max(
-    MIN_PANEL_WIDTH,
-    Math.min(
-      MAX_PANEL_WIDTH,
-      window.innerWidth - PANEL_GUTTER * 2,
-      window.innerHeight - chromeHeight - PANEL_GUTTER * 2,
-    ),
-  );
-  const width = THREE.MathUtils.clamp(next.width, MIN_PANEL_WIDTH, maxWidth);
-  const height = width + chromeHeight;
-  return {
-    width,
-    x: THREE.MathUtils.clamp(next.x, PANEL_GUTTER, Math.max(PANEL_GUTTER, window.innerWidth - width - PANEL_GUTTER)),
-    y: THREE.MathUtils.clamp(next.y, PANEL_GUTTER, Math.max(PANEL_GUTTER, window.innerHeight - height - PANEL_GUTTER)),
-  };
-}
-
 export default function OrangutanWidget() {
-  const widgetRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const gestureRef = useRef<PanelGesture | null>(null);
-  const [layout, setLayout] = useState<WidgetLayout | null>(null);
-  const [fedCount, setFedCount] = useState(0);
-  const [mood, setMood] = useState("BANANA");
-
-  function beginPanelGesture(mode: PanelGesture["mode"], event: ReactPointerEvent<HTMLButtonElement>) {
-    if (!layout) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    gestureRef.current = {
-      mode,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      layout,
-    };
-  }
-
-  function updatePanelGesture(event: ReactPointerEvent<HTMLButtonElement>) {
-    const gesture = gestureRef.current;
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
-    const dx = event.clientX - gesture.startX;
-    const dy = event.clientY - gesture.startY;
-
-    if (gesture.mode === "move") {
-      setLayout(constrainWidgetLayout({
-        ...gesture.layout,
-        x: gesture.layout.x + dx,
-        y: gesture.layout.y + dy,
-      }, widgetRef.current));
-      return;
-    }
-
-    const delta = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
-    setLayout(constrainWidgetLayout({ ...gesture.layout, width: gesture.layout.width + delta }, widgetRef.current));
-  }
-
-  function endPanelGesture(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (gestureRef.current?.pointerId === event.pointerId) gestureRef.current = null;
-  }
-
-  function nudgePanel(mode: PanelGesture["mode"], event: ReactKeyboardEvent<HTMLButtonElement>) {
-    if (!layout || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
-    event.preventDefault();
-    const step = event.shiftKey ? 1 : 10;
-    const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -step : step;
-    setLayout((current) => {
-      if (!current) return current;
-      if (mode === "resize") {
-        return constrainWidgetLayout({ ...current, width: current.width + direction }, widgetRef.current);
-      }
-      return constrainWidgetLayout({
-        ...current,
-        x: current.x + (event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0),
-        y: current.y + (event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0),
-      }, widgetRef.current);
-    });
-  }
+  const bloodOverlayRef = useRef<HTMLDivElement>(null);
+  const bloodTimerRef = useRef<number | null>(null);
+  const spawnBananaRef = useRef<(() => void) | null>(null);
+  const beatBongoRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const panel = widgetRef.current;
-    if (!panel) return;
-    const rect = panel.getBoundingClientRect();
-    setLayout(constrainWidgetLayout({ x: rect.left, y: rect.top, width: rect.width }, panel));
-
-    const keepOnScreen = () => {
-      setLayout((current) => current ? constrainWidgetLayout(current, panel) : current);
+    const onAction = (event: Event) => {
+      const action = (event as CustomEvent<{ action?: "feed" | "beat" }>).detail?.action;
+      if (action === "feed") spawnBananaRef.current?.();
+      if (action === "beat") beatBongoRef.current?.();
     };
-    window.addEventListener("resize", keepOnScreen);
-    return () => window.removeEventListener("resize", keepOnScreen);
+    window.addEventListener(ACTION_EVENT, onAction);
+    return () => window.removeEventListener(ACTION_EVENT, onAction);
   }, []);
-
-  function feedBanana() {
-    spawnBananaRef.current?.();
-  }
-  const spawnBananaRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -166,15 +66,14 @@ export default function OrangutanWidget() {
     camera.lookAt(0, 0.35, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(width, height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.domElement.style.touchAction = "none";
-    renderer.domElement.style.cursor = "grab";
+    renderer.domElement.style.pointerEvents = "none";
     mount.appendChild(renderer.domElement);
 
     // Cinematic three-point lighting, tinted to the alien console palette.
@@ -214,6 +113,60 @@ export default function OrangutanWidget() {
     const eyeMat = new THREE.MeshStandardMaterial({ color: 0x120d09, roughness: 0.16, metalness: 0.05 });
     const irisMat = new THREE.MeshStandardMaterial({ color: 0x9dff73, emissive: 0x2b8b55, emissiveIntensity: 1.5, roughness: 0.25 });
     const mouthMat = new THREE.MeshStandardMaterial({ color: 0x35100e, roughness: 0.72 });
+    const brainBumpCanvas = document.createElement("canvas");
+    brainBumpCanvas.width = 128;
+    brainBumpCanvas.height = 128;
+    const brainBumpContext = brainBumpCanvas.getContext("2d");
+    if (brainBumpContext) {
+      const texturePixels = brainBumpContext.createImageData(128, 128);
+      for (let y = 0; y < 128; y++) {
+        for (let x = 0; x < 128; x++) {
+          const waves = Math.sin(x * 0.31 + Math.sin(y * 0.13) * 3.2) * 32
+            + Math.cos(y * 0.27 + Math.sin(x * 0.11) * 2.4) * 24;
+          const grain = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+          const value = THREE.MathUtils.clamp(142 + waves + (grain - Math.floor(grain) - 0.5) * 24, 40, 225);
+          const pixel = (y * 128 + x) * 4;
+          texturePixels.data[pixel] = value;
+          texturePixels.data[pixel + 1] = value;
+          texturePixels.data[pixel + 2] = value;
+          texturePixels.data[pixel + 3] = 255;
+        }
+      }
+      brainBumpContext.putImageData(texturePixels, 0, 0);
+    }
+    const brainBumpTexture = new THREE.CanvasTexture(brainBumpCanvas);
+    brainBumpTexture.wrapS = THREE.RepeatWrapping;
+    brainBumpTexture.wrapT = THREE.RepeatWrapping;
+    brainBumpTexture.repeat.set(2.6, 1.8);
+    const brainMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd96583,
+      emissive: 0x300817,
+      emissiveIntensity: 0.25,
+      roughness: 0.64,
+      bumpMap: brainBumpTexture,
+      bumpScale: 0.026,
+      clearcoat: 0.32,
+      clearcoatRoughness: 0.4,
+      sheen: 0.38,
+      sheenColor: new THREE.Color(0xffa4b7),
+    });
+    const sulcusMat = new THREE.MeshStandardMaterial({ color: 0x6e1932, roughness: 0.86 });
+    const vesselMat = new THREE.MeshPhysicalMaterial({ color: 0x8f1731, roughness: 0.52, clearcoat: 0.5 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa7bac4, roughness: 0.28, metalness: 0.82 });
+    const cyanImplantMat = new THREE.MeshStandardMaterial({
+      color: 0x42eaff,
+      emissive: 0x087f9c,
+      emissiveIntensity: 1.8,
+      roughness: 0.3,
+      metalness: 0.45,
+    });
+    const purpleImplantMat = new THREE.MeshStandardMaterial({
+      color: 0xca55ff,
+      emissive: 0x5d117b,
+      emissiveIntensity: 1.5,
+      roughness: 0.32,
+      metalness: 0.38,
+    });
 
     const ape = new THREE.Group();
     const bodyRig = new THREE.Group();
@@ -238,9 +191,137 @@ export default function OrangutanWidget() {
     headRig.position.set(0, 0.97, 0.02);
     bodyRig.add(headRig);
 
-    const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.36, 26, 20), furMat);
+    const cranium = new THREE.Mesh(
+      new THREE.SphereGeometry(0.36, 28, 22, 0, Math.PI * 2, 0.88, Math.PI - 0.88),
+      furMat,
+    );
     cranium.scale.set(0.94, 1.04, 0.92);
     headRig.add(cranium);
+
+    // The upper third of the skull is physically absent. In its place, the
+    // brain uses denser geometry, wet tissue shading, mapped sulci and tiny
+    // surface vessels so its fidelity deliberately contrasts with the PS2 body.
+    const brainRig = new THREE.Group();
+    brainRig.position.set(0, 0.205, 0.205);
+    const brainTissueRig = new THREE.Group();
+    const brainLeft = new THREE.Mesh(new THREE.SphereGeometry(0.235, 34, 26), brainMat);
+    brainLeft.position.set(-0.105, 0.075, 0.012);
+    brainLeft.scale.set(0.86, 0.78, 0.8);
+    const brainRight = brainLeft.clone();
+    brainRight.position.x = 0.105;
+    brainTissueRig.add(brainLeft, brainRight);
+
+    // Layered winding grooves sit just above the tissue surface, giving the
+    // hemispheres recognizable gyri instead of a cluster of pink spheres.
+    for (const side of [-1, 1]) {
+      const centerX = side * 0.105;
+      for (let row = 0; row < 6; row++) {
+        const points: THREE.Vector3[] = [];
+        for (let point = 0; point < 10; point++) {
+          const progress = point / 9;
+          const localX = (progress - 0.5) * 0.25;
+          const y = -0.035 + row * 0.047 + Math.sin(progress * Math.PI * 4 + row * 1.7) * 0.014;
+          const normalizedX = localX / 0.145;
+          const normalizedY = (y - 0.075) / 0.19;
+          const surface = Math.max(0, 1 - normalizedX * normalizedX - normalizedY * normalizedY);
+          points.push(new THREE.Vector3(centerX + localX, y, 0.155 + surface * 0.065));
+        }
+        const groove = new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 28, 0.008, 7, false),
+          sulcusMat,
+        );
+        brainTissueRig.add(groove);
+      }
+    }
+    const fissurePoints = Array.from({ length: 9 }, (_, index) => {
+      const y = -0.075 + index * 0.041;
+      return new THREE.Vector3(Math.sin(index * 1.8) * 0.008, y, 0.225);
+    });
+    brainTissueRig.add(new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(fissurePoints), 32, 0.012, 8, false),
+      sulcusMat,
+    ));
+
+    const vesselPaths = [
+      [new THREE.Vector3(-0.22, 0.01, 0.17), new THREE.Vector3(-0.12, 0.08, 0.226), new THREE.Vector3(-0.04, 0.18, 0.205)],
+      [new THREE.Vector3(0.21, -0.01, 0.17), new THREE.Vector3(0.15, 0.09, 0.225), new THREE.Vector3(0.06, 0.2, 0.2)],
+    ];
+    for (const points of vesselPaths) {
+      brainTissueRig.add(new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 22, 0.005, 6, false),
+        vesselMat,
+      ));
+    }
+    brainRig.add(brainTissueRig);
+
+    const skullRim = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.027, 10, 36), chromeMat);
+    skullRim.scale.y = 0.63;
+    skullRim.position.z = 0.105;
+    brainRig.add(skullRim);
+
+    const chipMat = new THREE.MeshStandardMaterial({ color: 0x173d2b, roughness: 0.32, metalness: 0.78 });
+    const chip = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.13, 0.045), chipMat);
+    chip.position.set(0.085, 0.125, 0.245);
+    chip.rotation.z = -0.1;
+    brainRig.add(chip);
+    const chipLabelCanvas = document.createElement("canvas");
+    chipLabelCanvas.width = 512;
+    chipLabelCanvas.height = 256;
+    const chipLabelContext = chipLabelCanvas.getContext("2d");
+    if (chipLabelContext) {
+      chipLabelContext.clearRect(0, 0, 512, 256);
+      chipLabelContext.fillStyle = "#d8ffbd";
+      chipLabelContext.textAlign = "center";
+      chipLabelContext.textBaseline = "middle";
+      chipLabelContext.font = "900 55px monospace";
+      chipLabelContext.fillText("PROPERTY OF", 256, 86);
+      chipLabelContext.font = "900 66px monospace";
+      chipLabelContext.fillText("THE CIA", 256, 168);
+    }
+    const chipLabelTexture = new THREE.CanvasTexture(chipLabelCanvas);
+    chipLabelTexture.colorSpace = THREE.SRGBColorSpace;
+    const chipLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.184, 0.112),
+      new THREE.MeshBasicMaterial({ map: chipLabelTexture, transparent: true }),
+    );
+    chipLabel.position.set(0.085, 0.125, 0.269);
+    chipLabel.rotation.z = -0.1;
+    brainRig.add(chipLabel);
+    for (const side of [-1, 1]) {
+      for (let pin = 0; pin < 5; pin++) {
+        const chipPin = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.01, 0.012), chromeMat);
+        chipPin.position.set(0.085 + side * 0.112, 0.08 + pin * 0.023, 0.247);
+        brainRig.add(chipPin);
+      }
+    }
+    const implantPorts = [
+      [-0.21, 0.08, cyanImplantMat],
+      [-0.05, 0.205, purpleImplantMat],
+      [0.23, 0.025, cyanImplantMat],
+    ] as const;
+    for (const [x, y, material] of implantPorts) {
+      const port = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.052, 0.055, 8), material);
+      port.rotation.x = Math.PI / 2;
+      port.position.set(x, y, 0.235);
+      brainRig.add(port);
+    }
+    const cableMaterial = new THREE.MeshStandardMaterial({
+      color: 0x17192b,
+      emissive: 0x1b0b31,
+      emissiveIntensity: 0.7,
+      roughness: 0.46,
+      metalness: 0.65,
+    });
+    const cablePaths = [
+      [new THREE.Vector3(-0.05, 0.205, 0.25), new THREE.Vector3(0.01, 0.19, 0.3), new THREE.Vector3(0.07, 0.17, 0.27)],
+      [new THREE.Vector3(0.185, 0.13, 0.26), new THREE.Vector3(0.255, 0.1, 0.29), new THREE.Vector3(0.23, 0.025, 0.25)],
+      [new THREE.Vector3(-0.015, 0.1, 0.27), new THREE.Vector3(-0.14, 0.04, 0.29), new THREE.Vector3(-0.21, 0.08, 0.25)],
+    ];
+    for (const points of cablePaths) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      brainRig.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.016, 6, false), cableMaterial));
+    }
+    headRig.add(brainRig);
 
     const facePatch = new THREE.Mesh(new THREE.SphereGeometry(0.27, 24, 18), skinMat);
     facePatch.position.set(0, -0.035, 0.205);
@@ -301,17 +382,6 @@ export default function OrangutanWidget() {
     mouth.scale.set(1.35, 0.28, 0.55);
     jawRig.add(mouth);
     headRig.add(jawRig);
-
-    // A rough, broken fur silhouette reads far better than a perfectly smooth sphere.
-    const tuftGeo = new THREE.ConeGeometry(0.045, 0.14, 7);
-    for (let i = 0; i < 9; i++) {
-      const angle = -0.92 + (i / 8) * 1.84;
-      const tuft = new THREE.Mesh(tuftGeo, i % 3 === 0 ? furLightMat : furMat);
-      tuft.position.set(Math.sin(angle) * 0.285, 0.2 + Math.cos(angle) * 0.2, -0.02);
-      tuft.rotation.z = -angle;
-      tuft.scale.setScalar(0.72 + (i % 4) * 0.06);
-      headRig.add(tuft);
-    }
 
     function makeHand(sign: number) {
       const handRig = new THREE.Group();
@@ -424,8 +494,11 @@ export default function OrangutanWidget() {
     let grabbedPart: RagdollPart | null = null;
     const gazeTarget = new THREE.Vector2();
     let eatPulse = 0;
+    let chewTimer = 0;
     let impactPulse = 0;
     let grabPulse = 0;
+    let currentScale = 1;
+    let targetScale = 1;
     let blinkTimer = 0;
     let nextBlink = performance.now() + 900 + Math.random() * 1800;
 
@@ -485,6 +558,8 @@ export default function OrangutanWidget() {
       const intersection = raycaster.intersectObjects(grabbableMeshes, false)[0];
       if (!intersection) return;
 
+      event.preventDefault();
+      event.stopPropagation();
       dragging = true;
       grabPulse = 1;
       dragAnchorNode = intersection.object;
@@ -492,8 +567,6 @@ export default function OrangutanWidget() {
       dragAnchorLocal.copy(intersection.object.worldToLocal(intersection.point.clone()));
       dragPlane.constant = -intersection.point.z;
       pointerToWorld(event.clientX, event.clientY, dragPointerWorld);
-      renderer.domElement.style.cursor = "grabbing";
-      renderer.domElement.setPointerCapture(event.pointerId);
       lastPointerWorld.copy(dragPointerWorld);
       lastPointerTime = performance.now();
       recentVelocity.set(0, 0, 0);
@@ -518,10 +591,13 @@ export default function OrangutanWidget() {
       lastPointerTime = now;
     }
 
+    function stopTouchScroll(event: TouchEvent) {
+      if (dragging) event.preventDefault();
+    }
+
     function onPointerUp() {
       if (!dragging) return;
       dragging = false;
-      renderer.domElement.style.cursor = "grab";
       const throwVel = recentVelocity.clone().multiplyScalar(THROW_MULTIPLIER);
       if (throwVel.length() > MAX_THROW_SPEED) throwVel.setLength(MAX_THROW_SPEED);
       velocity.copy(throwVel);
@@ -536,30 +612,33 @@ export default function OrangutanWidget() {
       grabbedPart = null;
     }
 
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("touchmove", stopTouchScroll, { passive: false });
 
     // ---------------- Bananas ----------------
-    const bananaGeo = new THREE.TorusGeometry(0.13, 0.035, 7, 16, Math.PI * 1.42);
-    const bananaMat = new THREE.MeshStandardMaterial({ color: 0xf6d43c, roughness: 0.48, emissive: 0x594400, emissiveIntensity: 0.3 });
-    const bananaTipGeo = new THREE.SphereGeometry(0.038, 8, 6);
-    const bananaTipMat = new THREE.MeshStandardMaterial({ color: 0x5b3b10, roughness: 0.9 });
+    const textureLoader = new THREE.TextureLoader();
+    const bananaTexture = textureLoader.load("/media/bongo-banana-cutout-v1.png");
+    bananaTexture.colorSpace = THREE.SRGBColorSpace;
+    const bananaGeo = new THREE.PlaneGeometry(0.48, 0.32);
+    const bananaMat = new THREE.MeshBasicMaterial({
+      map: bananaTexture,
+      transparent: true,
+      alphaTest: 0.02,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
     const bananas: Banana[] = [];
     let activeSnack: Banana | null = null;
 
     function spawnBanana() {
       const group = new THREE.Group();
       const mesh = new THREE.Mesh(bananaGeo, bananaMat);
-      mesh.rotation.z = Math.PI / 5;
-      mesh.castShadow = true;
+      mesh.rotation.z = -0.08;
       group.add(mesh);
-      const tipA = new THREE.Mesh(bananaTipGeo, bananaTipMat);
-      tipA.position.set(0.13, 0.005, 0);
-      tipA.castShadow = true;
-      const tipB = tipA.clone();
-      tipB.position.set(-0.085, 0.1, 0);
-      group.add(tipA, tipB);
       const startX = THREE.MathUtils.clamp(
         ape.position.x + (Math.random() - 0.5) * 0.6,
         bounds.left,
@@ -579,6 +658,51 @@ export default function OrangutanWidget() {
     }
     spawnBananaRef.current = spawnBanana;
 
+    // A real scene object, not a DOM animation. The bat follows through, applies
+    // an impulse to the ragdoll, kicks its joints and changes its physical scale.
+    const batRig = new THREE.Group();
+    const batTexture = textureLoader.load("/media/bongo-bat-cutout-v1.png");
+    batTexture.colorSpace = THREE.SRGBColorSpace;
+    const batVisual = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.28, 0.853),
+      new THREE.MeshBasicMaterial({
+        map: batTexture,
+        transparent: true,
+        alphaTest: 0.02,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
+    );
+    batVisual.position.y = -0.65;
+    batVisual.rotation.z = Math.PI * 0.31;
+    batRig.add(batVisual);
+    batRig.visible = false;
+    scene.add(batRig);
+    let batAge = 0;
+    let batHit = false;
+
+    function swingBat() {
+      if (batRig.visible) return;
+      batAge = 0;
+      batHit = false;
+      batRig.visible = true;
+    }
+    beatBongoRef.current = swingBat;
+
+    function triggerBloodSpatter() {
+      const overlay = bloodOverlayRef.current;
+      if (!overlay) return;
+      overlay.classList.remove("is-active");
+      void overlay.offsetWidth;
+      overlay.classList.add("is-active");
+      if (bloodTimerRef.current) window.clearTimeout(bloodTimerRef.current);
+      bloodTimerRef.current = window.setTimeout(() => {
+        overlay.classList.remove("is-active");
+        bloodTimerRef.current = null;
+      }, 500);
+    }
+
     // ---------------- Animation loop ----------------
     let raf = 0;
     let lastTime = performance.now();
@@ -587,6 +711,9 @@ export default function OrangutanWidget() {
       raf = requestAnimationFrame(step);
       const dt = Math.min((now - lastTime) / 1000, 1 / 30);
       lastTime = now;
+
+      currentScale = THREE.MathUtils.lerp(currentScale, targetScale, 1 - Math.exp(-5 * dt));
+      ape.scale.setScalar(currentScale);
 
       if (!dragging) {
         velocity.y += GRAVITY * dt;
@@ -692,6 +819,7 @@ export default function OrangutanWidget() {
       impactPulse *= Math.exp(-7.5 * dt);
       grabPulse *= Math.exp(-5 * dt);
       eatPulse = Math.max(0, eatPulse - dt);
+      chewTimer = Math.max(0, chewTimer - dt);
 
       // Follow the pointer, but become fascinated by the nearest banana.
       let attentionX = gazeTarget.x;
@@ -828,10 +956,21 @@ export default function OrangutanWidget() {
       pupilL.position.y = 0.056 + attentionY * 0.014;
       pupilR.position.y = 0.056 + attentionY * 0.014;
 
-      const jawTarget = eatPulse > 0 ? 0.24 + Math.sin(phase * 28) * 0.08 : idle ? Math.max(0, Math.sin(phase * 0.72 - 1.4)) * 0.025 : 0;
+      const chewing = activeSnack?.state === "eating" || chewTimer > 0;
+      const jawTarget = chewing
+        ? 0.16 + Math.max(0, Math.sin(phase * 20)) * 0.14
+        : idle
+          ? Math.max(0, Math.sin(phase * 0.72 - 1.4)) * 0.025
+          : 0;
       jawRig.rotation.x = spring(joints.jaw, jawTarget, dt, 75, 12);
       const mouthPulse = 1 + eatPulse * 0.8;
       mouth.scale.set(1.35 * mouthPulse, 0.28 * mouthPulse, 0.55);
+      const chewPuff = chewTimer > 0 ? Math.sin(phase * 17) * 0.055 : 0;
+      cheekL.scale.y = 0.72 + chewPuff;
+      cheekR.scale.y = 0.72 - chewPuff;
+
+      brainMat.emissiveIntensity = 0.24 + Math.sin(phase * 4.2) * 0.035 + eatPulse * 0.16;
+      brainTissueRig.scale.set(1, 1 + Math.sin(phase * 4.7) * 0.007 + eatPulse * 0.012, 1);
 
       contactShadow.position.x = ape.position.x;
       contactShadow.position.y = bounds.floor - 0.16;
@@ -875,7 +1014,6 @@ export default function OrangutanWidget() {
             b.velocity.set(0, 0, 0);
             b.angularVelocity.multiplyScalar(0.25);
             activeSnack = b;
-            setMood("REACHING");
           } else if (b.age > 8) {
             scene.remove(b.group);
             bananas.splice(i, 1);
@@ -895,7 +1033,6 @@ export default function OrangutanWidget() {
           if (b.phaseTime > 0.9) {
             b.state = "eating";
             b.phaseTime = 0;
-            setMood("MUNCHING");
           }
           continue;
         }
@@ -912,12 +1049,36 @@ export default function OrangutanWidget() {
           acidFill.intensity = 2.8;
           kickJoints(2.2, b.group.position.x < ape.position.x ? -1 : 1);
           if (onFloor) velocity.y = Math.max(velocity.y, 0.75);
-          setFedCount((n) => n + 1);
-          setMood("STUFFED");
+          chewTimer = 2.2;
+          targetScale = Math.min(1.45, targetScale + 0.05);
           activeSnack = null;
           scene.remove(b.group);
           bananas.splice(i, 1);
         }
+      }
+
+      if (batRig.visible) {
+        batAge += dt;
+        const swingProgress = THREE.MathUtils.clamp(batAge / 0.72, 0, 1);
+        const windup = swingProgress < 0.16 ? swingProgress / 0.16 : 1;
+        const strike = THREE.MathUtils.clamp((swingProgress - 0.16) / 0.54, 0, 1);
+        const followThrough = 1 - Math.pow(1 - strike, 3);
+        batRig.position.set(ape.position.x + 1.08 * currentScale, ape.position.y + 1.58 * currentScale, 0.55);
+        batRig.rotation.z = THREE.MathUtils.lerp(0.58, -1.72, windup * followThrough);
+        batRig.rotation.x = -0.14;
+
+        if (!batHit && swingProgress > 0.48) {
+          batHit = true;
+          velocity.x = -4.8;
+          velocity.y = Math.max(velocity.y, 3.5);
+          angularVelocity.z += 5.4;
+          angularVelocity.y -= 1.4;
+          impactPulse = 1;
+          kickJoints(4.5, -1);
+          targetScale = Math.max(0.65, targetScale - 0.05);
+          triggerBloodSpatter();
+        }
+        if (swingProgress >= 1) batRig.visible = false;
       }
 
       acidFill.intensity = THREE.MathUtils.lerp(acidFill.intensity, 1.2 + eatPulse * 1.1, 0.08);
@@ -942,9 +1103,18 @@ export default function OrangutanWidget() {
     return () => {
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("touchmove", stopTouchScroll);
+      spawnBananaRef.current = null;
+      beatBongoRef.current = null;
+      if (bloodTimerRef.current) window.clearTimeout(bloodTimerRef.current);
+      chipLabelTexture.dispose();
+      brainBumpTexture.dispose();
+      bananaTexture.dispose();
+      batTexture.dispose();
       for (const b of bananas) scene.remove(b.group);
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
@@ -958,44 +1128,13 @@ export default function OrangutanWidget() {
   }, []);
 
   return (
-    <div
-      ref={widgetRef}
-      className="orangutan-widget"
-      style={layout ? { left: layout.x, top: layout.y, bottom: "auto", width: layout.width } : undefined}
-      aria-label="Interactive 3D orangutan — move or resize the panel, drag the orangutan to throw him, or feed him bananas"
-    >
-      <button
-        type="button"
-        className="orangutan-drag-handle"
-        aria-label="Move ragdoll panel"
-        title="Drag to move · Arrow keys to nudge"
-        onPointerDown={(event) => beginPanelGesture("move", event)}
-        onPointerMove={updatePanelGesture}
-        onPointerUp={endPanelGesture}
-        onPointerCancel={endPanelGesture}
-        onKeyDown={(event) => nudgePanel("move", event)}
-      >
-        <span aria-hidden="true">⠿</span> RAGDOLL // MOVE
-      </button>
-      <div className="orangutan-canvas" ref={mountRef} />
-      <div className="orangutan-controls">
-        <button type="button" onClick={feedBanana}>🍌 Feed</button>
-        <span className="orangutan-stat">FED ×{fedCount} · {mood}</span>
-      </div>
-      <button
-        type="button"
-        className="orangutan-resize-handle"
-        aria-label="Resize ragdoll panel"
-        title="Drag to resize · Arrow keys to resize"
-        onPointerDown={(event) => beginPanelGesture("resize", event)}
-        onPointerMove={updatePanelGesture}
-        onPointerUp={endPanelGesture}
-        onPointerCancel={endPanelGesture}
-        onKeyDown={(event) => nudgePanel("resize", event)}
+    <>
+      <div
+        ref={mountRef}
+        className="orangutan-playfield"
+        aria-label="Interactive 3D Dr. Bongo — drag and throw him anywhere on the screen; use his banner menu to feed or beat him"
       />
-    </div>
+      <div ref={bloodOverlayRef} className="bongo-blood-spatter" aria-hidden="true" />
+    </>
   );
 }
-
-
-

@@ -67,7 +67,7 @@ export default function Home() {
 
   return (
     <main className={`lab ${linkMode === "transmitting" ? "is-transmitting" : ""}`}>
-      <Link className="return-gate" href="/">← RETURN TO THE SPLIT</Link>
+      <Link className="return-gate" href="/">Fuck this Noise</Link>
       <section className="character-bay" aria-label="Alien operating chamber">
         <img
           className="character-image"
