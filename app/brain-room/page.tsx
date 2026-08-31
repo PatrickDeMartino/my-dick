@@ -38,10 +38,7 @@ export default function BrainRoom() {
 
   return (
     <main className="brain-room" ref={roomRef}>
-      <picture className="brain-room__backdrop">
-        <source media="(max-width: 620px)" srcSet="/brain-room/brain-room-mobile.jpg" />
-        <img src="/brain-room/brain-room-desktop.jpg" alt="A warm surreal sitting room built inside a living brain" />
-      </picture>
+      <div className="brain-room__backdrop" data-mobile-background="/brain-room/brain-room-mobile.jpg" role="img" aria-label="A warm surreal sitting room built inside a living brain" />
       <div className="brain-room__shade" aria-hidden="true" />
       <Link className="brain-room__back" href="/">← HOME</Link>
       <header className="brain-room__title"><small>NEURAL PLAYROOM</small><h1>Choose a test subject</h1></header>
@@ -79,3 +76,4 @@ export default function BrainRoom() {
     </main>
   );
 }
+

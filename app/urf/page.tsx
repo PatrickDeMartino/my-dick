@@ -916,25 +916,25 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         </div>
 
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
-          <aside className="building-brief-card" aria-live="polite" onPointerDown={(event) => event.stopPropagation()}>
-            <img src={BUILDING_STORIES[activeBuilding.id].character} alt="" />
-            <div><small>{BUILDING_STORIES[activeBuilding.id].role}</small><b>{BUILDING_STORIES[activeBuilding.id].name}</b><p>{BUILDING_STORIES[activeBuilding.id].description}</p></div>
-          </aside>
-        )}
-
-        {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
-          <aside className="town-editor-card" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
-            <div><small>SELECTED</small><b>{displayBuildingLabel(activeBuilding)}</b></div>
-            {activeBuilding.id === "telescope" && !telescopeUpgraded && (
-              <button type="button" className="upgrade-building" onClick={upgradeTelescope}>UPGRADE · 69</button>
-            )}
-            <button type="button" onClick={() => visitBuilding(activeBuilding)}>ENTER</button>
-            <button type="button" className="remove-building" onClick={() => {
-              setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
-              setActiveBuildingId(null);
-              setPlacementPreview(null);
-              setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
-            }}>REMOVE</button>
+          <aside className="town-selection-card" aria-live="polite" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
+            <div className="town-selection-character"><img src={BUILDING_STORIES[activeBuilding.id].character} alt="" /></div>
+            <div className="town-selection-copy">
+              <div className="town-selection-kicker"><small>{BUILDING_STORIES[activeBuilding.id].role}</small><span>SELECTED · {displayBuildingLabel(activeBuilding)}</span></div>
+              <b>{BUILDING_STORIES[activeBuilding.id].name}</b>
+              <p>{BUILDING_STORIES[activeBuilding.id].description}</p>
+            </div>
+            <div className="town-selection-actions">
+              {activeBuilding.id === "telescope" && !telescopeUpgraded && (
+                <button type="button" className="upgrade-building" onClick={upgradeTelescope}>UPGRADE · 69</button>
+              )}
+              <button type="button" onClick={() => visitBuilding(activeBuilding)}>ENTER</button>
+              <button type="button" className="remove-building" onClick={() => {
+                setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
+                setActiveBuildingId(null);
+                setPlacementPreview(null);
+                setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
+              }}>REMOVE</button>
+            </div>
           </aside>
         )}
 
@@ -1135,3 +1135,4 @@ export default function Home() {
     </main>
   );
 }
+

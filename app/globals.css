@@ -964,8 +964,8 @@ button, input { font: inherit; }
   background: #14070f;
   color: #fff6ef;
 }
-.brain-room__backdrop, .brain-room__backdrop img, .brain-room__shade { position: absolute; inset: 0; width: 100%; height: 100%; }
-.brain-room__backdrop img { object-fit: cover; }
+.brain-room__backdrop, .brain-room__shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+.brain-room__backdrop { background: url("/brain-room/brain-room-desktop.jpg") center / cover no-repeat; }
 .brain-room__shade { pointer-events: none; background: linear-gradient(180deg, rgba(15,3,12,.58), transparent 33%, transparent 66%, rgba(12,2,10,.72)); }
 .brain-room__back, .brain-room__controls a, .brain-room__controls button { border: 1px solid rgba(255,194,218,.5); background: rgba(28,8,22,.76); color: white; text-decoration: none; backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,.35); }
 .brain-room__back { position: absolute; z-index: 5; top: 16px; left: 16px; padding: 10px 14px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .1em; }
@@ -984,6 +984,7 @@ button, input { font: inherit; }
 .brain-room__hint { position: absolute; z-index: 5; right: 16px; top: 16px; margin: 0; color: #ffd9ea; font: 800 10px/1 var(--font-geist-mono); letter-spacing: .12em; }
 
 @media (max-width: 620px) {
+  .brain-room__backdrop { background-image: url("/brain-room/brain-room-mobile.jpg"); background-position: center; }
   .brain-room__title { top: 58px; width: 90%; }
   .brain-room__title h1 { font-size: 27px; }
   .brain-room__controls { bottom: 14px; grid-template-columns: 1fr; gap: 7px; }
@@ -1038,6 +1039,7 @@ button, input { font: inherit; }
   image-rendering: auto;
   will-change: transform, filter;
   backface-visibility: hidden;
+  transform-style: preserve-3d;
   transition: filter .35s ease, transform .35s ease;
   animation: choice-object-float 5s ease-in-out infinite;
 }
@@ -1157,6 +1159,8 @@ button, input { font: inherit; }
 .choice-object:focus-visible .choice-object-visual,
 .choice-object.is-active .choice-object-visual {
   filter: saturate(1.18) brightness(1.06);
+  animation-play-state: paused;
+  transform: translate3d(0, -5px, 32px) scale3d(1.045, 1.045, 1.045) rotateX(1deg) rotateY(-1deg);
 }
 
 .choice-object:hover .choice-smoke,
@@ -1174,8 +1178,8 @@ button, input { font: inherit; }
 
 @keyframes choice-slime-flow { to { background-position: 220% 0; } }
 @keyframes choice-object-float {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -4px, 0); }
+  0%, 100% { transform: translate3d(0, 1px, 0) scale3d(.985, .985, .985) rotateX(-.7deg) rotateY(-1deg); }
+  50% { transform: translate3d(0, -7px, 25px) scale3d(1.035, 1.035, 1.035) rotateX(.9deg) rotateY(1deg); }
 }
 
 @keyframes choice-smoke-rise {
@@ -1245,4 +1249,5 @@ button, input { font: inherit; }
   .choice-object .choice-smoke { opacity: .76; transform: scale(1); }
   .choice-object .choice-object-label { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
+
 

@@ -192,16 +192,18 @@ body {
   }
 }
 @media (max-aspect-ratio: 3/4) {
-  .scene { width:100vw; height:100dvh; aspect-ratio:auto; }
-  .scene-media { object-fit:cover; object-position:42% center; }
-  .sector-zoom { width:92%; height:72%; }
-  .room-sector { top:auto; bottom:2%; width:29%; height:46px; border:1px solid rgba(224,174,255,.45); border-radius:999px; background:rgba(13,3,27,.82); backdrop-filter:blur(8px); }
-  .room-sector span { bottom:50%; transform:translate(-50%,50%); opacity:1; }
-  .room-sector:hover span,.room-sector:focus-visible span { transform:translate(-50%,50%); }
-  .sector-tv { left:3%; }
-  .sector-anubis { left:35.5%; }
-  .sector-pigeon { left:68%; }
-  .tv-knob { width:8%; }
-  .tv-knob-sound { left:5%; top:auto; bottom:9%; }
-  .tv-knob-next { left:87%; top:auto; bottom:9%; }
+  .room {
+    align-items:start;
+    padding-top:clamp(42px,12dvh,104px);
+    background:
+      radial-gradient(circle at 50% 34%,rgba(104,38,135,.24),transparent 48%),
+      linear-gradient(180deg,#09020d 0%,#17071d 54%,#050207 100%);
+  }
+  .scene { width:100vw; height:auto; aspect-ratio:3/2; overflow:visible; box-shadow:0 20px 55px rgba(0,0,0,.72); }
+  .scene-media { object-fit:contain; object-position:center; }
+  .sector-overlay { position:fixed; }
+  .sector-zoom { width:92%; height:68%; border-radius:16px; }
+  .room-sector span { bottom:3%; padding:6px 8px; font-size:7px; opacity:1; }
+  .tv-knob { width:5%; }
 }
+
