@@ -138,11 +138,18 @@ body {
 .sector-tv { left:2%; top:10%; width:35%; height:82%; }
 .sector-anubis { left:42%; top:3%; width:38%; height:65%; }
 .sector-pigeon { left:39%; top:58%; width:57%; height:40%; }
-.sector-overlay { position:absolute; z-index:20; inset:0; display:grid; place-items:center; background:rgba(3,0,8,.76); backdrop-filter:blur(8px); animation:sector-in .22s ease-out; }
+.sector-overlay { position:absolute; z-index:20; inset:0; display:grid; place-items:center; pointer-events:none; background:transparent; animation:sector-in .22s ease-out; }
 .sector-overlay[hidden] { display:none; }
-.sector-zoom { width:min(82%,1050px); height:78%; border:1px solid rgba(231,181,255,.7); border-radius:20px; background-image:url('./assets/tv-room.jpg'); background-repeat:no-repeat; box-shadow:0 25px 80px #000,0 0 30px rgba(192,67,255,.25); }
-.sector-overlay > button { position:absolute; z-index:2; top:3%; right:3%; width:44px; height:44px; border:1px solid rgba(255,255,255,.5); border-radius:50%; background:#160823; color:white; font-size:27px; cursor:pointer; }
-.sector-overlay p { position:absolute; bottom:3%; margin:0; color:#f9dcff; font:900 clamp(12px,1.5vw,22px)/1 Arial,sans-serif; letter-spacing:.18em; }
+.sector-zoom { width:min(76%,980px); height:76%; border:0; border-radius:32% 24% 29% 25%; background-image:url('./assets/tv-room.jpg'); background-repeat:no-repeat; filter:drop-shadow(0 25px 35px rgba(0,0,0,.68)) drop-shadow(0 0 24px rgba(192,67,255,.2)); clip-path:polygon(8% 4%,91% 0,100% 17%,96% 88%,82% 100%,10% 95%,0 78%,3% 15%); }
+.sector-overlay > button { position:absolute; z-index:28; top:3%; right:3%; width:44px; height:44px; pointer-events:auto; border:1px solid rgba(255,255,255,.5); border-radius:50%; background:#160823; color:white; font-size:27px; cursor:pointer; }
+.sector-overlay p { position:absolute; z-index:27; bottom:3%; margin:0; padding:8px 13px; border-radius:999px; color:#f9dcff; background:rgba(16,4,28,.78); font:900 clamp(12px,1.5vw,22px)/1 Arial,sans-serif; letter-spacing:.18em; }
+.focus-tv-screen { position:absolute; z-index:25; left:41%; top:23%; width:38%; height:53%; overflow:hidden; pointer-events:auto; background:#050207; border-radius:8% 6% 7% 8%; transform:perspective(700px) rotateY(-1deg); }
+.focus-tv-screen[aria-hidden="true"] { display:none; }
+.focus-tv-screen #shorts-player,.focus-tv-screen iframe { width:100%!important; height:100%!important; }
+.scene[data-focus="anubis"] .puff-window { z-index:26; top:10%; left:50%; width:24%; height:56%; opacity:1; transform:scale(1.08); }
+.scene[data-focus="anubis"] .sector-zoom { width:min(68%,850px); background-position:69% 18%!important; background-size:245%!important; }
+.scene[data-focus="pigeon"] .sector-zoom { width:min(72%,920px); background-position:67% 90%!important; background-size:230%!important; }
+.scene[data-focus="tv"] .sector-zoom { width:min(76%,980px); background-position:8% 49%!important; background-size:285%!important; }
 @keyframes sector-in { from { opacity:0; transform:scale(.98); } }
 
 .tv-sound:focus-visible {
@@ -203,6 +210,8 @@ body {
   .scene-media { object-fit:contain; object-position:center; }
   .sector-overlay { position:fixed; }
   .sector-zoom { width:92%; height:68%; border-radius:16px; }
+  .focus-tv-screen { left:39%; top:27%; width:47%; height:45%; }
+  .scene[data-focus="anubis"] .puff-window { top:18%; left:48%; width:27%; height:42%; }
   .room-sector span { bottom:3%; padding:6px 8px; font-size:7px; opacity:1; }
   .tv-knob { width:5%; }
 }

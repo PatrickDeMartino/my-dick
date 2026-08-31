@@ -9,6 +9,9 @@ const sectorOverlay = document.querySelector("#sector-overlay");
 const sectorZoom = document.querySelector("#sector-zoom");
 const sectorTitle = document.querySelector("#sector-title");
 const sectorClose = document.querySelector("#sector-close");
+const scene = document.querySelector("#scene");
+const focusTvScreen = document.querySelector("#focus-tv-screen");
+const tvVideoHome = document.querySelector(".tv-video");
 
 const SHORT_IDS = [
   "510vSdkygXo", "fjh_N1SGXOs", "yA22xbGxbJg", "mFhxmYI1WE4",
@@ -199,14 +202,26 @@ const sectorViews = {
 };
 document.querySelectorAll(".room-sector").forEach((button) => button.addEventListener("click", () => {
   const view = sectorViews[button.dataset.sector];
+  scene.dataset.focus = button.dataset.sector;
   sectorZoom.style.backgroundPosition = view.position;
   sectorZoom.style.backgroundSize = view.size;
   sectorTitle.textContent = view.title;
+  if (button.dataset.sector === "tv") {
+    focusTvScreen.appendChild(document.querySelector("#shorts-player"));
+    focusTvScreen.setAttribute("aria-hidden", "false");
+  }
   sectorOverlay.hidden = false;
 }));
-sectorClose.addEventListener("click", () => { sectorOverlay.hidden = true; });
-sectorOverlay.addEventListener("click", (event) => { if (event.target === sectorOverlay) sectorOverlay.hidden = true; });
-window.addEventListener("keydown", (event) => { if (event.key === "Escape") sectorOverlay.hidden = true; });
+function closeSector() {
+  const player = document.querySelector("#shorts-player");
+  if (player && player.parentElement === focusTvScreen) tvVideoHome.appendChild(player);
+  focusTvScreen.setAttribute("aria-hidden", "true");
+  sectorOverlay.hidden = true;
+  delete scene.dataset.focus;
+}
+sectorClose.addEventListener("click", closeSector);
+sectorOverlay.addEventListener("click", (event) => { if (event.target === sectorOverlay) closeSector(); });
+window.addEventListener("keydown", (event) => { if (event.key === "Escape") closeSector(); });
 
 function randomDelayForCycle() {
   if (previewMode) return 2_000;
@@ -263,3 +278,4 @@ window.addEventListener("pagehide", () => {
 
 beginSchedule();
 prepareRoomPlate();
+
