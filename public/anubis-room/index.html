@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050207" />
+    <title>Anubis TV Room</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="room" aria-label="Anubis television room">
+      <div class="scene" id="scene">
+        <img
+          class="scene-media room-source"
+          id="room-source"
+          src="./assets/tv-room.jpg"
+          alt="Anubis seated in an Egyptian television room with a cybernetic pigeon in the foreground"
+        />
+        <canvas
+          class="scene-media room-plate"
+          id="room-plate"
+          aria-hidden="true"
+        ></canvas>
+        <div class="tv-screen" aria-label="Meat Bones YouTube Shorts player">
+          <div class="tv-video">
+            <div id="shorts-player"></div>
+          </div>
+          <button
+            class="tv-sound"
+            id="tv-sound"
+            type="button"
+            aria-label="Turn television sound on"
+            title="Click the TV to turn sound on"
+          ></button>
+        </div>
+        <div class="puff-window" id="puff-window" aria-hidden="true">
+          <video
+            class="puff"
+            id="puff-video"
+            src="./assets/anubis-smokes.mp4"
+            muted
+            playsinline
+            preload="auto"
+          ></video>
+        </div>
+        <button class="tv-knob tv-knob-sound" id="tv-knob-sound" type="button" aria-label="Toggle television sound" title="Sound"></button>
+        <button class="tv-knob tv-knob-next" id="tv-knob-next" type="button" aria-label="Play next video" title="Next video"></button>
+        <button class="room-sector sector-tv" type="button" data-sector="tv" aria-label="Enlarge the television"><span>TELEVISION</span></button>
+        <button class="room-sector sector-anubis" type="button" data-sector="anubis" aria-label="Enlarge Anubis"><span>ANUBIS</span></button>
+        <button class="room-sector sector-pigeon" type="button" data-sector="pigeon" aria-label="Enlarge the cybernetic pigeon"><span>PIGEON</span></button>
+        <div class="sector-overlay" id="sector-overlay" hidden>
+          <button type="button" id="sector-close" aria-label="Close enlarged view">×</button>
+          <div class="sector-zoom" id="sector-zoom" role="img" aria-label="Enlarged room detail"></div>
+          <p id="sector-title"></p>
+        </div>
+      </div>
+    </main>
+    <script src="./script.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+  </body>
+</html>

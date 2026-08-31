@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
+
 export default function LandingPage() {
   const [showUrf, setShowUrf] = useState(false);
 
@@ -27,38 +29,49 @@ export default function LandingPage() {
 
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
-      <div
-        className="choice-world-stage"
-        role="img"
-        aria-label="A glowing Earth and a luminous brain floating in darkness"
-      >
-        <img className="choice-world-layer choice-world-earth" src="/media/brain-earth.jpg" alt="" />
-        <img className="choice-world-layer choice-world-brain" src="/media/brain-earth.jpg" alt="" />
+      <div className="choice-world-stage" aria-label="Choose between Planet Urf and Dr. Bongo">
+        <button
+          className="choice-object choice-object-earth"
+          type="button"
+          data-portal="earth"
+          aria-label="Open the Planet Urf world selector"
+          aria-haspopup="dialog"
+          onClick={() => setShowUrf(true)}
+        >
+          <span className="choice-object-visual" aria-hidden="true" />
+          <span className="choice-smoke" aria-hidden="true">
+            {smokePuffs.map((puff) => <i key={puff} />)}
+          </span>
+          <span className="choice-object-label">
+            <strong>Planet Urf</strong>
+            <small>reality phisico</small>
+          </span>
+        </button>
+
+        <a
+          className="choice-object choice-object-brain"
+          href="/brain-room"
+          data-portal="brain"
+          aria-label="Open Dr. Bongo"
+        >
+          <span className="choice-object-visual" aria-hidden="true" />
+          <span className="choice-smoke" aria-hidden="true">
+            {smokePuffs.map((puff) => <i key={puff} />)}
+          </span>
+          <span className="choice-object-label">
+            <strong>that fucking other thing</strong>
+            <small>Enter the unknown</small>
+          </span>
+        </a>
       </div>
       <div className="choice-vignette" aria-hidden="true" />
 
-      <p className="choice-kicker">
-        <span>I&apos;m genuinely skitzofrenic</span>
-      </p>
-
-      <button
-        className="choice-portal choice-portal-earth"
-        type="button"
-        onClick={() => setShowUrf(true)}
-        aria-label="Open the Planet Urf territory selector"
-        aria-haspopup="dialog"
-      >
-        <strong>Planet Urf</strong>
-        <small>reality phisico</small>
-      </button>
-
       <a
-        className="choice-portal choice-portal-brain"
-        href="/bongo"
-        aria-label="Enter through that fucking other thing"
+        className="choice-kicker"
+        href="/anubis"
+        aria-label="Enter the Anubis television room"
       >
-        <strong>that fucking other thing</strong>
-        <small>Enter the unknown</small>
+        <span>I&apos;m genuinely skitzofrenic</span>
       </a>
 
       {showUrf && (

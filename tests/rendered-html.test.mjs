@@ -29,12 +29,23 @@ test("renders the Planet Urf landing page", async () => {
   const html = await response.text();
   assert.match(html, /<title>Planet Urf<\/title>/i);
   assert.match(html, /I(?:&#x27;|')m genuinely skitzofrenic/i);
+  assert.match(html, /href="\/anubis"/i);
   assert.match(html, /Planet Urf/);
   assert.match(html, /that fucking other thing/);
-  assert.match(html, /href="\/bongo"/);
+  assert.match(html, /href="\/brain-room"/);
   assert.match(html, /Rat Meat/);
   assert.match(html, /href="https:\/\/www\.cia\.gov\/"/);
   assert.match(html, /patrick_allan_demartino/);
+});
+
+test("mobile landing choices are active and open with one tap", async () => {
+  const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.doesNotMatch(landing, /isFirstTouch/);
+  assert.match(landing, /onClick=\{\(\) => setShowUrf\(true\)\}/);
+  assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.choice-object \.choice-smoke \{ opacity: \.76;/);
+  assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.choice-object \.choice-object-label \{ opacity: 1;/);
 });
 
 test("renders the Dr. Bongo neural-link scene", async () => {
@@ -45,6 +56,34 @@ test("renders the Dr. Bongo neural-link scene", async () => {
   assert.match(html, /Dr\. Bongo Neural Link/);
   assert.match(html, /Talk to the ape/);
   assert.match(html, /orangutan-aliens\.jpg/);
+  assert.match(html, /Fuck this Noise/);
+});
+
+test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
+  const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(widget, /className="orangutan-playfield"/);
+  assert.match(widget, /new THREE\.WebGLRenderer/);
+  assert.match(widget, /spawnBananaRef\.current = spawnBanana/);
+  assert.match(widget, /beatBongoRef\.current = swingBat/);
+  assert.match(widget, /chewTimer/);
+  assert.match(widget, /targetScale \+ 0\.05/);
+  assert.match(widget, /targetScale - 0\.05/);
+  assert.match(widget, /PROPERTY OF/);
+  assert.match(widget, /THE CIA/);
+  assert.match(widget, /triggerBloodSpatter\(\)/);
+  assert.match(widget, /textureLoader\.load\("\/media\/bongo-banana-cutout-v1\.png"\)/);
+  assert.match(widget, /textureLoader\.load\("\/media\/bongo-bat-cutout-v1\.png"\)/);
+  assert.match(banner, /interactWithBongo\("feed"\)/);
+  assert.match(banner, /interactWithBongo\("beat"\)/);
+  assert.match(banner, /dr-bongo-model-icon-v1\.png/);
+  assert.match(banner, /bongo-banana-cutout-v1\.png/);
+  assert.match(banner, /bongo-bat-cutout-v1\.png/);
+  const actionHandler = banner.match(/const interactWithBongo[\s\S]*?\n {2}};/)?.[0] ?? "";
+  assert.doesNotMatch(actionHandler, /setBongoMenuOpen\(false\)/);
+  assert.match(styles, /bongo-blood-flash \.5s/);
 });
 
 test("chat remains interactive without an API key", async () => {
@@ -108,6 +147,31 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   assert.match(town, /trip-rat-meat-balance-changed/);
   assert.match(town, /NOT ENOUGH RAT MEAT/);
   assert.match(banner, /trip-rat-meat-balance-changed/);
+});
+
+test("renders the responsive Brain Room experiment selector", async () => {
+  const response = await request("/brain-room");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Choose a test subject/i);
+  assert.match(html, /brain-room-mobile\.jpg/);
+  assert.match(html, /LAB RAT/);
+  assert.match(html, /href="\/bongo"/);
+});
+
+test("renders the Anubis pigeon television room", async () => {
+  const response = await request("/anubis");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  const room = await readFile(new URL("../public/anubis-room/index.html", import.meta.url), "utf8");
+  const roomScript = await readFile(new URL("../public/anubis-room/script.js", import.meta.url), "utf8");
+
+  assert.match(html, /Anubis TV Room/);
+  assert.match(html, /\/anubis-room\/index\.html/);
+  assert.match(room, /cybernetic pigeon/i);
+  assert.match(room, /youtube\.com\/iframe_api/);
+  assert.match(roomScript, /shorts-player/);
 });
 
 test("world globe clips coastlines cleanly and supports full rotation", async () => {

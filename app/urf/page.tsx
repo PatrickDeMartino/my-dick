@@ -30,6 +30,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [zoom, setZoom] = useState(1);
   const [size, setSize] = useState({ width: 720, height: 720 });
   const [landFeatures, setLandFeatures] = useState<LandFeature[]>([]);
+  const [texture, setTexture] = useState<HTMLImageElement | null>(null);
+  const [textureDrift, setTextureDrift] = useState(0);
+
+  useEffect(() => {
+    const image = new Image();
+    image.src = "/media/psychedelic-earth-texture-v1.png";
+    image.onload = () => setTexture(image);
+    const timer = window.setInterval(() => setTextureDrift((value) => (value + 1) % 360), 140);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -112,6 +122,23 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     ocean.addColorStop(1, "#020b15");
     ctx.fillStyle = ocean;
     ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    if (texture) {
+      const oceanPattern = ctx.createPattern(texture, "repeat");
+      if (oceanPattern) {
+        const textureScale = Math.max(.13, radius / 1100);
+        oceanPattern.setTransform(new DOMMatrix().translate(cx - radius + textureDrift * .55, cy - radius + Math.sin(textureDrift * .03) * 18).scale(textureScale));
+        ctx.globalAlpha = .86;
+        ctx.fillStyle = oceanPattern;
+        ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+        ctx.globalAlpha = 1;
+      }
+    }
+    const oceanShade = ctx.createRadialGradient(cx - radius * .3, cy - radius * .36, radius * .12, cx, cy, radius);
+    oceanShade.addColorStop(0, "rgba(125,245,255,.08)");
+    oceanShade.addColorStop(.68, "rgba(2,12,31,.08)");
+    oceanShade.addColorStop(1, "rgba(0,4,17,.72)");
+    ctx.fillStyle = oceanShade;
+    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
 
     const projection = geoOrthographic()
       .translate([cx, cy])
@@ -132,8 +159,13 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       landFeatures
         .filter((land) => land.antarctic === antarctic)
         .forEach((land) => path(land.feature));
-      ctx.fillStyle = antarctic ? "#bfe8ee" : "#53606b";
-      ctx.strokeStyle = antarctic ? "#e9ffff" : "#71818d";
+      const landGradient = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+      landGradient.addColorStop(0, "#f1c86e");
+      landGradient.addColorStop(.34, "#74aa62");
+      landGradient.addColorStop(.7, "#36776a");
+      landGradient.addColorStop(1, "#183f43");
+      ctx.fillStyle = antarctic ? "#c8eef1" : landGradient;
+      ctx.strokeStyle = antarctic ? "#f1ffff" : "rgba(255,239,170,.72)";
       ctx.lineWidth = 1.15;
       ctx.fill("evenodd");
       ctx.stroke();
@@ -150,7 +182,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     rim.addColorStop(1, "rgba(92,202,255,0)");
     ctx.fillStyle = rim;
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
-  }, [landFeatures, rotation, size, zoom]);
+  }, [landFeatures, rotation, size, texture, textureDrift, zoom]);
 
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
@@ -172,6 +204,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
 
   return (
     <div className="globe-frame" ref={frameRef}>
+      <div className="globe-satellite-orbit" aria-hidden="true"><span>🛰️</span></div>
       <canvas
         ref={canvasRef}
         className="globe-canvas"
@@ -280,12 +313,27 @@ const buildings: TownBuilding[] = [
   { id: "magic", label: "CIRCUS", hint: "Questionable entertainment · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 1 }, image: "/buildings/circus.png", start: { column: 15, row: 6 }, visualScale: 1.9 },
   { id: "igloo", label: "IGLOO", hint: "Housing · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 1 }, image: "/buildings/igloo.png", start: { column: 28, row: 16 }, visualScale: 1.9 },
   { id: "sweatshop", label: "SWEATSHOP", hint: "Production · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 2 }, image: "/buildings/sweatshop.png", start: { column: 14, row: 19 }, visualScale: 2.15 },
-  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, start: { column: 10, row: -6 }, visualScale: 2.3 },
+  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, image: "/buildings/cargo-ship-v2.png", start: { column: 10, row: -6 }, visualScale: 2.3 },
   { id: "arena", label: "DOG-FIGHT ARENA", hint: "Fight club · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 3 }, image: "/buildings/dogfight-arena.png", start: { column: 31, row: 27 }, visualScale: 2.2 },
 ];
 
 type TownDialogSubject = Pick<TownBuilding, "id" | "label">;
 const flipperFlappington: TownDialogSubject = { id: "flipper", label: "FLIPPER FLAPPINGTON" };
+
+const BUILDING_STORIES: Record<string, { character: string; name: string; role: string; description: string }> = {
+  plane: { character: "/evil-penguin.jpg", name: "CAPTAIN FLAPS", role: "BUSH PILOT", description: "A ski-plane with more optimism than fuel." },
+  telescope: { character: "/media/alien-astronomer-v1.png", name: "ZORB", role: "VISITING ASTRONOMER", description: "aliens... for sure" },
+  magic: { character: "/evil-penguin.jpg", name: "RINGMASTER WADDLES", role: "EXOTIC ANIMAL DEALER", description: "Questionable creatures. Surprisingly reasonable prices." },
+  igloo: { character: "/media/dr-bongo-model-icon-v1.png", name: "DR. BONGO", role: "DRONE SALESMAN", description: "A warm igloo, a cold lab, and one deeply ambitious ape." },
+  sweatshop: { character: "/penguinaroo.png", name: "PENGUINAROO", role: "SWEATSHOP OWNER", description: "Production never sleeps. The workers would like to." },
+  docks: { character: "/media/lab-rat-v1.png", name: "CAPTAIN SQUEAK", role: "RAT FARMER", description: "The cargo route is moving. The rats are multiplying." },
+  arena: { character: "/vicheal-nic.jpg", name: "VICHEAL NIC", role: "DOG-FIGHTER", description: "A frozen arena for extremely questionable athletics." },
+};
+
+const CIRCUS_STOCK = [
+  ["Lion", 7], ["Elephant", 13], ["Fighter Dog", 9], ["Meat Dog", 5], ["Rats", 3], ["Birds", 3],
+  ["Pigeons", 3], ["Seagulls", 4], ["Parrots", 6], ["Quad-copter Drones", 10], ["Drone Swarms", 12], ["Fully Autonomous Robot Army", 13],
+] as const;
 
 type GridPosition = { column: number; row: number };
 type TownLayout = Record<string, GridPosition & { stored: boolean }>;
@@ -505,10 +553,16 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const [workersFed, setWorkersFed] = useState(false);
   const [rationError, setRationError] = useState(false);
   const [showDogFightGame, setShowDogFightGame] = useState(false);
+  const [purchases, setPurchases] = useState<string[]>([]);
+  const [farmCooldown, setFarmCooldown] = useState(0);
   const dragRef = useRef<{ id: string; pointerId: number; map: DOMRect; preview: PlacementPreview } | null>(null);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
   const isFlipper = selectedBuilding?.id === "flipper";
+  const isTelescope = selectedBuilding?.id === "telescope";
+  const isCircus = selectedBuilding?.id === "magic";
+  const isIgloo = selectedBuilding?.id === "igloo";
+  const isDocks = selectedBuilding?.id === "docks";
   const activeBuilding = buildings.find((building) => building.id === activeBuildingId) ?? null;
   const placingBuilding = buildings.find((building) => building.id === placingBuildingId) ?? null;
   const movingBuilding = placementPreview ? buildings.find((building) => building.id === placementPreview.id) ?? null : null;
@@ -541,6 +595,37 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
       // The editor still works for this session when storage is unavailable.
     }
   }, [townLayout]);
+
+  useEffect(() => {
+    try { setPurchases(JSON.parse(window.localStorage.getItem("trip.town-purchases.v1") ?? "[]") as string[]); } catch { /* start empty */ }
+  }, []);
+
+  useEffect(() => {
+    if (farmCooldown <= 0) return;
+    const timer = window.setTimeout(() => setFarmCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [farmCooldown]);
+
+  useEffect(() => {
+    const boat = buildings.find((building) => building.id === "docks");
+    if (!boat) return;
+    const timer = window.setInterval(() => {
+      if (dragRef.current?.id === "docks" || activeBuildingId === "docks" || selectedBuilding?.id === "docks") return;
+      setTownLayout((current) => {
+        const position = current.docks;
+        if (!position || position.stored) return current;
+        const directions = [{ column: 1, row: 0 }, { column: 0, row: 1 }, { column: -1, row: 0 }, { column: 0, row: -1 }];
+        const start = Math.floor(Date.now() / 10000) % directions.length;
+        for (let offset = 0; offset < directions.length; offset += 1) {
+          const direction = directions[(start + offset) % directions.length];
+          const next = { column: position.column + direction.column, row: position.row + direction.row };
+          if (!placementIssue(boat, next, current)) return { ...current, docks: { ...next, stored: false } };
+        }
+        return current;
+      });
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [activeBuildingId, selectedBuilding]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -710,6 +795,32 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const spendRatMeat = (item: string, cost: number) => {
+    try {
+      const balance = Number.parseInt(window.localStorage.getItem(RAT_MEAT_STORAGE_KEY) ?? "0", 10) || 0;
+      if (balance < cost) { setEditorMessage(`NEED ${cost - balance} MORE CANS OF RAT MEAT`); return; }
+      const next = balance - cost;
+      const nextPurchases = [...new Set([...purchases, item])];
+      window.localStorage.setItem(RAT_MEAT_STORAGE_KEY, String(next));
+      window.localStorage.setItem("trip.town-purchases.v1", JSON.stringify(nextPurchases));
+      window.top?.postMessage({ type: RAT_MEAT_BALANCE_EVENT, balance: next }, window.location.origin);
+      setPurchases(nextPurchases);
+      setEditorMessage(`${item.toUpperCase()} ACQUIRED · ${cost} RAT MEAT SPENT`);
+    } catch { setEditorMessage("SHOP STORAGE UNAVAILABLE"); }
+  };
+
+  const farmRats = () => {
+    if (farmCooldown) return;
+    try {
+      const balance = Number.parseInt(window.localStorage.getItem(RAT_MEAT_STORAGE_KEY) ?? "0", 10) || 0;
+      const next = balance + 3;
+      window.localStorage.setItem(RAT_MEAT_STORAGE_KEY, String(next));
+      window.top?.postMessage({ type: RAT_MEAT_BALANCE_EVENT, balance: next }, window.location.origin);
+      setFarmCooldown(5);
+      setEditorMessage("RATS FARMED · +3 RAT MEAT");
+    } catch { setEditorMessage("RAT FARM OFFLINE"); }
+  };
+
   return (
     <main className="town-screen">
       <section
@@ -720,6 +831,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
       >
         <img className="town-art" src="/penguin-town-ground-v4.png" alt="A snowy Antarctic island with a broad lower snowfield, an elevated plateau, exposed cliff walls, and open ocean" draggable={false} />
         <div className="town-vignette" aria-hidden="true" />
+        <div className="ocean-life" aria-hidden="true"><span className="ocean-wave wave-one" /><span className="ocean-wave wave-two" /><span className="ocean-dolphin">🐬</span><span className="ocean-squid">🦑</span></div>
         <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
           <div><small>FULL-TERRAIN ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
@@ -804,6 +916,13 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         </div>
 
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
+          <aside className="building-brief-card" aria-live="polite" onPointerDown={(event) => event.stopPropagation()}>
+            <img src={BUILDING_STORIES[activeBuilding.id].character} alt="" />
+            <div><small>{BUILDING_STORIES[activeBuilding.id].role}</small><b>{BUILDING_STORIES[activeBuilding.id].name}</b><p>{BUILDING_STORIES[activeBuilding.id].description}</p></div>
+          </aside>
+        )}
+
+        {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
           <aside className="town-editor-card" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
             <div><small>SELECTED</small><b>{displayBuildingLabel(activeBuilding)}</b></div>
             {activeBuilding.id === "telescope" && !telescopeUpgraded && (
@@ -868,17 +987,17 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setSelectedBuilding(null);
         }}>
-          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}${isFlipper ? " flipper-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+          <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}${isFlipper ? " flipper-dialog" : ""}${isTelescope ? " alien-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
             <div className="dialog-character">
               <span className="bad-tape" aria-hidden="true" />
               <img
-                src={isSweatshop ? "/penguinaroo.png" : isDogFighter ? "/vicheal-nic.jpg" : "/evil-penguin.jpg"}
-                alt={isSweatshop ? "Penguinaroo wearing a rice-field hat, squinting, with buckteeth" : isDogFighter ? "Vicheal Nic holding a dog" : isFlipper ? "Flipper Flappington" : "The poorly drawn evil penguin"}
+                src={selectedBuilding.id === "flipper" ? "/evil-penguin.jpg" : BUILDING_STORIES[selectedBuilding.id]?.character ?? "/evil-penguin.jpg"}
+                alt={selectedBuilding.id === "flipper" ? "Flipper Flappington" : BUILDING_STORIES[selectedBuilding.id]?.name ?? "Penguin Town resident"}
               />
               <div className="character-tag">
-                <small>{isSweatshop ? "SWEATSHOP OWNER" : isDogFighter ? "DOG-FIGHTER" : isFlipper ? "TUTORIAL GUIDE" : "LOCAL RESIDENT"}</small>
-                <b>{isSweatshop ? "PENGUINAROO" : isDogFighter ? "Vicheal Nic" : isFlipper ? "FLIPPER FLAPPINGTON" : "PEN-GUIN"}</b>
+                <small>{isFlipper ? "TUTORIAL GUIDE" : BUILDING_STORIES[selectedBuilding.id]?.role ?? "LOCAL RESIDENT"}</small>
+                <b>{isFlipper ? "FLIPPER FLAPPINGTON" : BUILDING_STORIES[selectedBuilding.id]?.name ?? "PEN-GUIN"}</b>
               </div>
             </div>
             <div className="speech-panel">
@@ -922,6 +1041,34 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                   <h2 id="dialog-title">Flipper Flappington.</h2>
                   <p>&ldquo;Suck my penguin cock&rdquo;</p>
                   <button type="button" onClick={() => setSelectedBuilding(null)}>BACK TO TOWN <span>→</span></button>
+                </>
+              ) : isTelescope ? (
+                <>
+                  <h2 id="dialog-title">Deep-space field report.</h2>
+                  <p>&ldquo;aliens... for sure&rdquo;</p>
+                  {!telescopeUpgraded && <button type="button" onClick={upgradeTelescope}>UPGRADE TO METAL · 69 <span>→</span></button>}
+                </>
+              ) : isIgloo ? (
+                <>
+                  <h2 id="dialog-title">Dr. Bongo&apos;s drone depot.</h2>
+                  <p>&ldquo;Three cans and the sky belongs to the apes.&rdquo;</p>
+                  <div className="mini-bongo-ragdoll" aria-hidden="true"><img src="/media/dr-bongo-model-icon-v1.png" alt="" /></div>
+                  <button type="button" disabled={purchases.includes("Drone Swarm")} onClick={() => spendRatMeat("Drone Swarm", 3)}>{purchases.includes("Drone Swarm") ? "DRONE SWARM OWNED" : "BUY DRONE SWARM · 3"} <span>→</span></button>
+                </>
+              ) : isCircus ? (
+                <>
+                  <h2 id="dialog-title">Exotic inventory.</h2>
+                  <p className="store-intro">Animals, drones, and one fully autonomous bad idea.</p>
+                  <div className="circus-store">
+                    {CIRCUS_STOCK.map(([item, cost]) => <button type="button" key={item} disabled={purchases.includes(item)} onClick={() => spendRatMeat(item, cost)}><span>{item}</span><b>{purchases.includes(item) ? "OWNED" : `${cost} RM`}</b></button>)}
+                  </div>
+                </>
+              ) : isDocks ? (
+                <>
+                  <h2 id="dialog-title">Mobile offshore rat farm.</h2>
+                  <p>&ldquo;The sea provides. Mostly rats.&rdquo;</p>
+                  <div className="rat-farm-card"><img src="/media/lab-rat-v1.png" alt="Laboratory rat" /><span>+3 RAT MEAT</span></div>
+                  <button type="button" disabled={farmCooldown > 0} onClick={farmRats}>{farmCooldown ? `FARM COOLDOWN · ${farmCooldown}s` : "FARM RATS · +3"} <span>→</span></button>
                 </>
               ) : (
                 <>
