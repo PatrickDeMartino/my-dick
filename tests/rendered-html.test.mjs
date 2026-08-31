@@ -32,7 +32,7 @@ test("renders the Planet Urf landing page", async () => {
   assert.match(html, /href="\/anubis"/i);
   assert.match(html, /Planet Urf/);
   assert.match(html, /that fucking other thing/);
-  assert.match(html, /href="\/bongo"/);
+  assert.match(html, /href="\/brain-room"/);
   assert.match(html, /Rat Meat/);
   assert.match(html, /href="https:\/\/www\.cia\.gov\/"/);
   assert.match(html, /patrick_allan_demartino/);
@@ -147,6 +147,16 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   assert.match(town, /trip-rat-meat-balance-changed/);
   assert.match(town, /NOT ENOUGH RAT MEAT/);
   assert.match(banner, /trip-rat-meat-balance-changed/);
+});
+
+test("renders the responsive Brain Room experiment selector", async () => {
+  const response = await request("/brain-room");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Choose a test subject/i);
+  assert.match(html, /brain-room-mobile\.jpg/);
+  assert.match(html, /LAB RAT/);
+  assert.match(html, /href="\/bongo"/);
 });
 
 test("renders the Anubis pigeon television room", async () => {

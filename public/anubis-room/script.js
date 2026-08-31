@@ -3,6 +3,12 @@ const puffWindow = document.querySelector("#puff-window");
 const soundButton = document.querySelector("#tv-sound");
 const roomSource = document.querySelector("#room-source");
 const roomPlate = document.querySelector("#room-plate");
+const soundKnob = document.querySelector("#tv-knob-sound");
+const nextKnob = document.querySelector("#tv-knob-next");
+const sectorOverlay = document.querySelector("#sector-overlay");
+const sectorZoom = document.querySelector("#sector-zoom");
+const sectorTitle = document.querySelector("#sector-title");
+const sectorClose = document.querySelector("#sector-close");
 
 const SHORT_IDS = [
   "510vSdkygXo", "fjh_N1SGXOs", "yA22xbGxbJg", "mFhxmYI1WE4",
@@ -183,6 +189,24 @@ soundButton.addEventListener("click", () => {
     soundButton.setAttribute("aria-label", "Turn television sound off");
   }
 });
+soundKnob.addEventListener("click", () => soundButton.click());
+nextKnob.addEventListener("click", () => playNextRandomShort());
+
+const sectorViews = {
+  tv: { position: "8% 49%", size: "285%", title: "TELEVISION ARRAY" },
+  anubis: { position: "69% 18%", size: "245%", title: "ANUBIS ON THE THRONE" },
+  pigeon: { position: "67% 90%", size: "230%", title: "CYBERNETIC PIGEON" },
+};
+document.querySelectorAll(".room-sector").forEach((button) => button.addEventListener("click", () => {
+  const view = sectorViews[button.dataset.sector];
+  sectorZoom.style.backgroundPosition = view.position;
+  sectorZoom.style.backgroundSize = view.size;
+  sectorTitle.textContent = view.title;
+  sectorOverlay.hidden = false;
+}));
+sectorClose.addEventListener("click", () => { sectorOverlay.hidden = true; });
+sectorOverlay.addEventListener("click", (event) => { if (event.target === sectorOverlay) sectorOverlay.hidden = true; });
+window.addEventListener("keydown", (event) => { if (event.key === "Escape") sectorOverlay.hidden = true; });
 
 function randomDelayForCycle() {
   if (previewMode) return 2_000;

@@ -43,6 +43,16 @@
             preload="auto"
           ></video>
         </div>
+        <button class="tv-knob tv-knob-sound" id="tv-knob-sound" type="button" aria-label="Toggle television sound" title="Sound"></button>
+        <button class="tv-knob tv-knob-next" id="tv-knob-next" type="button" aria-label="Play next video" title="Next video"></button>
+        <button class="room-sector sector-tv" type="button" data-sector="tv" aria-label="Enlarge the television"><span>TELEVISION</span></button>
+        <button class="room-sector sector-anubis" type="button" data-sector="anubis" aria-label="Enlarge Anubis"><span>ANUBIS</span></button>
+        <button class="room-sector sector-pigeon" type="button" data-sector="pigeon" aria-label="Enlarge the cybernetic pigeon"><span>PIGEON</span></button>
+        <div class="sector-overlay" id="sector-overlay" hidden>
+          <button type="button" id="sector-close" aria-label="Close enlarged view">×</button>
+          <div class="sector-zoom" id="sector-zoom" role="img" aria-label="Enlarged room detail"></div>
+          <p id="sector-title"></p>
+        </div>
       </div>
     </main>
     <script src="./script.js"></script>

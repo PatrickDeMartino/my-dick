@@ -50,7 +50,7 @@ export default function LandingPage() {
 
         <a
           className="choice-object choice-object-brain"
-          href="/bongo"
+          href="/brain-room"
           data-portal="brain"
           aria-label="Open Dr. Bongo"
         >

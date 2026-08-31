@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
+const BANANA_STORAGE_KEY = "trip.bananas.v1";
+const WALLET_SEED_KEY = "trip.wallet.seed.v2";
 const REWARD_EVENT = "trip-rat-meat-earned";
 const BALANCE_EVENT = "trip-rat-meat-balance-changed";
 const BONGO_ACTION_EVENT = "trip-bongo-action";
@@ -20,7 +22,8 @@ function readRatMeat() {
 export default function SiteBanner() {
   const pathname = usePathname();
   const isBongo = pathname.startsWith("/bongo");
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState(69);
+  const [bananas, setBananas] = useState(69);
   const [visible, setVisible] = useState(true);
   const [earned, setEarned] = useState(false);
   const [bongoMenuOpen, setBongoMenuOpen] = useState(false);
@@ -39,7 +42,20 @@ export default function SiteBanner() {
       };
     }
 
-    const syncFrame = window.requestAnimationFrame(() => setAmount(readRatMeat()));
+    try {
+      if (!window.localStorage.getItem(WALLET_SEED_KEY)) {
+        window.localStorage.setItem(STORAGE_KEY, "69");
+        window.localStorage.setItem(BANANA_STORAGE_KEY, "69");
+        window.localStorage.setItem(WALLET_SEED_KEY, "seeded");
+      }
+    } catch {
+      /* The visible session defaults still work when storage is unavailable. */
+    }
+    const syncFrame = window.requestAnimationFrame(() => {
+      setAmount(readRatMeat());
+      const storedBananas = Number.parseInt(window.localStorage.getItem(BANANA_STORAGE_KEY) ?? "69", 10);
+      setBananas(Number.isFinite(storedBananas) ? Math.max(0, storedBananas) : 69);
+    });
 
     const onReward = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -111,6 +127,7 @@ export default function SiteBanner() {
   return (
     <header className={`trip-banner${earned ? " trip-banner--earned" : ""}${isBongo ? " trip-banner--bongo" : ""}`}>
       <div className="trip-banner__inner">
+        <div className="trip-banner__wallet">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
             <img src="/media/rat-meat-can-v2.png" alt="" />
@@ -119,6 +136,13 @@ export default function SiteBanner() {
           <span className="trip-banner__amount" aria-live="polite" aria-atomic="true">
             {amount}
           </span>
+        </div>
+        <div className="trip-banner__stat trip-banner__bananas" aria-label={`${bananas} bananas`}>
+          <span aria-hidden="true">🍌</span><strong>Bananas</strong><b>{bananas}</b>
+        </div>
+        <div className="trip-banner__stat trip-banner__oil" aria-label="An unquenchable thirst for oil">
+          <span aria-hidden="true">🛢️</span><strong>Oil thirst</strong><b>∞</b>
+        </div>
         </div>
 
         {isBongo && (
