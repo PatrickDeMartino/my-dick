@@ -199,7 +199,7 @@ test("Israel is an unlocked geographic destination with a playable Yoo-hoo room"
   assert.match(globe, /2 \/ 8 TERRITORIES UNLOCKED/);
   assert.match(room, /new THREE\.WebGLRenderer/);
   assert.match(room, /PRIME MINISTER OF MY HEART/);
-  assert.match(room, /BB NETTY-YOO-HOO CUTIE PATOOTIE/);
+  assert.match(room, /BIBI NEON-YOO-HOO IS A CUTIE PATOOTIE/);
   assert.match(room, /YOO-HOO COLLECTED · CURRENCY \+1/);
   assert.match(room, /netanyahu-1\.jpg/);
   assert.match(room, /netanyahu-2\.jpg/);
@@ -208,6 +208,9 @@ test("Israel is an unlocked geographic destination with a playable Yoo-hoo room"
   assert.match(room, /const cans:THREE\.Group\[\]=\[\]/);
   assert.match(room, /velocity\.y-=6\.2\*dt/);
   assert.match(room, /new THREE\.ExtrudeGeometry\(heart/);
+  assert.match(room, /for\(let i=0;i<11;i\+\+\)/);
+  assert.match(room, /floatingDecor\.forEach/);
+  assert.match(room, /israel-room__legend-close/);
   assert.match(banner, /trip\.yoohoo\.v1/);
   assert.match(banner, /Yoo-hoo cans/);
 });
@@ -222,6 +225,9 @@ test("Penguin Town V2 keeps the mobile-first 3D island and circular popup system
   assert.match(town, /<BuildingPopup/);
   assert.match(town, /className="town-frame"/);
   assert.match(scene, /popupPullback/);
+  assert.match(scene, /buildCliffFacetBand/);
+  assert.match(scene, /mode = "ragdoll"/);
+  assert.match(scene, /isBuildingLabel/);
   assert.match(popup, /building-popup-circle/);
   assert.match(popup, /JellyButtons shape="circle"/);
   assert.match(styles, /psychedelic-earth-texture-v1\.png/);
@@ -229,4 +235,6 @@ test("Penguin Town V2 keeps the mobile-first 3D island and circular popup system
   assert.match(banner, /<Can3D size=\{44\}/);
   assert.match(banner, /<OilGauge \/>/);
   assert.match(banner, /variant="yoohoo"/);
+  assert.match(await readFile(new URL("../app/urf/townData.ts", import.meta.url), "utf8"), /ALIEN PERVY PEEPER/);
+  assert.match(await readFile(new URL("../app/urf/townData.ts", import.meta.url), "utf8"), /rat-photo-hires\.jpg/);
 });

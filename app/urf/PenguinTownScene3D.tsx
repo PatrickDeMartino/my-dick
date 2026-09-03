@@ -8,6 +8,7 @@ import {
   buildingWorldPosition,
   gridPositionFromWorld,
   percentToWorldXZ,
+  worldXZToPercent,
   placementIssue,
   pointInPolygon,
   terrainAt,
@@ -126,6 +127,17 @@ function buildMountainPeak(radius: number, height: number, seed: number): THREE.
     shoulder.castShadow = true;
     shoulder.receiveShadow = true;
     group.add(shoulder);
+  }
+  const translucentIce = new THREE.MeshStandardMaterial({ color: 0x9feaff, emissive: 0x2f91b7, emissiveIntensity: .24, transparent: true, opacity: .48, roughness: .2, metalness: .08, depthWrite: false, side: THREE.DoubleSide });
+  for (let patch = 0; patch < 5; patch += 1) {
+    const angle = seededRandom(seed + 510 + patch * 4.2) * Math.PI * 2;
+    const heightRatio = .24 + seededRandom(seed + 530 + patch) * .48;
+    const spot = new THREE.Mesh(new THREE.CircleGeometry(radius * (.12 + seededRandom(seed + 560 + patch) * .13), 5), translucentIce);
+    spot.position.set(Math.cos(angle) * radius * (1 - heightRatio) * .82, heightRatio * height, Math.sin(angle) * radius * (1 - heightRatio) * .82);
+    spot.lookAt(new THREE.Vector3(Math.cos(angle) * radius * 2, heightRatio * height, Math.sin(angle) * radius * 2));
+    spot.rotation.z = seededRandom(seed + 590 + patch) * Math.PI;
+    spot.renderOrder = 2;
+    group.add(spot);
   }
   return group;
 }
@@ -420,6 +432,48 @@ function buildTerrainSlab(
   mesh.receiveShadow = true;
   mesh.castShadow = true;
   return mesh;
+}
+
+/** Faceted painted triangles laid over the vertical ice walls. They give both
+ * island tiers a hand-painted low-poly edge, with an especially tall band on
+ * the raised plateau instead of one smooth extruded side. */
+function buildCliffFacetBand(points: readonly (readonly [number, number])[], topY: number, bottomY: number, seed: number): THREE.Group {
+  const group = new THREE.Group();
+  const colors = [0x73a8bf, 0x4f819e, 0x9bc9d9, 0x5b92aa, 0xb7dce7];
+  for (let i = 0; i < points.length; i += 1) {
+    const a = percentToWorldXZ(points[i][0], points[i][1]);
+    const bPoint = points[(i + 1) % points.length];
+    const b = percentToWorldXZ(bPoint[0], bPoint[1]);
+    const midY = bottomY + (topY - bottomY) * (.34 + seededRandom(seed + i) * .34);
+    const triangles = [
+      [a.x, topY, a.z, b.x, topY, b.z, b.x, midY, b.z],
+      [a.x, topY, a.z, b.x, midY, b.z, a.x, bottomY, a.z],
+      [a.x, bottomY, a.z, b.x, midY, b.z, b.x, bottomY, b.z],
+    ];
+    triangles.forEach((vertices, triangle) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.computeVertexNormals();
+      const material = new THREE.MeshStandardMaterial({ color: colors[(i + triangle) % colors.length], roughness: .82, metalness: .03, flatShading: true, side: THREE.DoubleSide });
+      const face = new THREE.Mesh(geometry, material);
+      face.renderOrder = 1;
+      group.add(face);
+    });
+  }
+  return group;
+}
+
+function randomPointOnSurface(points: readonly (readonly [number, number])[], seed: number): THREE.Vector3 | null {
+  const bounds = points.reduce((box, [x, y]) => ({ minX: Math.min(box.minX, x), maxX: Math.max(box.maxX, x), minY: Math.min(box.minY, y), maxY: Math.max(box.maxY, y) }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const x = bounds.minX + seededRandom(seed + attempt * 2.13) * (bounds.maxX - bounds.minX);
+    const y = bounds.minY + seededRandom(seed + attempt * 3.71) * (bounds.maxY - bounds.minY);
+    if (pointInPolygon([x, y], points)) {
+      const world = percentToWorldXZ(x, y);
+      return new THREE.Vector3(world.x, 0, world.z);
+    }
+  }
+  return null;
 }
 
 const mat = (color: number, roughness = 0.78, metalness = 0.02) => new THREE.MeshStandardMaterial({ color, roughness, metalness, flatShading: true });
@@ -993,6 +1047,21 @@ export default function PenguinTownScene3D({
     const lowerIsland = buildTerrainSlab(TERRAIN_REGIONS.lowerIsland.bounds, ISLAND_HEIGHT, 0, 0xeaf4fb, 0x86a9bd);
     const upperPlateau = buildTerrainSlab(TERRAIN_REGIONS.upperPlateau.bounds, PLATEAU_HEIGHT, ISLAND_HEIGHT, 0xf4fbff, 0x6f9db3);
     scene.add(lowerIsland, upperPlateau);
+    const lowerCliffFacets = buildCliffFacetBand(TERRAIN_REGIONS.lowerIsland.bounds, ISLAND_HEIGHT - .03, .04, 410);
+    const plateauCliffFacets = buildCliffFacetBand(TERRAIN_REGIONS.upperPlateau.bounds, ISLAND_HEIGHT + PLATEAU_HEIGHT - .03, ISLAND_HEIGHT + .03, 920);
+    scene.add(lowerCliffFacets, plateauCliffFacets);
+
+    const paintedIce = new THREE.Group();
+    const crackMaterial = new THREE.LineBasicMaterial({ color: 0x5da5c6, transparent: true, opacity: .62 });
+    for (let i = 0; i < 20; i += 1) {
+      const origin = randomPointOnSurface(TERRAIN_REGIONS.lowerIsland.surface, i * 9.1 + 31);
+      if (!origin) continue;
+      const points = [origin, origin.clone().add(new THREE.Vector3(.3 + seededRandom(i) * .5, .01, (seededRandom(i + 4) - .5) * .55)), origin.clone().add(new THREE.Vector3(.55 + seededRandom(i + 7) * .7, .015, (seededRandom(i + 12) - .5) * .9))];
+      const crack = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), crackMaterial);
+      crack.position.y = ISLAND_HEIGHT + .035;
+      paintedIce.add(crack);
+    }
+    scene.add(paintedIce);
 
     // Broken ice, harbor markers, and tiny locals give the coastline scale and
     // stop the island from reading like a blank white game-board extrusion.
@@ -1012,7 +1081,7 @@ export default function PenguinTownScene3D({
     // teleport), it splashes, swims a little loop, then waddles back to shore —
     // a light, readable stand-in for full ragdoll physics (in the spirit of the
     // Dr. Bongo ragdoll elsewhere on the site) that stays cheap with 5 penguins.
-    type PenguinMode = "idle" | "walk" | "toss" | "swim" | "return";
+    type PenguinMode = "idle" | "walk" | "held" | "ragdoll" | "toss" | "swim" | "return";
     type PenguinAI = {
       group: THREE.Group;
       mode: PenguinMode;
@@ -1025,6 +1094,7 @@ export default function PenguinTownScene3D({
       tossElapsed: number;
       tossDuration: number;
       spin: THREE.Vector3;
+      velocity: THREE.Vector3;
     };
 
     const lowerSurfaceBBox = TERRAIN_REGIONS.lowerIsland.surface.reduce(
@@ -1066,6 +1136,7 @@ export default function PenguinTownScene3D({
         tossElapsed: 0,
         tossDuration: 1,
         spin: new THREE.Vector3(seededRandom(index) - .5, seededRandom(index + 1) - .5, seededRandom(index + 2) - .5).normalize(),
+        velocity: new THREE.Vector3(),
       });
     });
     scene.add(penguinGroup);
@@ -1215,6 +1286,8 @@ export default function PenguinTownScene3D({
       if (building.id === "plane") label.position.x = -.72;
       if (building.id === "sweatshop") label.position.x = .82;
       label.userData.buildingId = building.id;
+      label.userData.isBuildingLabel = true;
+      label.visible = false;
       group.add(label);
 
       scene.add(group);
@@ -1228,6 +1301,11 @@ export default function PenguinTownScene3D({
     // there's only ever one instance of it on screen — real or ghost.
     let hoverPreview: PlacementPreview | null = null;
     let lastPlacingId: string | null = null;
+    let hoveredBuildingId: string | null = null;
+    let activePenguinIndex: number | null = null;
+    let penguinWasMoved = false;
+    const lastPenguinPoint = new THREE.Vector3();
+    let lastPenguinMoveTime = performance.now();
 
     function setPointerFromEvent(event: PointerEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -1283,14 +1361,69 @@ export default function PenguinTownScene3D({
         // touch tap (no pointermove beforehand) still has somewhere to land.
         controls.enabled = false;
         updatePlacementPreview(event);
+        return;
+      }
+      setPointerFromEvent(event);
+      const penguinHits = raycaster.intersectObjects(penguinGroup.children, true);
+      const penguinIndex = penguinHits.length ? (penguinHits[0].object.userData.penguinIndex as number | undefined) : undefined;
+      if (typeof penguinIndex === "number") {
+        const penguin = penguins[penguinIndex];
+        activePenguinIndex = penguinIndex;
+        penguin.mode = "held";
+        penguin.velocity.set(0, 0, 0);
+        penguinWasMoved = false;
+        lastPenguinPoint.copy(penguin.group.position);
+        lastPenguinMoveTime = performance.now();
+        controls.enabled = false;
+        dom.style.cursor = "grabbing";
       }
     }
 
     function onPointerMove(event: PointerEvent) {
-      if (propsRef.current.placingBuildingId) updatePlacementPreview(event);
+      if (activePenguinIndex !== null) {
+        const penguin = penguins[activePenguinIndex];
+        setPointerFromEvent(event);
+        const normal = camera.getWorldDirection(new THREE.Vector3());
+        const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, penguin.group.position);
+        const point = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(dragPlane, point)) {
+          const now = performance.now();
+          const dt = Math.max(.016, (now - lastPenguinMoveTime) / 1000);
+          penguin.velocity.copy(point).sub(lastPenguinPoint).multiplyScalar(1 / dt).clampLength(0, 13);
+          penguin.group.position.set(THREE.MathUtils.clamp(point.x, -15, 15), THREE.MathUtils.clamp(point.y, .1, 13), THREE.MathUtils.clamp(point.z, -15, 15));
+          penguin.group.rotation.x += (point.y - lastPenguinPoint.y) * .25;
+          penguin.group.rotation.z += (point.x - lastPenguinPoint.x) * -.22;
+          lastPenguinPoint.copy(point);
+          lastPenguinMoveTime = now;
+          penguinWasMoved = true;
+        }
+        return;
+      }
+      if (propsRef.current.placingBuildingId) { updatePlacementPreview(event); return; }
+      setPointerFromEvent(event);
+      const hits = raycaster.intersectObjects([...buildingGroups.values()], true).filter((hit) => !hit.object.userData.isBuildingLabel);
+      hoveredBuildingId = hits.length ? (hits[0].object.userData.buildingId as string | undefined) ?? null : null;
+      dom.style.cursor = hoveredBuildingId ? "pointer" : "grab";
     }
 
     function onPointerUp(event: PointerEvent) {
+      if (activePenguinIndex !== null) {
+        const releasedIndex = activePenguinIndex;
+        const penguin = penguins[releasedIndex];
+        activePenguinIndex = null;
+        controls.enabled = true;
+        dom.style.cursor = "grab";
+        pointerDownAt = null;
+        if (penguinWasMoved) {
+          penguin.mode = "ragdoll";
+          if (penguin.velocity.lengthSq() < .25) penguin.velocity.set(0, 2.2, 0);
+          penguin.spin.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
+        } else {
+          penguin.mode = "idle";
+          tossPenguin(releasedIndex);
+        }
+        return;
+      }
       const placingId = propsRef.current.placingBuildingId;
       const downAt = pointerDownAt;
       pointerDownAt = null;
@@ -1331,6 +1464,7 @@ export default function PenguinTownScene3D({
     // canvas — the rotate control, the selection card — never reaches this
     // handler unless the drag actually started on the canvas.
     dom.addEventListener("pointerup", onPointerUp);
+    dom.addEventListener("pointercancel", onPointerUp);
 
     // ---------------- Per-frame sync + render ----------------
     let raf = 0;
@@ -1391,6 +1525,42 @@ export default function PenguinTownScene3D({
                 if (object.userData.isFlipper) object.rotation.x = Math.sin(hopT + (object.userData.flipperSide === 1 ? Math.PI : 0)) * .4;
                 if (object.userData.isFoot) object.position.y = 0.015 + Math.max(0, Math.sin(hopT + (object.userData.footSide === 1 ? Math.PI : 0))) * .05;
               });
+            }
+          }
+        } else if (penguin.mode === "held") {
+          group.scale.set(1.08, .94, 1.08);
+          group.traverse((object) => { if (object.userData.isFlipper) object.rotation.x = Math.sin(elapsed * 8 + object.userData.flipperSide) * .9; });
+        } else if (penguin.mode === "ragdoll") {
+          penguin.velocity.y -= 7.8 * frameDeltaSec;
+          group.position.addScaledVector(penguin.velocity, frameDeltaSec);
+          group.rotation.x += penguin.spin.x * frameDeltaSec * 8;
+          group.rotation.y += penguin.spin.y * frameDeltaSec * 8;
+          group.rotation.z += penguin.spin.z * frameDeltaSec * 8;
+          const percent = worldXZToPercent(group.position.x, group.position.z);
+          const overPlateau = pointInPolygon([percent.x, percent.y], TERRAIN_REGIONS.upperPlateau.bounds);
+          const overIsland = pointInPolygon([percent.x, percent.y], TERRAIN_REGIONS.lowerIsland.bounds);
+          const surfaceY = overPlateau ? ISLAND_HEIGHT + PLATEAU_HEIGHT : overIsland ? ISLAND_HEIGHT : 0;
+          if (group.position.y <= surfaceY + .05) {
+            if (!overIsland) {
+              group.position.y = .02;
+              spawnSplash(group.position);
+              penguin.mode = "swim";
+              penguin.timer = 3 + Math.random() * 2.5;
+              penguin.tossTo.copy(group.position);
+              penguin.target.copy(group.position);
+              group.rotation.set(0, penguin.facing, 0);
+            } else {
+              group.position.y = surfaceY + .05;
+              penguin.velocity.y = Math.abs(penguin.velocity.y) * .42;
+              penguin.velocity.x *= .72;
+              penguin.velocity.z *= .72;
+              if (penguin.velocity.lengthSq() < .45) {
+                penguin.mode = "idle";
+                penguin.timer = 1 + Math.random() * 2;
+                penguin.velocity.set(0, 0, 0);
+                group.rotation.set(0, penguin.facing, 0);
+                group.scale.set(1, 1, 1);
+              }
             }
           }
         } else if (penguin.mode === "toss") {
@@ -1543,6 +1713,9 @@ export default function PenguinTownScene3D({
 
         const isSelected = props.activeBuildingId === building.id;
         group.scale.setScalar(isSelected ? 1.06 : 1);
+        group.traverse((object) => {
+          if (object.userData.isBuildingLabel) object.visible = isSelected || hoveredBuildingId === building.id;
+        });
       }
 
       controls.update();
@@ -1565,6 +1738,7 @@ export default function PenguinTownScene3D({
       dom.removeEventListener("pointerdown", onPointerDown);
       dom.removeEventListener("pointermove", onPointerMove);
       dom.removeEventListener("pointerup", onPointerUp);
+      dom.removeEventListener("pointercancel", onPointerUp);
       controls.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {

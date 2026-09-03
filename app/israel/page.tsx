@@ -101,6 +101,7 @@ function heartShape() {
 export default function IsraelRoom() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState("DRAG THE ROOM OR THROW A YOO-HOO CAN");
+  const [panelOpen, setPanelOpen] = useState(true);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -183,15 +184,25 @@ export default function IsraelRoom() {
       flag.position.set(x,y,z); flag.rotation.y = ry; scene.add(flag);
     });
 
-    const starMaterial = new THREE.LineBasicMaterial({ color: 0x7be9ff, transparent: true, opacity: .92 });
-    const addStar = (x: number, y: number, z: number, ry: number, scale: number) => {
-      const points: number[] = [];
-      const triangles = [[0,1,.866,-.5,-.866,-.5],[0,-1,.866,.5,-.866,.5]];
-      triangles.forEach((vertices) => { for (let i=0;i<3;i++) { const a=i*2,b=((i+1)%3)*2; points.push(vertices[a],vertices[a+1],0,vertices[b],vertices[b+1],0); } });
-      const star = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(points,3)),starMaterial);
-      star.position.set(x,y,z); star.rotation.y=ry; star.scale.setScalar(scale); scene.add(star);
+    const floatingDecor: THREE.Object3D[] = [];
+    const floatObject = (object: THREE.Object3D, phase: number, drift = .24) => {
+      object.userData.floatAnchor = object.position.clone();
+      object.userData.floatPhase = phase;
+      object.userData.floatDrift = drift;
+      floatingDecor.push(object);
     };
-    for (let i=0;i<13;i++) addStar(-5.8+(i%7)*1.9, 5.25+Math.sin(i)*.2, -4.82, 0, .18+(i%3)*.05);
+    const starMaterial = new THREE.MeshStandardMaterial({ color: 0x79eaff, emissive: 0x175cbb, emissiveIntensity: 1.35, metalness: .64, roughness: .2 });
+    const triangleShape = new THREE.Shape();
+    triangleShape.moveTo(0, 1); triangleShape.lineTo(.866, -.5); triangleShape.lineTo(-.866, -.5); triangleShape.closePath();
+    const starTriangleGeometry = new THREE.ExtrudeGeometry(triangleShape, { depth: .11, bevelEnabled: true, bevelSize: .035, bevelThickness: .025, bevelSegments: 2 });
+    const addStar = (x: number, y: number, z: number, ry: number, scale: number) => {
+      const star = new THREE.Group();
+      const up = new THREE.Mesh(starTriangleGeometry, starMaterial);
+      const down = new THREE.Mesh(starTriangleGeometry, starMaterial); down.rotation.z = Math.PI;
+      star.add(up, down); star.position.set(x,y,z); star.rotation.y=ry; star.scale.setScalar(scale); scene.add(star);
+      floatObject(star, x * 1.7 + y + z, .18);
+    };
+    for (let i=0;i<15;i++) addStar(-5.6+(i%6)*2.2, 1.25+(i%5)*.92, -4.25+(i%3)*3.4, (i%4)*.55, .13+(i%3)*.045);
 
     const chimpFrames: Array<[THREE.Texture, number, number, number, number]> = [[chimpOne,-6.86,2.7,-1.7,Math.PI/2],[chimpTwo,6.86,2.7,-1.4,-Math.PI/2]];
     chimpFrames.forEach(([map,x,y,z,ry]) => {
@@ -200,13 +211,17 @@ export default function IsraelRoom() {
     });
 
     const moneyLabel = canvasTexture(256,256,(ctx)=>{ctx.fillStyle="#f7d23d";ctx.fillRect(0,0,256,256);ctx.fillStyle="#15592d";ctx.textAlign="center";ctx.font="900 74px Arial";ctx.fillText("$$$",128,155);});
-    const addMoneyBag = (x:number,z:number) => {
-      const bag = new THREE.Group(); bag.position.set(x,.52,z);
-      const sack = new THREE.Mesh(new THREE.SphereGeometry(.43,24,16),new THREE.MeshStandardMaterial({color:0xc8a34c,roughness:.78})); sack.scale.y=1.18; sack.castShadow=true; bag.add(sack);
-      const neck = new THREE.Mesh(new THREE.ConeGeometry(.28,.42,20),new THREE.MeshStandardMaterial({color:0xb68b37,roughness:.8})); neck.position.y=.48; bag.add(neck);
-      const label = new THREE.Mesh(new THREE.CircleGeometry(.23,28),new THREE.MeshBasicMaterial({map:moneyLabel})); label.position.set(0,.04,.42); bag.add(label); scene.add(bag);
+    const sackMaterial = new THREE.MeshStandardMaterial({color:0xd0aa50,roughness:.62,metalness:.08});
+    const sackProfile = [new THREE.Vector2(.08,-.54),new THREE.Vector2(.34,-.47),new THREE.Vector2(.48,-.12),new THREE.Vector2(.42,.24),new THREE.Vector2(.22,.42),new THREE.Vector2(.18,.62),new THREE.Vector2(.07,.69)];
+    const addMoneyBag = (x:number,y:number,z:number,index:number) => {
+      const bag = new THREE.Group(); bag.position.set(x,y,z);
+      const sack = new THREE.Mesh(new THREE.LatheGeometry(sackProfile,32),sackMaterial); sack.castShadow=true; bag.add(sack);
+      const cord = new THREE.Mesh(new THREE.TorusGeometry(.2,.035,10,30),gold); cord.rotation.x=Math.PI/2;cord.position.y=.4;bag.add(cord);
+      const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(.09,.025,48,8),gold);knot.position.y=.48;bag.add(knot);
+      const label = new THREE.Mesh(new THREE.CircleGeometry(.24,36),new THREE.MeshBasicMaterial({map:moneyLabel})); label.position.set(0,-.05,.43); bag.add(label); scene.add(bag);
+      floatObject(bag,index*1.91,.3);
     };
-    [[-4.8,-2.7],[-3.8,-3.4],[4.6,-2.8],[3.8,-3.55]].forEach(([x,z])=>addMoneyBag(x,z));
+    [[-4.8,1.2,-2.7],[-3.9,3.65,.2],[4.6,1.65,-2.8],[4.0,4.1,.55],[-1.9,4.75,2.7]].forEach(([x,y,z],index)=>addMoneyBag(x,y,z,index));
     for(let i=0;i<18;i++){
       const bar=new THREE.Mesh(new THREE.BoxGeometry(.68,.18,.32),gold);
       bar.position.set(-5.1+(i%6)*.72,.11+Math.floor(i/6)*.19,3.45+Math.floor(i/6)*.12); bar.rotation.y=(i%2?-.07:.07); bar.castShadow=true; scene.add(bar);
@@ -243,8 +258,8 @@ export default function IsraelRoom() {
       wallpaper.wrapS=THREE.RepeatWrapping;wallpaper.wrapT=THREE.RepeatWrapping;wallpaper.repeat.set(1.55,1);
       [back,left,right].forEach((wall)=>{const material=wall.material as THREE.MeshStandardMaterial;material.map=wallpaper;material.color.set(0xffffff);material.needsUpdate=true;});
       const posters:Array<[string,string,HTMLImageElement,[string,string],number,number,number,number,number]>=[
-        ["PRIME MINISTER OF MY HEART","BENJAMIN NETANYAHU",portraitOne,["#1253bd","#ff4ca8"],-3.4,3.0,-4.76,0,1.2],
-        ["BB NETTY-YOO-HOO CUTIE PATOOTIE","YOO-HOO FOREVER",portraitTwo,["#5b20c9","#ff276d"],3.4,3.0,-4.76,0,1.2],
+        ["PRIME MINISTER OF MY HEART","BENJAMIN NETANYAHU",portraitOne,["#1253bd","#ff4ca8"],-3.65,3.05,-4.76,0,1.55],
+        ["BIBI NEON-YOO-HOO IS A CUTIE PATOOTIE","YOO-HOO FOREVER",portraitTwo,["#5b20c9","#ff276d"],3.65,3.05,-4.76,0,1.5],
         ["BIG TIME CRUSH","HEART-EYES FOR BB",portraitOne,["#ff2c83","#315fd6"],-6.76,3.2,1.1,Math.PI/2,.9],
         ["MY SWEET BB","GOLD-PLATED FEELINGS",portraitTwo,["#233caa","#f5b82d"],6.76,3.2,1.0,-Math.PI/2,.9],
         ["NETTY-YOO-HOO","THE CRUSH IS REAL",portraitTwo,["#7b1fd1","#ff4e77"],-1.25,4.55,-4.72,0,.62],
@@ -252,7 +267,8 @@ export default function IsraelRoom() {
       ];
       posters.forEach(([title,subtitle,image,palette,x,y,z,ry,scale])=>addHeartPoster(posterTexture(title,subtitle,image,palette),x,y,z,ry,scale));
 
-      const faceTexture=canvasTexture(512,512,(ctx)=>{ctx.fillStyle="#8f642f";ctx.fillRect(0,0,512,512);ctx.globalAlpha=.72;ctx.drawImage(portraitTwo,20,20,472,472);ctx.globalCompositeOperation="color";ctx.fillStyle="#a97839";ctx.fillRect(0,0,512,512);});
+      const faceTexture=canvasTexture(1024,1024,(ctx)=>{ctx.fillStyle="#8f642f";ctx.fillRect(0,0,1024,1024);const sw=portraitTwo.naturalWidth*.5,sh=portraitTwo.naturalHeight*.88;const sx=portraitTwo.naturalWidth*.25,sy=portraitTwo.naturalHeight*.03;ctx.drawImage(portraitTwo,sx,sy,sw,sh,0,0,1024,1024);ctx.fillStyle="rgba(168,111,49,.12)";ctx.fillRect(0,0,1024,1024);});
+      faceTexture.anisotropy=16;
       const statue=new THREE.Group(); statue.position.set(0,0,-1.1);
       const base1=new THREE.Mesh(new THREE.CylinderGeometry(1.45,1.65,.35,48),bronze);base1.position.y=.18;statue.add(base1);
       const base2=new THREE.Mesh(new THREE.CylinderGeometry(1.18,1.38,.48,48),bronze);base2.position.y=.58;statue.add(base2);
@@ -263,7 +279,7 @@ export default function IsraelRoom() {
       const neck=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.35,24),bronze);neck.position.y=3.55;statue.add(neck);
       const head=new THREE.Mesh(new THREE.SphereGeometry(.43,48,32),bronze);head.position.y=3.95;head.scale.set(.92,1.12,.88);statue.add(head);
       const hair=new THREE.Mesh(new THREE.SphereGeometry(.435,48,18,0,Math.PI*2,0,Math.PI*.5),deepBlue);hair.position.y=4.02;hair.scale.set(.94,1.1,.9);statue.add(hair);
-      const face=new THREE.Mesh(new THREE.CircleGeometry(.31,48),new THREE.MeshBasicMaterial({map:faceTexture,transparent:true,opacity:.84}));face.position.set(0,3.94,.39);statue.add(face);
+      const face=new THREE.Mesh(new THREE.CircleGeometry(.335,64),new THREE.MeshBasicMaterial({map:faceTexture,toneMapped:false}));face.position.set(0,3.94,.395);statue.add(face);
       const nose=new THREE.Mesh(new THREE.ConeGeometry(.07,.2,18),bronze);nose.position.set(0,3.91,.49);nose.rotation.x=Math.PI/2;statue.add(nose);
       const tie=new THREE.Mesh(new THREE.ConeGeometry(.105,.75,4),new THREE.MeshStandardMaterial({color:0x8f1717,metalness:.4}));tie.position.set(0,2.83,.47);tie.rotation.z=Math.PI;statue.add(tie);
       const addArm=(side:number,raised:boolean)=>{const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.72,8,20),bronze);upper.position.set(side*.72,2.85,.08);upper.rotation.z=side*(raised?-.68:.35);statue.add(upper);const lower=new THREE.Mesh(new THREE.CapsuleGeometry(.14,.62,8,20),bronze);lower.position.set(side*(raised?1.03:.88),raised?3.22:2.28,raised?.35:.16);lower.rotation.z=side*(raised?-1.02:-.2);lower.rotation.x=raised?.35:0;statue.add(lower);};addArm(1,true);addArm(-1,false);
@@ -273,18 +289,18 @@ export default function IsraelRoom() {
     });
 
     const cans:THREE.Group[]=[];
-    for(let i=0;i<22;i++){
-      const x=-5.7+(i%8)*1.58+(i%2)*.16;
-      const z=3.65-Math.floor(i/8)*1.18;
-      const can=makeCan(yoohooTexture,x,.48+(i%3)*.04,z,.82+(i%4)*.08);
+    for(let i=0;i<11;i++){
+      const x=-5.55+((i*37)%101)/100*11.1;
+      const z=-3.75+((i*61+17)%97)/96*7.55;
+      const can=makeCan(yoohooTexture,x,.49+(i%3)*.035,z,.76+(i%5)*.095);
       can.rotation.z=(i%5-2)*.13;can.userData.canIndex=i;cans.push(can);scene.add(can);
     }
 
-    const squiggleGeometry=new THREE.TorusKnotGeometry(.16,.052,70,10,2,3);
+    const squiggleGeometry=new THREE.TorusKnotGeometry(.2,.055,120,16,2,3);
     const squiggles:THREE.Mesh[]=[];
-    for(let i=0;i<38;i++){
-      const material=new THREE.MeshStandardMaterial({color:i%3===0?0xffd83d:i%3===1?0xff3d91:0x55dcff,emissive:i%3===0?0x765000:i%3===1?0x6d0d3d:0x0b4a73,emissiveIntensity:1.35});
-      const squiggle=new THREE.Mesh(squiggleGeometry,material);squiggle.position.set(-6.1+(i%10)*1.35,4.75+(i%4)*.24,-4.58+(i%3)*.04);squiggle.scale.set(.8+(i%3)*.18,.8+(i%3)*.18,.32);squiggles.push(squiggle);scene.add(squiggle);
+    for(let i=0;i<34;i++){
+      const material=new THREE.MeshStandardMaterial({color:i%3===0?0xffd83d:i%3===1?0xff3d91:0x55dcff,emissive:i%3===0?0x765000:i%3===1?0x6d0d3d:0x0b4a73,emissiveIntensity:1.35,metalness:.42,roughness:.24});
+      const squiggle=new THREE.Mesh(squiggleGeometry,material);squiggle.position.set(-5.9+((i*43)%101)/100*11.8,.9+((i*29)%97)/96*4.2,-4.25+((i*71)%103)/102*8.1);squiggle.scale.set(.72+(i%4)*.14,.72+(i%4)*.14,.32+(i%3)*.08);squiggles.push(squiggle);scene.add(squiggle);floatObject(squiggle,i*.77,.2);
     }
 
     let yaw=0,pitch=-.03,distance=8.7;
@@ -317,7 +333,7 @@ export default function IsraelRoom() {
     const resize=()=>{camera.aspect=mount.clientWidth/mount.clientHeight;camera.updateProjectionMatrix();renderer.setSize(mount.clientWidth,mount.clientHeight);};
     renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointermove",onMove);renderer.domElement.addEventListener("pointerup",onUp);renderer.domElement.addEventListener("pointercancel",onUp);renderer.domElement.addEventListener("wheel",onWheel,{passive:false});window.addEventListener("keydown",onKey);window.addEventListener("resize",resize);
     let frame=0;const clock=new THREE.Clock();
-    const animate=()=>{const dt=Math.min(clock.getDelta(),.035);const elapsed=clock.elapsedTime;cans.forEach((can,index)=>{if(!can.visible||can.userData.held)return;const velocity=can.userData.velocity as THREE.Vector3;const angular=can.userData.angularVelocity as THREE.Vector3;velocity.y-=6.2*dt;can.position.addScaledVector(velocity,dt);can.rotation.x+=angular.x*dt;can.rotation.y+=angular.y*dt;can.rotation.z+=angular.z*dt;if(can.position.y<.46){can.position.y=.46;if(Math.abs(velocity.y)>.18)velocity.y*=-.58;else velocity.y=0;velocity.x*=.88;velocity.z*=.88;}if(Math.abs(can.position.x)>6.3){can.position.x=Math.sign(can.position.x)*6.3;velocity.x*=-.66;}if(can.position.z>4.15||can.position.z<-4.45){can.position.z=THREE.MathUtils.clamp(can.position.z,-4.45,4.15);velocity.z*=-.66;}if(velocity.lengthSq()<.002&&can.position.y<=.47)can.rotation.y+=.0015*Math.sin(elapsed+index);});squiggles.forEach((shape,index)=>{shape.rotation.x+=dt*(.18+(index%4)*.04);shape.rotation.y+=dt*(.32+(index%3)*.06);shape.position.y+=Math.sin(elapsed*1.3+index)*.0008;});renderer.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
+    const animate=()=>{const dt=Math.min(clock.getDelta(),.035);const elapsed=clock.elapsedTime;cans.forEach((can,index)=>{if(!can.visible||can.userData.held)return;const velocity=can.userData.velocity as THREE.Vector3;const angular=can.userData.angularVelocity as THREE.Vector3;velocity.y-=6.2*dt;can.position.addScaledVector(velocity,dt);can.rotation.x+=angular.x*dt;can.rotation.y+=angular.y*dt;can.rotation.z+=angular.z*dt;if(can.position.y<.46){can.position.y=.46;if(Math.abs(velocity.y)>.18)velocity.y*=-.58;else velocity.y=0;velocity.x*=.88;velocity.z*=.88;}if(Math.abs(can.position.x)>6.3){can.position.x=Math.sign(can.position.x)*6.3;velocity.x*=-.66;}if(can.position.z>4.15||can.position.z<-4.45){can.position.z=THREE.MathUtils.clamp(can.position.z,-4.45,4.15);velocity.z*=-.66;}if(velocity.lengthSq()<.002&&can.position.y<=.47)can.rotation.y+=.0015*Math.sin(elapsed+index);});squiggles.forEach((shape,index)=>{shape.rotation.x+=dt*(.2+(index%4)*.04);shape.rotation.y+=dt*(.3+(index%3)*.05);});floatingDecor.forEach((object,index)=>{const anchor=object.userData.floatAnchor as THREE.Vector3;const phase=object.userData.floatPhase as number;const drift=object.userData.floatDrift as number;object.position.x=anchor.x+Math.sin(elapsed*.37+phase)*drift;object.position.y=anchor.y+Math.sin(elapsed*.62+phase*1.3)*drift;object.position.z=anchor.z+Math.cos(elapsed*.43+phase)*drift*.7;object.rotation.y+=dt*(.08+(index%5)*.025);});renderer.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
     return()=>{cancelAnimationFrame(frame);renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointerup",onUp);renderer.domElement.removeEventListener("pointercancel",onUp);renderer.domElement.removeEventListener("wheel",onWheel);window.removeEventListener("keydown",onKey);window.removeEventListener("resize",resize);renderer.dispose();scene.traverse((object)=>{if(object instanceof THREE.Mesh){object.geometry.dispose();const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>material.dispose());}});if(renderer.domElement.parentElement===mount)mount.removeChild(renderer.domElement);};
   },[]);
 
@@ -325,9 +341,6 @@ export default function IsraelRoom() {
     <div className="israel-room__viewport" ref={mountRef} aria-label="Interactive 3D Israel love shrine. Drag to look, scroll to zoom, use WASD to move, and drag or click Yoo-hoo cans." />
     <div className="israel-room__wash" aria-hidden="true" />
     <a className="israel-room__back" href="/">← WORLD SELECT</a>
-    <header className="israel-room__title"><small>UNLOCKED TERRITORY · ISRAEL</small><h1>BB NETTY-YOO-HOO LOVE SHRINE</h1><p>♥ 70% BENJAMIN NETANYAHU · 30% YOO-HOO ♥</p></header>
-    <aside className="israel-room__legend"><b>3D SHRINE CONTROLS</b><span>DRAG EMPTY SPACE · LOOK</span><span>DRAG A CAN · THROW</span><span>CLICK A CAN · COLLECT</span><span>SCROLL · ZOOM</span><span>WASD / ARROWS · MOVE</span><small>Chimp photos: <a href="https://commons.wikimedia.org/wiki/File:Chimpanzee_Portrait.jpg" target="_blank" rel="noreferrer">Ewing</a> &amp; <a href="https://commons.wikimedia.org/wiki/File:Chimp_portrait_(5312048385).jpg" target="_blank" rel="noreferrer">Becker1999</a>, CC BY 2.0</small></aside>
-    <p className="israel-room__message" aria-live="polite">{message}</p>
-    <div className="israel-room__hearts" aria-hidden="true">♥ ✦ ♥ ✦ ♥</div>
+    {panelOpen ? <aside className="israel-room__legend"><button type="button" className="israel-room__legend-close" onClick={()=>setPanelOpen(false)} aria-label="Close controls">×</button><header className="israel-room__title"><small>UNLOCKED TERRITORY · ISRAEL</small><h1>BB NETTY-YOO-HOO LOVE SHRINE</h1><p>♥ 70% BENJAMIN NETANYAHU · 30% YOO-HOO ♥</p></header><b>3D SHRINE CONTROLS</b><span>DRAG EMPTY SPACE · LOOK</span><span>DRAG A CAN · THROW</span><span>CLICK A CAN · COLLECT</span><span>SCROLL · ZOOM</span><span>WASD / ARROWS · MOVE</span><p className="israel-room__message" aria-live="polite">{message}</p><div className="israel-room__hearts" aria-hidden="true">♥ ✦ ♥ ✦ ♥</div><small>Chimp photos: <a href="https://commons.wikimedia.org/wiki/File:Chimpanzee_Portrait.jpg" target="_blank" rel="noreferrer">Ewing</a> &amp; <a href="https://commons.wikimedia.org/wiki/File:Chimp_portrait_(5312048385).jpg" target="_blank" rel="noreferrer">Becker1999</a>, CC BY 2.0</small></aside> : <button type="button" className="israel-room__legend-open" onClick={()=>setPanelOpen(true)} aria-label="Open controls">♥</button>}
   </main>;
 }

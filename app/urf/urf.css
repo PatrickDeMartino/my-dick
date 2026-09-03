@@ -217,7 +217,7 @@
 
 @media (min-width: 860px) and (min-aspect-ratio: 0.85) {
   .town-frame {
-    display: flex; align-items: stretch; justify-content: center; height: 100dvh; width: 100dvw; overflow: hidden;
+    display: flex; align-items: stretch; justify-content: flex-start; height: 100dvh; width: 100dvw; overflow: hidden; padding-left: clamp(34px, 8vw, 154px);
     background: #030814;
   }
   .town-map { width: min(100vw, 56dvh); flex: 0 0 auto; box-shadow: 0 0 90px rgba(0,0,0,.65); }
@@ -251,11 +251,11 @@
    mobile; docked in the right trippy panel (no camera move) on desktop.
    --------------------------------------------------------------------- */
 .building-popup {
-  position: fixed; z-index: 30; right: clamp(10px, 3.4vw, 26px); bottom: clamp(10px, 3.4vw, 26px);
+  position: fixed; z-index: 30; right: clamp(22px, 4vw, 34px); bottom: clamp(18px, 4vw, 34px);
   width: min(62vmin, 300px); aspect-ratio: 1;
 }
 .building-popup-close {
-  position: absolute; z-index: 3; top: -6%; right: -4%; width: 34px; height: 34px; border-radius: 50%;
+  position: absolute; z-index: 5; top: -11px; right: -5px; width: 38px; height: 38px; border-radius: 50%;
   border: 2px solid #ffe35d; background: #0d0620; color: #ffe9c2; font-size: 19px; line-height: 1; cursor: pointer;
   box-shadow: 0 6px 16px rgba(0,0,0,.5), 0 0 14px rgba(255, 227, 93, .35); display: grid; place-items: center;
 }
@@ -298,11 +298,14 @@
 }
 .building-popup-tag small { display: block; color: #ffd4f0; font-size: 6px; letter-spacing: .16em; }
 .building-popup-tag b { display: block; color: white; font-size: 9px; letter-spacing: .05em; text-shadow: 0 0 8px rgba(0,0,0,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.building-popup-credit { position:absolute; z-index:4; left:50%; bottom:3%; transform:translateX(-50%); width:max-content; color:#e7fbff; font:800 6px/1 var(--font-geist-mono); letter-spacing:.08em; text-decoration:none; text-shadow:0 1px 4px #000; }
 .building-popup-circle .jelly-field { position: absolute; inset: 0; z-index: 2; margin: 0; }
 .building-popup-circle .jelly-btn { width: 25%; height: 25%; }
+.building-popup-circle .jelly-btn { will-change: transform; backface-visibility: hidden; text-rendering: geometricPrecision; }
 
 @media (min-width: 860px) and (min-aspect-ratio: 0.85) {
-  .building-popup { right: clamp(16px, 3vw, 48px); bottom: auto; top: 50%; transform: translateY(-50%); width: min(19vw, 300px); }
+  .building-popup { right: clamp(28px, 4vw, 68px); bottom: auto; top: 50%; transform: translateY(-50%); width: min(28vw, 420px); }
+  .building-popup-circle .jelly-btn { width: 23%; height: 23%; }
 }
 
 @media (max-width: 460px) {
@@ -354,7 +357,7 @@
 .penguin-dialog {
   position: relative; width: min(920px, 95vw); min-height: min(510px, 78svh); display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
   border: 3px solid rgba(148,221,238,.5); background: linear-gradient(140deg, rgba(4,19,34,.97), rgba(2,8,17,.98));
-  box-shadow: 0 28px 90px #000, 0 0 0 8px rgba(104,228,237,.06), inset 0 1px rgba(255,255,255,.06); overflow: hidden;
+  box-shadow: 0 28px 90px #000, 0 0 0 8px rgba(104,228,237,.06), inset 0 1px rgba(255,255,255,.06); overflow: visible;
   animation: dialog-in .28s cubic-bezier(.2,.9,.2,1), goo-wobble 11s ease-in-out infinite 0.3s, goo-glow 7s ease-in-out infinite;
 }
 /* Kept modest on purpose: the corners still have to hold real content (a
@@ -371,7 +374,7 @@
   0%, 100% { filter: drop-shadow(0 0 26px rgba(104,228,237,.22)); }
   50% { filter: drop-shadow(0 0 34px rgba(160,111,240,.24)); }
 }
-.dialog-close { position: absolute; z-index: 4; top: 14px; right: 14px; width: 36px; height: 36px; border: 1px solid rgba(160,205,220,.35); border-radius: 50%; color: #a6bac4; background: #071522; font-size: 23px; cursor: pointer; }
+.dialog-close { position: absolute; z-index: 8; top: -16px; right: -16px; width: 40px; height: 40px; border: 2px solid #ffe35d; border-radius: 50%; color: #fff1ba; background: #071522; box-shadow:0 8px 22px rgba(0,0,0,.55); font-size: 23px; cursor: pointer; }
 .dialog-close:hover { color: white; border-color: white; }
 .dialog-character {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 46px 28px 25px;

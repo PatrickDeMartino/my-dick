@@ -10,7 +10,7 @@ export type JellyButtonSpec = {
   tone?: "default" | "primary" | "danger" | "gold";
 };
 
-type ButtonState = { x: number; y: number; vx: number; vy: number; r: number; squish: number };
+type ButtonState = { x: number; y: number; drawX: number; drawY: number; vx: number; vy: number; r: number; squish: number };
 
 /**
  * A small circular-button playground: each button drifts slowly, bounces off
@@ -56,8 +56,9 @@ export function JellyButtons({ buttons, minHeight = 132, shape = "rect" }: { but
       }
       states.set(spec.key, {
         x, y,
-        vx: (Math.random() - 0.5) * 0.045,
-        vy: (Math.random() - 0.5) * 0.045,
+        drawX: x, drawY: y,
+        vx: (Math.random() - 0.5) * 0.022,
+        vy: (Math.random() - 0.5) * 0.022,
         r,
         squish: 0,
       });
@@ -73,7 +74,7 @@ export function JellyButtons({ buttons, minHeight = 132, shape = "rect" }: { but
 
     function step(now: number) {
       raf = requestAnimationFrame(step);
-      const dt = Math.min(48, now - last);
+      const dt = Math.min(24, now - last);
       last = now;
       const w = field!.clientWidth || width;
       const h = field!.clientHeight || height;
@@ -95,8 +96,8 @@ export function JellyButtons({ buttons, minHeight = 132, shape = "rect" }: { but
             // Reflect velocity around the wall normal — a real bounce off the
             // round wall, not just a clamp.
             const along = state.vx * nx + state.vy * ny;
-            state.vx -= 2 * along * nx;
-            state.vy -= 2 * along * ny;
+            state.vx -= 1.72 * along * nx;
+            state.vy -= 1.72 * along * ny;
             state.squish = 1;
           }
         }
@@ -128,22 +129,31 @@ export function JellyButtons({ buttons, minHeight = 132, shape = "rect" }: { but
           const relVx = b.vx - a.vx;
           const relVy = b.vy - a.vy;
           const along = relVx * nx + relVy * ny;
-          if (along < 0) continue;
-          a.vx += nx * along; a.vy += ny * along;
-          b.vx -= nx * along; b.vy -= ny * along;
+          if (along < 0) {
+            const impulse = -along * .76;
+            a.vx -= nx * impulse; a.vy -= ny * impulse;
+            b.vx += nx * impulse; b.vy += ny * impulse;
+          }
           a.squish = 1; b.squish = 1;
         }
       }
 
       for (const [key, state] of entries) {
-        state.squish *= 0.9;
+        state.squish *= 0.82;
+        state.vx *= Math.pow(.9996, dt);
+        state.vy *= Math.pow(.9996, dt);
+        const velocity = Math.hypot(state.vx, state.vy);
+        if (velocity > .028) { state.vx *= .028 / velocity; state.vy *= .028 / velocity; }
+        state.drawX += (state.x - state.drawX) * .3;
+        state.drawY += (state.y - state.drawY) * .3;
         const node = buttonRefs.current.get(key);
         if (!node) continue;
         const speed = Math.hypot(state.vx, state.vy);
-        const stretch = 1 + Math.min(0.32, state.squish * 0.3 + speed * 1.4);
-        const squeeze = 1 - Math.min(0.24, state.squish * 0.22 + speed * 1.1);
-        const angle = Math.atan2(state.vy, state.vx) * (180 / Math.PI);
-        node.style.transform = `translate(${state.x - state.r}px, ${state.y - state.r}px) rotate(${angle}deg) scaleX(${stretch}) scaleY(${squeeze}) rotate(${-angle}deg)`;
+        const stretch = 1 + Math.min(0.09, state.squish * 0.075 + speed * .45);
+        const squeeze = 1 - Math.min(0.07, state.squish * 0.06 + speed * .35);
+        const tx = Math.round((state.drawX - state.r) * 2) / 2;
+        const ty = Math.round((state.drawY - state.r) * 2) / 2;
+        node.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${stretch}, ${squeeze})`;
       }
     }
     raf = requestAnimationFrame(step);

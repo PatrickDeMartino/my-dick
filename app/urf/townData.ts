@@ -65,11 +65,11 @@ export const OCEAN_BAND_X_MAX = 125;
 export const TERRAIN_REGIONS = {
   upperPlateau: {
     surface: [[59.6, 31.2], [62.7, 27.7], [68.9, 24.8], [76.3, 26], [81.3, 30], [83.8, 34.7], [81.3, 38.1], [73.8, 37.6], [66.4, 34.7], [60.2, 34.1]],
-    bounds: [[57.7, 31.8], [61.4, 26.5], [68.9, 24.2], [76.9, 25.4], [83.1, 30], [86.2, 37.6], [85, 43.4], [80, 45.7], [72.6, 41], [65.2, 37.6], [59, 37]],
+    bounds: [[57.7, 31.8], [59.1, 28.8], [61.4, 26.5], [65.7, 24.9], [68.9, 24.2], [72.4, 25.1], [76.9, 25.4], [81.4, 28.1], [83.1, 30], [84.4, 33.2], [86.2, 37.6], [87.1, 41.2], [85, 43.4], [82.2, 46.8], [78.3, 45.2], [75.4, 42.5], [72.6, 41], [69.2, 40.5], [65.2, 37.6], [61.5, 38.4], [59, 37]],
   },
   lowerIsland: {
     surface: [[40.4, 34.1], [56.5, 32.3], [65.2, 34.7], [73.8, 37], [81.3, 38.7], [83.8, 42.2], [86.2, 50.3], [85, 57.3], [90, 63.1], [97.4, 68.3], [103.6, 72.4], [103.6, 77], [96.2, 79.9], [86.2, 84], [76.3, 92.1], [66.4, 92.1], [57.7, 88.6], [50.3, 84], [41.6, 82.8], [37.9, 79.3], [42.8, 73.5], [42.8, 70], [32.9, 71.2], [25.5, 68.9], [21.8, 65.4], [19.3, 60.8], [16.8, 55], [14.3, 51.5], [11.8, 46.8], [11.8, 42.2], [21.8, 38.7], [32.9, 37]],
-    bounds: [[39.1, 34.1], [56.5, 31.2], [66.4, 34.1], [75.1, 36.4], [82.5, 37.6], [86.2, 41], [88.7, 50.3], [87.5, 58.4], [92.4, 64.2], [101.1, 68.9], [106.1, 73.5], [106.1, 78.2], [98.6, 82.8], [88.7, 86.3], [77.6, 94.4], [66.4, 95.6], [56.5, 90.9], [49, 87.4], [40.4, 86.3], [35.4, 82.8], [36.6, 77], [40.4, 72.4], [31.7, 74.7], [24.2, 72.4], [19.3, 68.9], [16.8, 64.2], [14.3, 58.4], [11.8, 53.8], [9.4, 49.2], [8.1, 44.5], [11.8, 39.9], [21.8, 37.6], [31.7, 35.8]],
+    bounds: [[39.1, 34.1], [47.8, 31.9], [56.5, 31.2], [61.7, 32.2], [66.4, 34.1], [71.2, 34.9], [75.1, 36.4], [82.5, 37.6], [86.2, 41], [87.4, 45.7], [88.7, 50.3], [87.5, 58.4], [90.1, 61.5], [92.4, 64.2], [97.2, 66.1], [101.1, 68.9], [106.1, 73.5], [109.2, 76.4], [106.1, 78.2], [103.4, 81.5], [98.6, 82.8], [93.7, 86.8], [88.7, 86.3], [83.8, 91.2], [77.6, 94.4], [71.5, 93.4], [66.4, 95.6], [61.2, 93.7], [56.5, 90.9], [52.1, 91.5], [49, 87.4], [44.3, 88.2], [40.4, 86.3], [35.4, 82.8], [32.8, 79.6], [36.6, 77], [40.4, 72.4], [36.4, 71.1], [31.7, 74.7], [27.5, 73.1], [24.2, 72.4], [21.4, 70.8], [19.3, 68.9], [18.1, 66.4], [16.8, 64.2], [15.9, 61.3], [14.3, 58.4], [12.2, 56.4], [11.8, 53.8], [9.4, 49.2], [8.1, 44.5], [10.3, 41.8], [11.8, 39.9], [17.4, 38.8], [21.8, 37.6], [27.1, 37.9], [31.7, 35.8], [35.2, 36.7]],
   },
 } as const satisfies Record<string, TerrainRegion>;
 
@@ -88,11 +88,11 @@ export const flipperFlappington: TownDialogSubject = { id: "flipper", label: "FL
 
 export const BUILDING_STORIES: Record<string, { character: string; name: string; role: string; description: string }> = {
   plane: { character: "/evil-penguin.jpg", name: "CAPTAIN FLAPS", role: "UNLICENSED BUSH PILOT", description: "A ski-biplane held together with wire, spite, and aviation crimes." },
-  telescope: { character: "/media/alien-astronomer-v1.png", name: "ZORB", role: "ALIEN PEEPING-TOM", description: "A giant brass eye aimed directly at whatever the government denies." },
+  telescope: { character: "/media/alien-astronomer-v1.png", name: "ALIEN PERVY PEEPER", role: "NOSY EXTRATERRESTRIAL", description: "A giant brass eye aimed directly at whatever the government denies." },
   magic: { character: "/evil-penguin.jpg", name: "RINGMASTER WADDLES", role: "BLACK-MARKET RINGMASTER", description: "Questionable creatures, weaponized drones, and absolutely no refunds." },
   igloo: { character: "/media/dr-bongo-model-icon-v1.png", name: "DR. BONGO", role: "DRONE WARLORD", description: "A warm igloo, a cold laboratory, and an ape planning air superiority." },
   sweatshop: { character: "/penguinaroo.png", name: "PENGUINAROO", role: "SWEATSHOP TYRANT", description: "Cheap shit goes in. Profitable shit comes out. Nobody gets a lunch break." },
-  docks: { character: "/media/lab-rat-v1.png", name: "CAPTAIN SQUEAK", role: "OFFSHORE RAT BARON", description: "A filthy cargo tub breeding rats faster than customs can count them." },
+  docks: { character: "/media/rat-photo-hires.jpg", name: "SQUEEK", role: "OFFSHORE RAT BARON", description: "A filthy cargo tub breeding rats faster than customs can count them." },
   arena: { character: "/vicheal-nic.jpg", name: "VICHEAL NIC", role: "DOG-FIGHT PROMOTER", description: "A frozen boxing pit where bad dogs settle worse gambling debts." },
 };
 

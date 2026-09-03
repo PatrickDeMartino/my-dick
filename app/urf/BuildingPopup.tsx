@@ -38,6 +38,7 @@ export function BuildingPopup({ character, role, name, buttons, onClose }: Props
           <small>{role}</small>
           <b>{name}</b>
         </div>
+        {character.includes("rat-photo-hires") && <a className="building-popup-credit" href="https://www.viva.fct.unl.pt/mamiferos/rattus-norvegicus" target="_blank" rel="noreferrer">PHOTO · J-J BOUJOT · CC BY-SA</a>}
         <JellyButtons shape="circle" minHeight={220} buttons={buttons} />
       </div>
     </aside>
