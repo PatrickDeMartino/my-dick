@@ -9,6 +9,7 @@ import {
   gridPositionFromWorld,
   percentToWorldXZ,
   placementIssue,
+  pointInPolygon,
   terrainAt,
   terrainMoveInstruction,
   tierAt,
@@ -32,6 +33,11 @@ type Props = {
   activeBuildingId: string | null;
   placingBuildingId: string | null;
   placementRotation: Rotation;
+  /** True while the circular building-interaction popup is open — on the
+   * compact (mobile-proportioned) camera framing this pulls the camera back
+   * and raises its target so the whole island stays visible above the popup
+   * instead of being partly covered by it. No-op on the wide desktop framing. */
+  popupOpen: boolean;
   onSelectBuilding: (id: string) => void;
   onPlacementPreview: (preview: PlacementPreview | null) => void;
   onCommitPlacement: (id: string, position: GridPosition, rotation: Rotation) => void;
@@ -54,22 +60,32 @@ function shapeFromPercentPolygon(points: readonly (readonly [number, number])[])
   return shape;
 }
 
-/** A tall, jagged low-poly peak built from a cone with jittered radial verts, plus a paler snow cap. */
+let sharedRockBump: THREE.CanvasTexture | null = null;
+let sharedSnowBump: THREE.CanvasTexture | null = null;
+
+/** A tall, jagged low-poly peak built from a cone with multi-octave jittered radial
+ * verts (a coarse pass for silhouette + a fine pass for crags), plus a paler snow cap
+ * and a couple of small shoulder ridges so it reads as a real massif, not a smooth cone. */
 function buildMountainPeak(radius: number, height: number, seed: number): THREE.Group {
   const group = new THREE.Group();
-  const segments = 7 + Math.floor(seededRandom(seed) * 3);
-  const bodyGeometry = new THREE.ConeGeometry(radius, height, segments, 4);
+  const segments = 9 + Math.floor(seededRandom(seed) * 5);
+  const bodyGeometry = new THREE.ConeGeometry(radius, height, segments, 6);
   const positions = bodyGeometry.attributes.position;
   for (let i = 0; i < positions.count; i += 1) {
     const x = positions.getX(i);
     const y = positions.getY(i);
     const z = positions.getZ(i);
-    const jitter = 1 + (seededRandom(seed + i * 3.1) - 0.5) * 0.5;
+    const coarseJitter = 1 + (seededRandom(seed + i * 3.1) - 0.5) * 0.55;
+    const fineJitter = 1 + (seededRandom(seed + i * 11.3 + 4.4) - 0.5) * 0.16;
     const heightFactor = Math.max(0, (y + height / 2) / height);
-    positions.setXYZ(i, x * jitter, y + heightFactor * (seededRandom(seed + i * 5.7) - 0.5) * height * 0.18, z * jitter);
+    const crag = heightFactor * (seededRandom(seed + i * 5.7) - 0.5) * height * 0.22
+      + heightFactor * (seededRandom(seed + i * 19.1 + 8) - 0.5) * height * 0.07;
+    positions.setXYZ(i, x * coarseJitter * fineJitter, y + crag, z * coarseJitter * fineJitter);
   }
   bodyGeometry.computeVertexNormals();
-  const rock = new THREE.MeshStandardMaterial({ color: 0x779db0, roughness: 0.95, flatShading: true });
+  if (!sharedRockBump) sharedRockBump = buildNoiseBumpTexture(3033);
+  if (!sharedSnowBump) sharedSnowBump = buildNoiseBumpTexture(7711);
+  const rock = new THREE.MeshStandardMaterial({ color: 0x779db0, roughness: 0.95, flatShading: true, bumpMap: sharedRockBump, bumpScale: 0.35 });
   const body = new THREE.Mesh(bodyGeometry, rock);
   body.position.y = height / 2;
   body.castShadow = true;
@@ -77,11 +93,40 @@ function buildMountainPeak(radius: number, height: number, seed: number): THREE.
   group.add(body);
 
   const capGeometry = new THREE.ConeGeometry(radius * 0.42, height * 0.4, segments, 2);
-  const snow = new THREE.MeshStandardMaterial({ color: 0xf6fbff, roughness: 0.8, flatShading: true });
+  const capPositions = capGeometry.attributes.position;
+  for (let i = 0; i < capPositions.count; i += 1) {
+    const x = capPositions.getX(i), y = capPositions.getY(i), z = capPositions.getZ(i);
+    const jitter = 1 + (seededRandom(seed + 200 + i * 4.4) - 0.5) * 0.3;
+    capPositions.setXYZ(i, x * jitter, y, z * jitter);
+  }
+  capGeometry.computeVertexNormals();
+  const snow = new THREE.MeshStandardMaterial({ color: 0xf6fbff, roughness: 0.75, flatShading: true, bumpMap: sharedSnowBump, bumpScale: 0.18 });
   const cap = new THREE.Mesh(capGeometry, snow);
   cap.position.y = height * 0.82;
   cap.castShadow = true;
   group.add(cap);
+
+  // One or two small shoulder ridges bracing the main peak, so the massif reads as
+  // a range fold rather than a single isolated cone (matches the jagged multi-peak
+  // skyline in the reference art).
+  const shoulders = 1 + Math.floor(seededRandom(seed + 55) * 2);
+  for (let s = 0; s < shoulders; s += 1) {
+    const angle = seededRandom(seed + s * 17 + 3) * Math.PI * 2;
+    const shoulderHeight = height * (0.42 + seededRandom(seed + s * 9) * 0.22);
+    const shoulderRadius = radius * (0.45 + seededRandom(seed + s * 6) * 0.2);
+    const shoulderGeo = new THREE.ConeGeometry(shoulderRadius, shoulderHeight, 6 + Math.floor(seededRandom(seed + s) * 3), 3);
+    const shoulderPos = shoulderGeo.attributes.position;
+    for (let i = 0; i < shoulderPos.count; i += 1) {
+      const jitter = 1 + (seededRandom(seed + s * 40 + i * 2.9) - 0.5) * 0.5;
+      shoulderPos.setXYZ(i, shoulderPos.getX(i) * jitter, shoulderPos.getY(i), shoulderPos.getZ(i) * jitter);
+    }
+    shoulderGeo.computeVertexNormals();
+    const shoulder = new THREE.Mesh(shoulderGeo, rock);
+    shoulder.position.set(Math.cos(angle) * radius * 0.7, shoulderHeight / 2, Math.sin(angle) * radius * 0.7);
+    shoulder.castShadow = true;
+    shoulder.receiveShadow = true;
+    group.add(shoulder);
+  }
   return group;
 }
 
@@ -90,18 +135,31 @@ function seededRandom(seed: number): number {
   return value - Math.floor(value);
 }
 
-/** A ring of 3D mountain peaks at the edge of the playable island, ringing the horizon. */
+/** A ring of 3D mountain peaks at the edge of the playable island, ringing the horizon,
+ * with a second denser ring of smaller foothills layered in front for a fuller,
+ * less gap-toothed range (closer to the packed Antarctic mainland skyline in the
+ * reference photo instead of a thin scatter of isolated cones). */
 function buildMountainRange(): THREE.Group {
   const group = new THREE.Group();
-  const count = 14;
+  const count = 18;
   for (let i = 0; i < count; i += 1) {
     const angle = (i / count) * Math.PI * 2 + seededRandom(i) * 0.3;
-    const distance = 39 + seededRandom(i * 2.2) * 14;
-    const height = 7 + seededRandom(i * 3.7) * 9;
-    const radius = 4 + seededRandom(i * 4.4) * 4;
+    const distance = 39 + seededRandom(i * 2.2) * 15;
+    const height = 8 + seededRandom(i * 3.7) * 11;
+    const radius = 4.5 + seededRandom(i * 4.4) * 4.5;
     const peak = buildMountainPeak(radius, height, i * 7.3);
     peak.position.set(Math.cos(angle) * distance, -1, Math.sin(angle) * distance);
     group.add(peak);
+  }
+  const foothillCount = 24;
+  for (let i = 0; i < foothillCount; i += 1) {
+    const angle = (i / foothillCount) * Math.PI * 2 + seededRandom(i + 300) * 0.4;
+    const distance = 32 + seededRandom(i * 1.8 + 300) * 8;
+    const height = 3.5 + seededRandom(i * 2.9 + 300) * 4;
+    const radius = 2.4 + seededRandom(i * 3.1 + 300) * 2.4;
+    const foothill = buildMountainPeak(radius, height, i * 5.1 + 900);
+    foothill.position.set(Math.cos(angle) * distance, -1, Math.sin(angle) * distance);
+    group.add(foothill);
   }
   return group;
 }
@@ -278,6 +336,60 @@ function buildNoiseBumpTexture(seed: number): THREE.CanvasTexture {
   return texture;
 }
 
+/** Layered rolling-swell noise (a few octaves of sine interference), tiled and
+ * scrolled over time for the ocean's slow, rolling bump-map "texture". */
+function buildOceanWaveTexture(): THREE.CanvasTexture {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const image = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const swell = Math.sin(x * 0.025) + Math.sin(y * 0.021) + Math.sin((x + y) * 0.014);
+      const ripple = Math.sin(x * 0.13 + y * 0.09) * 0.6 + Math.sin(x * 0.21 - y * 0.17) * 0.4;
+      const value = ((swell / 3 + 1) / 2) * 0.65 + ((ripple + 1) / 2) * 0.35;
+      const index = (y * size + x) * 4;
+      const byte = Math.round(Math.max(0, Math.min(1, value)) * 255);
+      image.data[index] = byte; image.data[index + 1] = byte; image.data[index + 2] = byte; image.data[index + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(9, 9);
+  return texture;
+}
+
+/** Small bright glints on black, tiled and scrolled fast + independently of the
+ * wave bump layer above — reads as sunlight catching moving wave faces. */
+function buildOceanSparkleTexture(): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 130; i += 1) {
+    const x = seededRandom(i * 2.1) * size;
+    const y = seededRandom(i * 2.1 + 500) * size;
+    const r = 0.7 + seededRandom(i * 2.1 + 900) * 1.7;
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    glow.addColorStop(0, "rgba(255,255,255,.95)");
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(7, 7);
+  return texture;
+}
+
 function buildTerrainSlab(
   points: readonly (readonly [number, number])[],
   depth: number,
@@ -390,6 +502,86 @@ function makeStripeTexture(colors: string[]): THREE.CanvasTexture {
   return texture;
 }
 
+/** Curved, offset brick coursing (like real igloo snow-block rows), painted once and
+ * wrapped around the dome/tunnel so the igloo reads as built from blocks, not plastic. */
+function buildIceBrickTexture(): THREE.CanvasTexture {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#eef8ff";
+  ctx.fillRect(0, 0, size, size);
+  const rows = 8;
+  for (let r = 0; r < rows; r += 1) {
+    const rowH = size / rows;
+    const y = r * rowH;
+    const cols = 7 + r;
+    const offset = (r % 2) * (size / cols / 2);
+    for (let c = 0; c < cols; c += 1) {
+      const x = (c / cols) * size + offset;
+      const shade = 0.92 + seededRandom(r * 13.7 + c * 3.1) * 0.1;
+      ctx.fillStyle = `rgba(${Math.round(214 * shade)},${Math.round(236 * shade)},${Math.round(250 * shade)},1)`;
+      ctx.fillRect(x, y, size / cols + 1, rowH + 1);
+    }
+    ctx.strokeStyle = "rgba(120,172,201,.55)";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
+    for (let c = 0; c <= cols; c += 1) {
+      const x = ((c / cols) * size + offset) % size;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + rowH); ctx.stroke();
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/** Weathered wood-plank siding, painted once and reused for the sweatshop's walls/sign. */
+function buildPlankTexture(colorA: string, colorB: string): THREE.CanvasTexture {
+  const w = 256, h = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  const planks = 9;
+  for (let i = 0; i < planks; i += 1) {
+    ctx.fillStyle = i % 2 ? colorA : colorB;
+    ctx.fillRect(0, (i / planks) * h, w, h / planks + 1);
+  }
+  ctx.strokeStyle = "rgba(0,0,0,.28)";
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= planks; i += 1) {
+    ctx.beginPath(); ctx.moveTo(0, (i / planks) * h); ctx.lineTo(w, (i / planks) * h); ctx.stroke();
+  }
+  for (let n = 0; n < 60; n += 1) {
+    ctx.fillStyle = "rgba(0,0,0,.07)";
+    ctx.fillRect(seededRandom(n) * w, seededRandom(n + 50) * h, 8 + seededRandom(n + 90) * 26, 1.4);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/** A small triangular pennant-flag garland strung between two points — used to trim
+ * tent roofs and hilltop landmarks the way the painted reference art does. */
+function buildBunting(group: THREE.Group, from: THREE.Vector3, to: THREE.Vector3, count: number, colors: number[]) {
+  for (let i = 0; i < count; i += 1) {
+    const t = (i + 0.5) / count;
+    const point = from.clone().lerp(to, t);
+    point.y -= Math.sin(t * Math.PI) * 0.05;
+    const flagGeo = new THREE.ConeGeometry(0.055, 0.14, 3);
+    const flag = new THREE.Mesh(flagGeo, mat(colors[i % colors.length]));
+    flag.rotation.z = Math.PI;
+    flag.rotation.y = Math.PI / 2;
+    flag.position.copy(point);
+    flag.castShadow = true;
+    group.add(flag);
+  }
+  const string = beamBetween(group, from, to, 0.012, 0x3a3226);
+  string.castShadow = false;
+}
+
 function buildPlane(): THREE.Group {
   const g = new THREE.Group();
   const teal = 0x159bb0;
@@ -405,24 +597,78 @@ function buildPlane(): THREE.Group {
   box(g, [.07, 1.34, .08], [0, .72, -1.46], 0xb87b35, [0, 0, -Math.PI / 4]);
   for (const x of [-.54, .54]) box(g, [.14, .12, 1.35], [x, .12, .08], 0xb87b35, [0, 0, x > 0 ? -.08 : .08]);
   sphere(g, .2, [0, .93, .15], 0x183443, [1.25, .75, 1]);
+  // Windshield + spinning prop disc (a thin, near-transparent cone reads as motion blur).
+  const windshield = new THREE.Mesh(new THREE.BoxGeometry(.5, .16, .02), new THREE.MeshStandardMaterial({ color: 0xbfe7f2, roughness: .15, metalness: .3, transparent: true, opacity: .55 }));
+  windshield.position.set(0, 1.02, .34);
+  g.add(windshield);
+  const propDisc = new THREE.Mesh(new THREE.CircleGeometry(.62, 20), new THREE.MeshStandardMaterial({ color: 0xd8d8d8, transparent: true, opacity: .22, side: THREE.DoubleSide }));
+  propDisc.position.set(0, .72, -1.5);
+  propDisc.userData.spinPhase = 0;
+  g.add(propDisc);
   return g;
+}
+
+/** A field of tiny raised rivet-dots on a canvas, for the brass/steel telescope barrel. */
+function buildRivetTexture(base: string, rivet: string): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  for (let row = 0; row < 4; row += 1) {
+    const y = (row + 0.5) * (size / 4);
+    for (let col = 0; col < 10; col += 1) {
+      const x = ((col + (row % 2) * 0.5) / 10) * size;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.4, 0, Math.PI * 2);
+      ctx.fillStyle = rivet;
+      ctx.fill();
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(3, 1);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function buildTelescope(upgraded: boolean): THREE.Group {
   const g = new THREE.Group();
-  const body = upgraded ? 0x34495d : 0x8b522d;
   const trim = upgraded ? 0xaec6d1 : 0xd5a645;
   cylinder(g, 1.0, 1.12, .28, [0, .14, 0], 0x704121, [0, 0, 0], 18);
   cylinder(g, .72, .82, .9, [0, .65, 0], 0x81502d, [0, 0, 0], 18);
   for (const x of [-.52, .52]) box(g, [.18, 1.35, .24], [x, 1.2, 0], 0x80502e, [0, 0, x * .14]);
+  // Third rear tripod strut, angled back to actually brace the mount like a real tripod.
+  box(g, [.16, 1.32, .2], [0, 1.16, .58], 0x7a4a29, [-.16, 0, 0]);
   const barrel = new THREE.Group();
-  cylinder(barrel, .34, .41, 1.85, [0, 0, 0], body, [0, 0, Math.PI / 2], 18);
+  const barrelMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(.34, .41, 1.85, 18, 1, false),
+    new THREE.MeshStandardMaterial({ map: buildRivetTexture(upgraded ? "#3a4d61" : "#8b522d", upgraded ? "#dbe8ee" : "#f0d488"), roughness: .55, metalness: upgraded ? .55 : .12, flatShading: false }),
+  );
+  barrelMesh.rotation.z = Math.PI / 2;
+  barrelMesh.castShadow = true;
+  barrel.add(barrelMesh);
   cylinder(barrel, .46, .46, .16, [-.92, 0, 0], trim, [0, 0, Math.PI / 2], 18);
   cylinder(barrel, .39, .39, .1, [.88, 0, 0], trim, [0, 0, Math.PI / 2], 18);
+  // Brass eyepiece cluster at the back, like a real observatory scope.
+  cylinder(barrel, .16, .19, .22, [-1.05, 0, 0], 0xd9a62f, [0, 0, Math.PI / 2], 10);
   barrel.position.set(0, 1.72, 0);
   barrel.rotation.z = .35;
   g.add(barrel);
   box(g, [.13, 1.45, .13], [0, 1.12, 0], trim, [0, 0, -.35]);
+  // Small pennant flag on a thin pole beside the mount — a nod to the crest flags
+  // flanking the hilltop landmark in the reference art.
+  const flagPole = new THREE.Group();
+  cylinder(flagPole, .02, .02, 1.3, [0, .65, 0], 0x4a3a24, [0, 0, 0], 6);
+  const pennant = new THREE.Mesh(new THREE.ConeGeometry(.11, .3, 3), mat(0xdd3a34));
+  pennant.rotation.z = Math.PI / 2;
+  pennant.rotation.y = Math.PI / 2;
+  pennant.position.set(.14, 1.16, 0);
+  flagPole.add(pennant);
+  flagPole.position.set(.78, 0, .72);
+  g.add(flagPole);
   return g;
 }
 
@@ -440,33 +686,68 @@ function buildCircus(): THREE.Group {
     const x = Math.cos(a) * 1.16, z = Math.sin(a) * 1.16;
     cylinder(g, .035, .035, 1.5, [x, .75, z], 0xd9a62f, [0, 0, 0], 8);
   }
+  // Triangular pennant bunting strung around the tent roofline, alternating colors.
+  const buntingHeight = 1.28;
+  const corners = 8;
+  for (let i = 0; i < corners; i += 1) {
+    const a0 = (i / corners) * Math.PI * 2;
+    const a1 = ((i + 1) / corners) * Math.PI * 2;
+    const from = new THREE.Vector3(Math.cos(a0) * 1.02, buntingHeight, Math.sin(a0) * 1.02);
+    const to = new THREE.Vector3(Math.cos(a1) * 1.02, buntingHeight, Math.sin(a1) * 1.02);
+    buildBunting(g, from, to, 2, [0xdd3a34, 0xf6c637, 0x1574bc]);
+  }
   return g;
 }
 
 function buildIgloo(): THREE.Group {
   const g = new THREE.Group();
-  const ice = 0xeaf8ff, seam = 0x8fc5dd;
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(1.03, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), mat(ice));
+  const seam = 0x8fc5dd;
+  const brickTexture = buildIceBrickTexture();
+  const brickBump = buildNoiseBumpTexture(1971);
+  const domeMaterial = new THREE.MeshStandardMaterial({ map: brickTexture, bumpMap: brickBump, bumpScale: .05, roughness: .82, flatShading: false });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(1.03, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), domeMaterial);
   dome.position.y = 0; dome.castShadow = true; dome.receiveShadow = true; g.add(dome);
   for (const y of [.23, .48, .73]) {
     const radius = Math.sqrt(Math.max(.1, 1.03 * 1.03 - y * y));
     const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, .018, 5, 32), mat(seam));
     ring.position.y = y; ring.rotation.x = Math.PI / 2; g.add(ring);
   }
-  box(g, [.7, .62, .78], [0, .31, -1.03], ice);
-  const doorway = box(g, [.4, .43, .06], [0, .24, -1.44], 0x17364b);
-  doorway.position.y = .25;
+  const tunnel = box(g, [.7, .62, .78], [0, .31, -1.03], 0xeaf8ff);
+  tunnel.material = new THREE.MeshStandardMaterial({ map: brickTexture, roughness: .85 });
+  // Real wooden door with a round porthole window, like the reference igloo art —
+  // previously just a flat dark rectangle.
+  const doorGroup = new THREE.Group();
+  const doorPlanks = new THREE.Mesh(new THREE.BoxGeometry(.4, .43, .06), new THREE.MeshStandardMaterial({ map: buildPlankTexture("#7a4a29", "#6a3e21"), roughness: .78 }));
+  doorGroup.add(doorPlanks);
+  const porthole = new THREE.Mesh(new THREE.CircleGeometry(.075, 16), new THREE.MeshStandardMaterial({ color: 0x0c1f2c, roughness: .3, metalness: .4 }));
+  porthole.position.set(.06, .08, .035);
+  doorGroup.add(porthole);
+  const portholeRing = new THREE.Mesh(new THREE.TorusGeometry(.075, .014, 6, 16), mat(0x2a2016));
+  portholeRing.position.set(.06, .08, .035);
+  doorGroup.add(portholeRing);
+  const handle = new THREE.Mesh(new THREE.SphereGeometry(.02, 8, 6), mat(0x3a2c1a));
+  handle.position.set(-.12, -.02, .04);
+  doorGroup.add(handle);
+  doorGroup.position.set(0, .24, -1.44);
+  g.add(doorGroup);
   for (const x of [-.34, .34]) box(g, [.06, .54, .7], [x, .3, -1.07], seam);
   return g;
 }
 
 function buildSweatshop(): THREE.Group {
   const g = new THREE.Group();
-  box(g, [1.85, 1.25, 1.45], [0, .63, 0], 0x7c4327);
+  const wallMaterial = new THREE.MeshStandardMaterial({ map: buildPlankTexture("#7c4327", "#6b3a21"), bumpMap: buildNoiseBumpTexture(552), bumpScale: .04, roughness: .88 });
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(1.85, 1.25, 1.45), wallMaterial);
+  walls.position.set(0, .63, 0); walls.castShadow = true; walls.receiveShadow = true; g.add(walls);
   box(g, [2.05, .16, 1.35], [0, 1.38, -.45], 0x234f7d, [.55, 0, 0]);
   box(g, [2.05, .16, 1.35], [0, 1.38, .45], 0x234f7d, [-.55, 0, 0]);
   box(g, [.42, .78, .05], [0, .39, -.74], 0x25170f);
   for (const x of [-.65, .65]) box(g, [.36, .35, .05], [x, .8, -.74], 0x66c7e2);
+  // "WORK HARD" sign over the door, matching the painted reference facade.
+  const sign = makeLabel("WORK HARD", "#ffcf5c");
+  sign.scale.set(1.0, .22, 1);
+  sign.position.set(0, 1.08, -.78);
+  g.add(sign);
   cylinder(g, .19, .23, 1.42, [.62, 1.88, .32], 0x67564a, [0, 0, 0], 10);
   for (let i = 0; i < 4; i += 1) {
     const puff = sphere(g, .24 + i * .06, [.62 + i * .1, 2.65 + i * .32, .32], 0xd8e0df, [1, .8, 1]);
@@ -474,6 +755,16 @@ function buildSweatshop(): THREE.Group {
     puff.userData.smokeBaseY = puff.position.y;
   }
   for (let i = 0; i < 5; i += 1) box(g, [.42, .42, .42], [-.92 + i * .46, .21, .92], i % 2 ? 0x1b65a2 : 0xa63e32);
+  // Split-rail fence enclosing the yard, and a couple of stacked barrels, echoing
+  // the fenced "WORK HARD" compound in the reference art.
+  const fenceZ = 1.28;
+  for (const x of [-1.2, -.6, 0, .6, 1.2]) {
+    cylinder(g, .035, .04, .5, [x, .27, fenceZ], 0x4a3420, [0, 0, 0], 6);
+  }
+  for (const y of [.32, .46]) beamBetween(g, new THREE.Vector3(-1.25, y, fenceZ), new THREE.Vector3(1.25, y, fenceZ), .022, 0x5a4128);
+  for (const x of [-1.05, -.85]) {
+    cylinder(g, .16, .18, .3, [x, .16, 1.05], 0x5a4128, [0, 0, 0], 10);
+  }
   return g;
 }
 
@@ -490,6 +781,27 @@ function buildBoat(): THREE.Group {
   for (const [x, z, c] of [[-.78,-.27,0x1f65a6],[-.78,.27,0xb53b33],[-.27,-.27,0xe0a832],[-.27,.27,0x1f65a6]] as const) box(g, [.45, .38, .45], [x, 1.05, z], c);
   cylinder(g, .035, .035, 1.65, [.18, 1.65, 0], 0x4f3524, [0, 0, 0], 8);
   box(g, [.04, .48, .68], [.2, 2.06, 0], 0xedcf69);
+  // Loading crane over the container stack: a mast, an angled jib, and a cable
+  // hanging down to a hook — the boat previously had cargo but no way to load it.
+  const crane = new THREE.Group();
+  cylinder(crane, .045, .06, 1.5, [0, 0, 0], 0x2c2f33, [0, 0, 0], 8);
+  const jibStart = new THREE.Vector3(0, .72, 0);
+  const jibEnd = new THREE.Vector3(-.95, .34, 0);
+  beamBetween(crane, jibStart, jibEnd, .035, 0x2c2f33);
+  beamBetween(crane, new THREE.Vector3(0, .1, 0), jibEnd, .022, 0x555b61);
+  beamBetween(crane, jibEnd, new THREE.Vector3(-.95, .05, 0), .012, 0x1c1e21);
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(.045, .012, 6, 10, Math.PI * 1.4), mat(0x1c1e21));
+  hook.position.set(-.95, .04, 0);
+  crane.add(hook);
+  crane.position.set(-.55, 1.55, -.32);
+  g.add(crane);
+  // Small flag flying from the mast, matching the penguin-flag detail on the biplane.
+  const boatFlag = new THREE.Mesh(new THREE.ConeGeometry(.09, .24, 3), mat(0xdd3a34));
+  boatFlag.rotation.z = Math.PI / 2;
+  boatFlag.rotation.y = Math.PI / 2;
+  boatFlag.position.set(.13, 2.24, 0);
+  boatFlag.userData.flagWave = true;
+  g.add(boatFlag);
   return g;
 }
 
@@ -506,6 +818,17 @@ function buildArena(): THREE.Group {
     beamBetween(g, new THREE.Vector3(1.14,y,-.82), new THREE.Vector3(1.14,y,.82), .025, 0xd9b68a);
   }
   const emblem = makeLabel("K9  KNOCKOUT", "#ff635c"); emblem.position.set(0, .52, 0); emblem.scale.set(1.65,.36,1); g.add(emblem);
+  // Corner floodlights on tall poles, angled inward — gives the pit a "night fight"
+  // presence instead of reading as a bare fenced rectangle in daylight.
+  for (const [x, z] of corners) {
+    const poleHeight = 1.9 + seededRandom(x * 3 + z) * .3;
+    cylinder(g, .03, .04, poleHeight, [x * 1.12, poleHeight / 2, z * 1.12], 0x24272b, [0, 0, 0], 6);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.6), new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffdf8a, emissiveIntensity: .9, roughness: .4 }));
+    lamp.position.set(x * 1.12, poleHeight, z * 1.12);
+    lamp.rotation.x = Math.PI;
+    lamp.lookAt(0, .3, 0);
+    g.add(lamp);
+  }
   return g;
 }
 
@@ -526,14 +849,36 @@ function buildBuildingModel(id: string, telescopeUpgraded: boolean): THREE.Group
   return buildArena();
 }
 
+/** Adds a small pool of colors so the wandering penguins aren't all identical clones. */
+const PENGUIN_COLORS = [0x273fbd, 0x1c3a8f, 0x2a2a2a, 0x33507a, 0x1a2f5c];
+
 function buildPenguin(color = 0x273fbd): THREE.Group {
   const g = new THREE.Group();
-  sphere(g, .18, [0,.24,0], color, [.85,1.3,.75]);
+  const body = sphere(g, .18, [0,.24,0], color, [.85,1.3,.75]);
+  body.userData.isPenguinBody = true;
   sphere(g, .12, [0,.48,0], color);
   sphere(g, .11, [0,.25,-.13], 0xf4f0df, [.75,1.15,.3]);
   box(g, [.1,.035,.16], [-.1,.035,0], 0xff7d2b, [0,.2,0]);
   box(g, [.1,.035,.16], [.1,.035,0], 0xff7d2b, [0,-.2,0]);
   const beak = new THREE.Mesh(new THREE.ConeGeometry(.055,.16,4), mat(0xff7d2b)); beak.rotation.x = -Math.PI/2; beak.position.set(0,.48,-.15); g.add(beak);
+  // Little flipper wings that swing while waddling — the previous model had no
+  // arms at all, so walking/jumping had nothing visibly animating besides tilt.
+  const flipperGeo = new THREE.SphereGeometry(.1, 10, 8);
+  for (const side of [-1, 1]) {
+    const flipper = new THREE.Mesh(flipperGeo, mat(color));
+    flipper.scale.set(.34, .95, .55);
+    flipper.position.set(side * .19, .27, .01);
+    flipper.rotation.z = side * .3;
+    flipper.userData.isFlipper = true;
+    flipper.userData.flipperSide = side;
+    g.add(flipper);
+  }
+  // Feet, offset slightly so a walk-cycle bob reads as steps rather than a slide.
+  for (const side of [-1, 1]) {
+    const foot = box(g, [.075, .03, .13], [side * .07, .015, .04], 0xff7d2b);
+    foot.userData.isFoot = true;
+    foot.userData.footSide = side;
+  }
   return g;
 }
 
@@ -546,18 +891,19 @@ export default function PenguinTownScene3D({
   activeBuildingId,
   placingBuildingId,
   placementRotation,
+  popupOpen,
   onSelectBuilding,
   onPlacementPreview,
   onCommitPlacement,
   onPlacementMessage,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const propsRef = useRef({ townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation });
+  const propsRef = useRef({ townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen });
   const callbacksRef = useRef({ onSelectBuilding, onPlacementPreview, onCommitPlacement, onPlacementMessage });
 
   useEffect(() => {
-    propsRef.current = { townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation };
-  }, [townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation]);
+    propsRef.current = { townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen };
+  }, [townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen]);
 
   useEffect(() => {
     callbacksRef.current = { onSelectBuilding, onPlacementPreview, onCommitPlacement, onPlacementMessage };
@@ -602,17 +948,30 @@ export default function PenguinTownScene3D({
     const openingAzimuth = Math.atan2(camera.position.x, camera.position.z);
     controls.minAzimuthAngle = openingAzimuth - .48;
     controls.maxAzimuthAngle = openingAzimuth + .48;
+    let compactMode = false;
     const frameCamera = () => {
-      const compact = width / height < .72;
-      camera.fov = compact ? 68 : 42;
-      controls.minDistance = compact ? 25 : 13;
-      controls.maxDistance = compact ? 42 : 27;
-      if (compact && camera.position.length() < 34) camera.position.setLength(36);
-      if (!compact && camera.position.length() > 28) camera.position.setLength(26);
+      compactMode = width / height < .72;
+      camera.fov = compactMode ? 68 : 42;
+      controls.minDistance = compactMode ? 25 : 13;
+      controls.maxDistance = compactMode ? 42 : 27;
+      if (compactMode && camera.position.length() < 34) camera.position.setLength(36);
+      if (!compactMode && camera.position.length() > 28) camera.position.setLength(26);
       camera.updateProjectionMatrix();
     };
     frameCamera();
     controls.update();
+
+    // Building-popup camera pull-back: on the compact (mobile-proportioned)
+    // framing, opening the round popup eases the camera further back and its
+    // target a touch higher so the whole island stays visible above the
+    // popup instead of being partly covered by it. Applied as a pure
+    // incremental delta each frame (not an absolute position) so it never
+    // fights the player's own orbit/zoom — closing the popup eases the same
+    // total amount back off. No-op on the wide desktop framing, where the
+    // popup docks beside the island instead of over it.
+    let popupPullback = 0;
+    const POPUP_PULLBACK_DISTANCE = 8;
+    const POPUP_PULLBACK_LIFT = 2.4;
 
     scene.add(new THREE.HemisphereLight(0xcdf5ff, 0x213142, 1.25));
     const sun = new THREE.DirectionalLight(0xfef6e6, 2.1);
@@ -644,14 +1003,111 @@ export default function PenguinTownScene3D({
       const floe = cylinder(setDressing, .35 + seededRandom(i + 44) * .65, .45 + seededRandom(i + 44) * .7, .08 + seededRandom(i + 2) * .09, [Math.cos(angle) * distance, .06, Math.sin(angle) * distance], 0xdff4fa, [0, seededRandom(i) * Math.PI, 0], 7);
       floe.scale.z = .55 + seededRandom(i + 72) * .65;
     }
-    for (const [x,z] of [[-7,-3],[-5,7],[5,5],[7,-1],[-1,7]] as const) {
-      const penguin = buildPenguin();
-      penguin.position.set(x, ISLAND_HEIGHT + .05, z);
-      penguin.rotation.y = seededRandom(x * z + 80) * Math.PI * 2;
-      penguin.userData.waddlePhase = seededRandom(x + z + 10) * 10;
-      setDressing.add(penguin);
-    }
     scene.add(setDressing);
+
+    // ---------------- Penguin wander AI + toss-into-water physics ----------------
+    // Each background penguin wanders to random walkable points on its own, with
+    // an idle waddle when still and a hop cadence when moving. Clicking one tosses
+    // it in a tumbling arc out over the ocean (real parabolic flight, not a
+    // teleport), it splashes, swims a little loop, then waddles back to shore —
+    // a light, readable stand-in for full ragdoll physics (in the spirit of the
+    // Dr. Bongo ragdoll elsewhere on the site) that stays cheap with 5 penguins.
+    type PenguinMode = "idle" | "walk" | "toss" | "swim" | "return";
+    type PenguinAI = {
+      group: THREE.Group;
+      mode: PenguinMode;
+      target: THREE.Vector3;
+      timer: number;
+      facing: number;
+      hopPhase: number;
+      tossFrom: THREE.Vector3;
+      tossTo: THREE.Vector3;
+      tossElapsed: number;
+      tossDuration: number;
+      spin: THREE.Vector3;
+    };
+
+    const lowerSurfaceBBox = TERRAIN_REGIONS.lowerIsland.surface.reduce(
+      (box, [px, py]) => ({ minX: Math.min(box.minX, px), maxX: Math.max(box.maxX, px), minY: Math.min(box.minY, py), maxY: Math.max(box.maxY, py) }),
+      { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+    );
+
+    function randomWalkablePoint(): THREE.Vector3 {
+      for (let attempt = 0; attempt < 24; attempt += 1) {
+        const px = lowerSurfaceBBox.minX + Math.random() * (lowerSurfaceBBox.maxX - lowerSurfaceBBox.minX);
+        const py = lowerSurfaceBBox.minY + Math.random() * (lowerSurfaceBBox.maxY - lowerSurfaceBBox.minY);
+        if (!pointInPolygon([px, py], TERRAIN_REGIONS.lowerIsland.surface)) continue;
+        const { x, z } = percentToWorldXZ(px, py);
+        return new THREE.Vector3(x, ISLAND_HEIGHT + 0.05, z);
+      }
+      return new THREE.Vector3(0, ISLAND_HEIGHT + 0.05, 0);
+    }
+
+    const penguinGroup = new THREE.Group();
+    const penguins: PenguinAI[] = [];
+    const PENGUIN_SPAWN: readonly [number, number][] = [[-7, -3], [-5, 7], [5, 5], [7, -1], [-1, 7]];
+    PENGUIN_SPAWN.forEach(([x, z], index) => {
+      const model = buildPenguin(PENGUIN_COLORS[index % PENGUIN_COLORS.length]);
+      model.traverse((object) => { object.userData.penguinIndex = index; });
+      const start = new THREE.Vector3(x, ISLAND_HEIGHT + 0.05, z);
+      model.position.copy(start);
+      const facing = seededRandom(x * z + 80) * Math.PI * 2;
+      model.rotation.y = facing;
+      penguinGroup.add(model);
+      penguins.push({
+        group: model,
+        mode: "idle",
+        target: start.clone(),
+        timer: 1 + seededRandom(index + 40) * 3,
+        facing,
+        hopPhase: seededRandom(index + 5) * 10,
+        tossFrom: start.clone(),
+        tossTo: start.clone(),
+        tossElapsed: 0,
+        tossDuration: 1,
+        spin: new THREE.Vector3(seededRandom(index) - .5, seededRandom(index + 1) - .5, seededRandom(index + 2) - .5).normalize(),
+      });
+    });
+    scene.add(penguinGroup);
+
+    // Small pool of expanding splash-ring meshes, reused rather than allocated
+    // per-toss so repeated tossing doesn't leak geometry.
+    const splashRings: THREE.Mesh[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.1, 0.16, 24),
+        new THREE.MeshBasicMaterial({ color: 0xdff8ff, transparent: true, opacity: 0, side: THREE.DoubleSide }),
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.visible = false;
+      ring.userData.life = 0;
+      scene.add(ring);
+      splashRings.push(ring);
+    }
+    function spawnSplash(position: THREE.Vector3) {
+      const ring = splashRings.find((candidate) => candidate.userData.life <= 0) ?? splashRings[0];
+      ring.position.set(position.x, 0.03, position.z);
+      ring.scale.setScalar(1);
+      ring.visible = true;
+      ring.userData.life = 0.7;
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.85;
+    }
+
+    function tossPenguin(index: number) {
+      const penguin = penguins[index];
+      if (!penguin || penguin.mode === "toss" || penguin.mode === "swim") return;
+      const from = penguin.group.position.clone();
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 15 + Math.random() * 6;
+      const to = new THREE.Vector3(Math.cos(angle) * distance, 0, Math.sin(angle) * distance);
+      penguin.mode = "toss";
+      penguin.tossFrom = from;
+      penguin.tossTo = to;
+      penguin.tossElapsed = 0;
+      penguin.tossDuration = 1 + Math.random() * 0.3;
+      penguin.spin.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
+      penguin.timer = 0;
+    }
 
     // ---------------- Backdrop: distant mainland Antarctica ----------------
     // A close ring of real 3D peaks reads as solid geometry near the camera;
@@ -671,17 +1127,27 @@ export default function PenguinTownScene3D({
     gridGroup.visible = false;
     scene.add(gridGroup);
 
-    const oceanGeometry = new THREE.PlaneGeometry(140, 140, 48, 48);
+    const oceanGeometry = new THREE.PlaneGeometry(140, 140, 72, 72);
     oceanGeometry.rotateX(-Math.PI / 2);
     const oceanBasePositions = oceanGeometry.attributes.position.array.slice();
+    // Two independently-scrolling layers give the water real texture: a coarse
+    // rolling-swell bump (moves slow, drives the big highlights/shadows) and a
+    // fine glinting-sparkle emissive layer (moves fast, reads as sunlight/wave
+    // crests catching the light) — plus the existing per-vertex sine displacement
+    // below for actual geometric wave motion, not just a painted-on illusion.
+    const oceanWaveTexture = buildOceanWaveTexture();
+    const oceanSparkleTexture = buildOceanSparkleTexture();
     const oceanMaterial = new THREE.MeshStandardMaterial({
-      color: 0x087aa4,
-      roughness: 0.35,
-      metalness: 0.15,
+      color: 0x0a7fac,
+      roughness: 0.32,
+      metalness: 0.2,
       transparent: true,
-      opacity: 0.92,
-      bumpMap: buildNoiseBumpTexture(4242),
-      bumpScale: 0.06,
+      opacity: 0.93,
+      bumpMap: oceanWaveTexture,
+      bumpScale: 0.14,
+      emissive: 0xbdf1ff,
+      emissiveMap: oceanSparkleTexture,
+      emissiveIntensity: 0.5,
     });
     const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
     ocean.receiveShadow = true;
@@ -848,7 +1314,13 @@ export default function PenguinTownScene3D({
       setPointerFromEvent(event);
       const hits = raycaster.intersectObjects([...buildingGroups.values()], true);
       const hitId = hits.length ? (hits[0].object.userData.buildingId as string | undefined) : undefined;
-      if (hitId) callbacksRef.current.onSelectBuilding(hitId);
+      if (hitId) {
+        callbacksRef.current.onSelectBuilding(hitId);
+        return;
+      }
+      const penguinHits = raycaster.intersectObjects(penguinGroup.children, true);
+      const penguinIndex = penguinHits.length ? (penguinHits[0].object.userData.penguinIndex as number | undefined) : undefined;
+      if (typeof penguinIndex === "number") tossPenguin(penguinIndex);
     }
 
     const dom = renderer.domElement;
@@ -864,9 +1336,12 @@ export default function PenguinTownScene3D({
     let raf = 0;
     const clock = new THREE.Clock();
 
+    let lastFrameElapsed = 0;
     function step() {
       raf = requestAnimationFrame(step);
       const elapsed = clock.getElapsedTime();
+      const frameDeltaSec = Math.min(0.05, Math.max(0, elapsed - lastFrameElapsed));
+      lastFrameElapsed = elapsed;
       const props = propsRef.current;
 
       setDressing.children.forEach((object) => {
@@ -874,24 +1349,154 @@ export default function PenguinTownScene3D({
         object.rotation.z = Math.sin(elapsed * 3 + object.userData.waddlePhase) * .055;
       });
 
+      // ---- Penguin wander AI / toss / swim state machine ----
+      const WALK_SPEED = 0.9; // world units/sec
+      const SWIM_SPEED = 1.3;
+      for (const penguin of penguins) {
+        const { group } = penguin;
+        if (penguin.mode === "idle" || penguin.mode === "walk") {
+          penguin.timer -= frameDeltaSec;
+          if (penguin.mode === "idle") {
+            group.rotation.z = Math.sin(elapsed * 3 + penguin.hopPhase) * .055;
+            if (penguin.timer <= 0) {
+              penguin.target = randomWalkablePoint();
+              penguin.mode = "walk";
+              penguin.timer = 20; // safety cap so a stuck pathfind can't wander forever
+            }
+          } else {
+            const toTarget = penguin.target.clone().sub(group.position);
+            toTarget.y = 0;
+            const distance = toTarget.length();
+            if (distance < 0.15 || penguin.timer <= 0) {
+              penguin.mode = "idle";
+              penguin.timer = 1.5 + seededRandom(elapsed * 13 + penguin.hopPhase) * 3.5;
+              group.rotation.x = 0;
+            } else {
+              const direction = toTarget.normalize();
+              const desiredFacing = Math.atan2(direction.x, direction.z);
+              let facingDelta = desiredFacing - penguin.facing;
+              facingDelta = Math.atan2(Math.sin(facingDelta), Math.cos(facingDelta));
+              penguin.facing += facingDelta * Math.min(1, frameDeltaSec * 6);
+              group.rotation.y = penguin.facing;
+              const step3 = Math.min(distance, WALK_SPEED * frameDeltaSec);
+              group.position.addScaledVector(direction, step3);
+              // Hop cadence: a little vertical bounce + squash-stretch reads as a
+              // waddling gait rather than a gliding sprite.
+              const hopT = (elapsed * 7 + penguin.hopPhase) % (Math.PI * 2);
+              const hop = Math.abs(Math.sin(hopT));
+              group.position.y = ISLAND_HEIGHT + 0.05 + hop * 0.05;
+              group.rotation.z = Math.sin(hopT * 2) * .12;
+              group.scale.set(1 - hop * .06, 1 + hop * .1, 1 - hop * .06);
+              group.traverse((object) => {
+                if (object.userData.isFlipper) object.rotation.x = Math.sin(hopT + (object.userData.flipperSide === 1 ? Math.PI : 0)) * .4;
+                if (object.userData.isFoot) object.position.y = 0.015 + Math.max(0, Math.sin(hopT + (object.userData.footSide === 1 ? Math.PI : 0))) * .05;
+              });
+            }
+          }
+        } else if (penguin.mode === "toss") {
+          penguin.tossElapsed += frameDeltaSec;
+          const t = Math.min(1, penguin.tossElapsed / penguin.tossDuration);
+          const gravity = 9;
+          const vy0 = gravity * penguin.tossDuration * 0.55;
+          const height = vy0 * (penguin.tossElapsed) - 0.5 * gravity * penguin.tossElapsed * penguin.tossElapsed;
+          const pos = penguin.tossFrom.clone().lerp(penguin.tossTo, t);
+          pos.y = ISLAND_HEIGHT + 0.05 + Math.max(0, height);
+          group.position.copy(pos);
+          group.rotation.x += penguin.spin.x * frameDeltaSec * 9;
+          group.rotation.y += penguin.spin.y * frameDeltaSec * 9;
+          group.rotation.z += penguin.spin.z * frameDeltaSec * 9;
+          if (t >= 1) {
+            group.position.set(penguin.tossTo.x, 0.02, penguin.tossTo.z);
+            group.rotation.set(0, penguin.facing, 0);
+            group.scale.set(.92, .78, .92);
+            spawnSplash(group.position);
+            penguin.mode = "swim";
+            penguin.timer = 3 + Math.random() * 2.5;
+            penguin.target = penguin.tossTo.clone();
+          }
+        } else if (penguin.mode === "swim") {
+          penguin.timer -= frameDeltaSec;
+          const swimAngle = elapsed * 0.6 + penguin.hopPhase;
+          group.position.x = penguin.tossTo.x + Math.cos(swimAngle) * 0.6;
+          group.position.z = penguin.tossTo.z + Math.sin(swimAngle) * 0.6;
+          group.position.y = 0.02 + Math.sin(elapsed * 3.4 + penguin.hopPhase) * 0.02;
+          group.rotation.y = swimAngle + Math.PI / 2;
+          group.rotation.z = Math.sin(elapsed * 3.4 + penguin.hopPhase) * .18;
+          if (penguin.timer <= 0) {
+            penguin.mode = "return";
+            penguin.target = randomWalkablePoint();
+          }
+        } else if (penguin.mode === "return") {
+          const toTarget = penguin.target.clone().sub(group.position);
+          toTarget.y = 0;
+          const distance = toTarget.length();
+          if (distance < 0.3) {
+            penguin.mode = "idle";
+            penguin.timer = 1 + Math.random() * 2;
+            penguin.facing = group.rotation.y;
+            group.scale.set(1, 1, 1);
+            group.position.y = ISLAND_HEIGHT + 0.05;
+          } else {
+            const direction = toTarget.normalize();
+            penguin.facing = Math.atan2(direction.x, direction.z);
+            group.rotation.y = penguin.facing;
+            const step3 = Math.min(distance, SWIM_SPEED * frameDeltaSec);
+            group.position.addScaledVector(direction, step3);
+            const swimBob = Math.sin(elapsed * 5) * 0.02;
+            group.position.y = distance > 1.5 ? 0.02 + swimBob : ISLAND_HEIGHT + 0.05;
+          }
+        }
+      }
+
+      for (const ring of splashRings) {
+        if (ring.userData.life <= 0) continue;
+        ring.userData.life -= frameDeltaSec;
+        const progress = 1 - Math.max(0, ring.userData.life) / 0.7;
+        ring.scale.setScalar(1 + progress * 9);
+        const material = ring.material as THREE.MeshBasicMaterial;
+        material.opacity = Math.max(0, 0.85 * (1 - progress));
+        if (ring.userData.life <= 0) ring.visible = false;
+      }
+
       const sweatshop = buildingGroups.get("sweatshop");
       sweatshop?.traverse((object) => {
         if (!(object instanceof THREE.Mesh) || object.userData.smokePhase === undefined) return;
         object.position.y = object.userData.smokeBaseY + Math.sin(elapsed * 1.35 + object.userData.smokePhase) * .06;
       });
 
-      // Ocean ripple: cheap per-vertex sine displacement on a coarse grid.
+      const plane = buildingGroups.get("plane");
+      plane?.traverse((object) => { if (object.userData.spinPhase !== undefined) object.rotation.z = elapsed * 26; });
+      const boat = buildingGroups.get("docks");
+      boat?.traverse((object) => { if (object.userData.flagWave) object.rotation.x = Math.sin(elapsed * 4) * .18; });
+
+      // Ocean ripple: per-vertex sine displacement on a coarse grid (two swell
+      // frequencies plus a finer chop layer) for actual geometric wave motion,
+      // paired with the two scrolling canvas layers below for surface texture.
       const positions = oceanGeometry.attributes.position;
       for (let i = 0; i < positions.count; i += 1) {
         const x = oceanBasePositions[i * 3];
         const z = oceanBasePositions[i * 3 + 2];
-        const y = Math.sin(x * 0.35 + elapsed * 1.1) * 0.06 + Math.cos(z * 0.3 + elapsed * 0.8) * 0.06;
+        const y = Math.sin(x * 0.35 + elapsed * 1.1) * 0.06 + Math.cos(z * 0.3 + elapsed * 0.8) * 0.06
+          + Math.sin((x + z) * 0.9 + elapsed * 2.1) * 0.02;
         positions.setY(i, y);
       }
       positions.needsUpdate = true;
       oceanGeometry.computeVertexNormals();
+      oceanWaveTexture.offset.set(elapsed * 0.014, elapsed * 0.009);
+      oceanSparkleTexture.offset.set(-elapsed * 0.05, elapsed * 0.032);
 
       gridGroup.visible = Boolean(props.placingBuildingId);
+
+      const frameDeltaMs = frameDeltaSec * 1000;
+      const wantPullback = compactMode && props.popupOpen ? 1 : 0;
+      const previousPullback = popupPullback;
+      popupPullback += (wantPullback - popupPullback) * Math.min(1, frameDeltaMs * 0.0035);
+      if (Math.abs(popupPullback - wantPullback) < 0.001) popupPullback = wantPullback;
+      const pullbackDelta = popupPullback - previousPullback;
+      if (Math.abs(pullbackDelta) > 0.00001) {
+        camera.position.setLength(camera.position.length() + pullbackDelta * POPUP_PULLBACK_DISTANCE);
+        controls.target.y += pullbackDelta * POPUP_PULLBACK_LIFT;
+      }
 
       // Reconcile every building's group with the latest React state,
       // except the one actively being dragged into place (that one is

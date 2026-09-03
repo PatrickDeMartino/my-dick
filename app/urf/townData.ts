@@ -46,20 +46,30 @@ export type TerrainRegion = Readonly<{
 }>;
 
 export const BACKGROUND_OCEAN_EDGE: readonly TerrainPoint[] = [
-  [0, 32], [15, 31.5], [30, 29.5], [45, 28], [60, 26.5], [75, 26], [90, 29], [100, 32],
+  [-25, 33], [0, 32], [15, 31.5], [30, 29.5], [45, 28], [60, 26.5], [75, 26], [90, 29], [100, 32], [125, 33],
 ];
 // The editor controls occupy the foreground below this line on both desktop
 // and the shorter mobile map, so those covered tiles are intentionally blocked.
 export const FOREGROUND_BUILD_LIMIT_Y = 84.5;
+// How far past the original 0–100 painted-art strip the open-ocean band now
+// reaches on each side — widened alongside the bigger island so there's a
+// proportionally bigger ring of buildable/dock-able ocean tiles around it.
+export const OCEAN_BAND_X_MIN = -25;
+export const OCEAN_BAND_X_MAX = 125;
 
+// Scaled up ~1.2x from the originally painted 2:3 art (anchored near the
+// upper island so growth pushes outward into open ocean on the sides/top
+// rather than deeper under the foreground UI band) — more buildable land,
+// more coastline, and correspondingly more open ocean around it once the
+// blocked-boundary check below is widened to match.
 export const TERRAIN_REGIONS = {
   upperPlateau: {
-    surface: [[58.5, 33.5], [61, 30.5], [66, 28], [72, 29], [76, 32.5], [78, 36.5], [76, 39.5], [70, 39], [64, 36.5], [59, 36]],
-    bounds: [[57, 34], [60, 29.5], [66, 27.5], [72.5, 28.5], [77.5, 32.5], [80, 39], [79, 44], [75, 46], [69, 42], [63, 39], [58, 38.5]],
+    surface: [[59.6, 31.2], [62.7, 27.7], [68.9, 24.8], [76.3, 26], [81.3, 30], [83.8, 34.7], [81.3, 38.1], [73.8, 37.6], [66.4, 34.7], [60.2, 34.1]],
+    bounds: [[57.7, 31.8], [61.4, 26.5], [68.9, 24.2], [76.9, 25.4], [83.1, 30], [86.2, 37.6], [85, 43.4], [80, 45.7], [72.6, 41], [65.2, 37.6], [59, 37]],
   },
   lowerIsland: {
-    surface: [[43, 36], [56, 34.5], [63, 36.5], [70, 38.5], [76, 40], [78, 43], [80, 50], [79, 56], [83, 61], [89, 65.5], [94, 69], [94, 73], [88, 75.5], [80, 79], [72, 86], [64, 86], [57, 83], [51, 79], [44, 78], [41, 75], [45, 70], [45, 67], [37, 68], [31, 66], [28, 63], [26, 59], [24, 54], [22, 51], [20, 47], [20, 43], [28, 40], [37, 38.5]],
-    bounds: [[42, 36], [56, 33.5], [64, 36], [71, 38], [77, 39], [80, 42], [82, 50], [81, 57], [85, 62], [92, 66], [96, 70], [96, 74], [90, 78], [82, 81], [73, 88], [64, 89], [56, 85], [50, 82], [43, 81], [39, 78], [40, 73], [43, 69], [36, 71], [30, 69], [26, 66], [24, 62], [22, 57], [20, 53], [18, 49], [17, 45], [20, 41], [28, 39], [36, 37.5]],
+    surface: [[40.4, 34.1], [56.5, 32.3], [65.2, 34.7], [73.8, 37], [81.3, 38.7], [83.8, 42.2], [86.2, 50.3], [85, 57.3], [90, 63.1], [97.4, 68.3], [103.6, 72.4], [103.6, 77], [96.2, 79.9], [86.2, 84], [76.3, 92.1], [66.4, 92.1], [57.7, 88.6], [50.3, 84], [41.6, 82.8], [37.9, 79.3], [42.8, 73.5], [42.8, 70], [32.9, 71.2], [25.5, 68.9], [21.8, 65.4], [19.3, 60.8], [16.8, 55], [14.3, 51.5], [11.8, 46.8], [11.8, 42.2], [21.8, 38.7], [32.9, 37]],
+    bounds: [[39.1, 34.1], [56.5, 31.2], [66.4, 34.1], [75.1, 36.4], [82.5, 37.6], [86.2, 41], [88.7, 50.3], [87.5, 58.4], [92.4, 64.2], [101.1, 68.9], [106.1, 73.5], [106.1, 78.2], [98.6, 82.8], [88.7, 86.3], [77.6, 94.4], [66.4, 95.6], [56.5, 90.9], [49, 87.4], [40.4, 86.3], [35.4, 82.8], [36.6, 77], [40.4, 72.4], [31.7, 74.7], [24.2, 72.4], [19.3, 68.9], [16.8, 64.2], [14.3, 58.4], [11.8, 53.8], [9.4, 49.2], [8.1, 44.5], [11.8, 39.9], [21.8, 37.6], [31.7, 35.8]],
   },
 } as const satisfies Record<string, TerrainRegion>;
 
@@ -122,7 +132,7 @@ export const pointInPolygon = ([x, y]: TerrainPoint, polygon: readonly TerrainPo
 };
 
 const backgroundOceanEdgeAt = (screenX: number): number => {
-  const clampedX = Math.max(0, Math.min(100, screenX));
+  const clampedX = Math.max(OCEAN_BAND_X_MIN, Math.min(OCEAN_BAND_X_MAX, screenX));
   for (let index = 1; index < BACKGROUND_OCEAN_EDGE.length; index += 1) {
     const [leftX, leftY] = BACKGROUND_OCEAN_EDGE[index - 1];
     const [rightX, rightY] = BACKGROUND_OCEAN_EDGE[index];
@@ -143,7 +153,7 @@ export const terrainAt = (column: number, row: number): TerrainType => {
   if (pointInPolygon(point, TERRAIN_REGIONS.upperPlateau.bounds)) return "cliff";
   if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.surface)) return "land";
   if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.bounds)) return "cliff";
-  if (screenX < 0 || screenX > 100 || screenY < backgroundOceanEdgeAt(screenX) || screenY > FOREGROUND_BUILD_LIMIT_Y) return "blocked";
+  if (screenX < OCEAN_BAND_X_MIN || screenX > OCEAN_BAND_X_MAX || screenY < backgroundOceanEdgeAt(screenX) || screenY > FOREGROUND_BUILD_LIMIT_Y) return "blocked";
   return "ocean";
 };
 

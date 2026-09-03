@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import PenguinTownScene3D from "./PenguinTownScene3D";
 import { JellyButtons } from "./JellyButtons";
+import { BuildingPopup } from "./BuildingPopup";
 import {
   BUILDING_STORIES,
   CIRCUS_STOCK,
@@ -528,8 +529,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     } catch { setEditorMessage("RAT FARM OFFLINE"); }
   };
 
+  const popupOpen = Boolean(activeBuilding && !townLayout[activeBuilding.id]?.stored);
+
   return (
     <main className="town-screen">
+      <div className="town-frame">
+        <div className="town-side-art town-side-art-left" aria-hidden="true" />
       <section
         className={`town-map${placingBuildingId ? " is-placing" : ""}`}
         aria-label="Penguin Town base editor"
@@ -540,6 +545,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           activeBuildingId={activeBuildingId}
           placingBuildingId={placingBuildingId}
           placementRotation={placementPreview?.rotation ?? 0}
+          popupOpen={popupOpen}
           onSelectBuilding={handleSelectBuilding}
           onPlacementPreview={handlePlacementPreview}
           onCommitPlacement={handleCommitPlacement}
@@ -558,15 +564,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         </aside>
 
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
-          <aside className="town-selection-card" aria-live="polite" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
-            <div className="town-selection-character"><img src={BUILDING_STORIES[activeBuilding.id].character} alt="" /></div>
-            <div className="town-selection-copy">
-              <div className="town-selection-kicker"><small>{BUILDING_STORIES[activeBuilding.id].role}</small><span>SELECTED · {displayBuildingLabel(activeBuilding)}</span></div>
-              <b>{BUILDING_STORIES[activeBuilding.id].name}</b>
-              <p>{BUILDING_STORIES[activeBuilding.id].description}</p>
-            </div>
-            <JellyButtons
-              minHeight={104}
+          <div onPointerDown={(event) => event.stopPropagation()}>
+            <BuildingPopup
+              character={BUILDING_STORIES[activeBuilding.id].character}
+              role={BUILDING_STORIES[activeBuilding.id].role}
+              name={displayBuildingLabel(activeBuilding)}
+              onClose={() => setActiveBuildingId(null)}
               buttons={[
                 ...(activeBuilding.id === "telescope" && !telescopeUpgraded
                   ? [{ key: "upgrade", label: "UPGRADE · 69", tone: "gold" as const, onClick: upgradeTelescope }]
@@ -586,7 +589,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 },
               ]}
             />
-          </aside>
+          </div>
         )}
 
         {(placingBuildingId || editorMessage) && (
@@ -632,6 +635,8 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           </div>
         </nav>
       </section>
+        <div className="town-side-art town-side-art-right" aria-hidden="true" />
+      </div>
 
       {selectedBuilding && (
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {

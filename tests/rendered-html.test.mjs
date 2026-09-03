@@ -193,17 +193,40 @@ test("Israel is an unlocked geographic destination with a playable Yoo-hoo room"
   const room = await readFile(new URL("../app/israel/page.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
 
-  assert.match(html, /YOO-HOO HEART ROOM/);
+  assert.match(html, /BB NETTY-YOO-HOO LOVE SHRINE/);
   assert.match(globe, /project\(\[34\.85, 31\.5\]\)/);
   assert.match(globe, /aria-label="Enter Israel"/);
   assert.match(globe, /2 \/ 8 TERRITORIES UNLOCKED/);
   assert.match(room, /new THREE\.WebGLRenderer/);
   assert.match(room, /PRIME MINISTER OF MY HEART/);
-  assert.match(room, /BB NEON-YOO-HOO IS A CUTIE PATOOTIE/);
+  assert.match(room, /BB NETTY-YOO-HOO CUTIE PATOOTIE/);
   assert.match(room, /YOO-HOO COLLECTED · CURRENCY \+1/);
   assert.match(room, /netanyahu-1\.jpg/);
   assert.match(room, /netanyahu-2\.jpg/);
-  assert.match(room, /yoohoo-can\.jpg/);
+  assert.match(room, /yoohoo-can-clean\.png/);
+  assert.match(room, /Chimpanzee_Portrait/);
+  assert.match(room, /const cans:THREE\.Group\[\]=\[\]/);
+  assert.match(room, /velocity\.y-=6\.2\*dt/);
+  assert.match(room, /new THREE\.ExtrudeGeometry\(heart/);
   assert.match(banner, /trip\.yoohoo\.v1/);
   assert.match(banner, /Yoo-hoo cans/);
+});
+
+test("Penguin Town V2 keeps the mobile-first 3D island and circular popup system", async () => {
+  const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+  const scene = await readFile(new URL("../app/urf/PenguinTownScene3D.tsx", import.meta.url), "utf8");
+  const popup = await readFile(new URL("../app/urf/BuildingPopup.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/urf/urf.css", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+
+  assert.match(town, /<BuildingPopup/);
+  assert.match(town, /className="town-frame"/);
+  assert.match(scene, /popupPullback/);
+  assert.match(popup, /building-popup-circle/);
+  assert.match(popup, /JellyButtons shape="circle"/);
+  assert.match(styles, /psychedelic-earth-texture-v1\.png/);
+  assert.match(styles, /@media \(min-width: 860px\) and \(min-aspect-ratio: 0\.85\)/);
+  assert.match(banner, /<Can3D size=\{44\}/);
+  assert.match(banner, /<OilGauge \/>/);
+  assert.match(banner, /variant="yoohoo"/);
 });

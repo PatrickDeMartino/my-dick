@@ -94,11 +94,7 @@ html.trip-embedded .trip-banner { display: none; }
 .trip-banner__stat strong { font-size: 10px; letter-spacing: .08em; }
 .trip-banner__stat b { min-width: 28px; padding: 6px 8px; border: 1px solid rgba(255,245,185,.5); border-radius: 999px; background: rgba(27,0,48,.55); text-align: center; }
 .trip-banner__yoohoo { color:#fff3a2; }
-.trip-banner__stat > .trip-banner__yoohoo-can { position:relative; width:24px; height:43px; flex:0 0 auto; overflow:hidden; border-radius:50% / 8%; background:#ffd823; box-shadow:inset -5px 0 7px rgba(80,31,0,.38),inset 4px 0 5px rgba(255,255,255,.5),0 4px 7px rgba(30,0,52,.42); transform:perspective(80px) rotateY(-9deg); }
-.trip-banner__yoohoo-can::before,.trip-banner__yoohoo-can::after { content:""; position:absolute; z-index:2; left:1px; right:1px; height:4px; border-radius:50%; background:linear-gradient(90deg,#8c8d8f,#f8fbfc,#7f8082); }
-.trip-banner__yoohoo-can::before { top:0; }
-.trip-banner__yoohoo-can::after { bottom:0; }
-.trip-banner__yoohoo-can img { width:100%; height:100%; display:block; object-fit:cover; object-position:72% center; filter:saturate(1.24) contrast(1.08); }
+.trip-banner__stat > .trip-banner__yoohoo-can { width:34px; height:52px; flex:0 0 auto; display:block; filter:drop-shadow(0 4px 5px rgba(30,0,52,.45)); transform:perspective(90px) rotateY(-8deg); }
 
 .trip-banner__currency {
   min-width: 0;
@@ -130,6 +126,26 @@ html.trip-embedded .trip-banner { display: none; }
   filter: contrast(1.08) saturate(1.08);
   mix-blend-mode: screen;
 }
+
+.trip-can-3d { width: 100%; height: 100%; display: block; }
+.trip-can-3d canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* Thirst for Oil: an analog dial that's always redlining, driven by
+   OilGauge.tsx via refs/rAF so it can flutter every frame without
+   re-rendering the banner. */
+.trip-oil-gauge { position: relative; width: 46px; }
+.trip-oil-gauge-face { display: block; width: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+.trip-oil-gauge-readout { margin-top: -6px; display: grid; justify-items: center; gap: 1px; }
+.trip-oil-gauge-readout > span {
+  min-width: 40px; padding: 3px 6px; border: 1px solid rgba(255,245,185,.5); border-radius: 999px;
+  background: rgba(27,0,48,.55); color: #fff4a4; font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 11px; font-weight: 900; text-align: center; letter-spacing: .02em;
+}
+.trip-oil-gauge-peg {
+  height: 0; overflow: visible; color: #ff8f7a; font-size: 7px; font-weight: 900; letter-spacing: .16em;
+  opacity: 0; transform: translateY(-1px) scale(.8); transition: opacity .12s, transform .12s;
+}
+.trip-oil-gauge-peg.is-flashing { opacity: 1; transform: translateY(1px) scale(1.08); text-shadow: 0 0 8px #ff4a35; }
 
 .trip-banner__currency strong {
   overflow: hidden;
@@ -373,11 +389,11 @@ html.trip-embedded .trip-banner { display: none; }
   .trip-banner__wallet { gap: 5px; }
   .trip-banner__stat { gap: 2px; }
   .trip-banner__stat > span { font-size: 18px; }
-  .trip-banner__stat > .trip-banner__yoohoo-can { width:18px; height:34px; }
+  .trip-banner__stat > .trip-banner__yoohoo-can { width:24px; height:42px; }
   .trip-banner__stat strong { display: none; }
   .trip-banner__stat b { min-width: 25px; padding: 4px 6px; font-size: 12px; }
-  .trip-banner__oil > span { display: none; }
-  .trip-banner__oil { display:none; }
+  .trip-oil-gauge { width: 34px; }
+  .trip-oil-gauge-readout > span { min-width: 30px; padding: 2px 4px; font-size: 9px; }
   .trip-banner__links a { width: 31px; height: 31px; }
 }
 
