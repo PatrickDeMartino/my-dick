@@ -117,3 +117,4 @@ export default function BrainRoom() {
     {subject === "bongo" && !consoleOpen && <button className="brain-console-reopen" type="button" onClick={() => setConsoleOpen(true)}>OPEN BONGO LINK</button>}
   </main>;
 }
+

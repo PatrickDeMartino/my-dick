@@ -278,3 +278,4 @@ window.addEventListener("pagehide", () => {
 
 beginSchedule();
 prepareRoomPlate();
+
