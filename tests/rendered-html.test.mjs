@@ -183,3 +183,27 @@ test("world globe clips coastlines cleanly and supports full rotation", async ()
   assert.match(town, /roll: wrapAngle/);
   assert.doesNotMatch(town, /Math\.max\(-55, Math\.min\(55/);
 });
+
+test("Israel is an unlocked geographic destination with a playable Yoo-hoo room", async () => {
+  const response = await request("/israel");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  const globe = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+  const room = await readFile(new URL("../app/israel/page.tsx", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+
+  assert.match(html, /YOO-HOO HEART ROOM/);
+  assert.match(globe, /project\(\[34\.85, 31\.5\]\)/);
+  assert.match(globe, /aria-label="Enter Israel"/);
+  assert.match(globe, /2 \/ 8 TERRITORIES UNLOCKED/);
+  assert.match(room, /new THREE\.WebGLRenderer/);
+  assert.match(room, /PRIME MINISTER OF MY HEART/);
+  assert.match(room, /BB NEON-YOO-HOO IS A CUTIE PATOOTIE/);
+  assert.match(room, /YOO-HOO COLLECTED · CURRENCY \+1/);
+  assert.match(room, /netanyahu-1\.jpg/);
+  assert.match(room, /netanyahu-2\.jpg/);
+  assert.match(room, /yoohoo-can\.jpg/);
+  assert.match(banner, /trip\.yoohoo\.v1/);
+  assert.match(banner, /Yoo-hoo cans/);
+});

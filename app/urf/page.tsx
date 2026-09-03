@@ -44,7 +44,7 @@ const continentMarkers: { name: string; center: Point }[] = [
   { name: "Australia", center: [134, -25] },
 ];
 
-function Globe({ onEnter }: { onEnter: () => void }) {
+function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ active: false, x: 0, y: 0, mode: "orbit" as "orbit" | "roll" });
@@ -208,6 +208,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
 
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
+  const israel = project([34.85, 31.5]);
 
   const moveDrag = (x: number, y: number) => {
     if (!dragRef.current.active) return;
@@ -270,6 +271,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       >
         <span className="marker-dot" />
         <span className="marker-copy"><b>ANTARCTICA</b><small>AVAILABLE</small></span>
+      </button>
+      <button
+        type="button"
+        className="israel-marker"
+        style={{ left: `${israel.x}px`, top: `${israel.y}px`, opacity: israel.visible ? "1" : "0", pointerEvents: israel.visible ? "auto" : "none" }}
+        onClick={onEnterIsrael}
+        aria-label="Enter Israel"
+      >
+        <span className="israel-marker__pin" aria-hidden="true">✦</span>
+        <span className="marker-copy"><b>ISRAEL</b><small>AVAILABLE</small></span>
       </button>
       <div className="globe-shadow" />
     </div>
@@ -745,6 +756,14 @@ export default function Home() {
     window.location.href = "/";
   };
 
+  const enterIsrael = () => {
+    if (window.parent !== window) {
+      window.parent.location.href = "/israel";
+      return;
+    }
+    window.location.href = "/israel";
+  };
+
   if (screen === "town") {
     return <PenguinTown onBack={() => setScreen("world")} />;
   }
@@ -755,16 +774,16 @@ export default function Home() {
       <header className="world-header">
         <div className="eyebrow"><span /> WORLD SELECT</div>
         <h1>Go anywhere</h1>
-        <p>as Long as it&apos;s Antarctica</p>
+        <p>Antarctica and Israel are unlocked</p>
       </header>
       <button className="quit-button" type="button" aria-label="Exit world selection" onClick={closeSelector}>×</button>
       <section className="globe-stage" aria-label="World map">
-        <Globe onEnter={() => setScreen("town")} />
+        <Globe onEnter={() => setScreen("town")} onEnterIsrael={enterIsrael} />
       </section>
       <footer className="world-footer">
         <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>360° ROTATE · SHIFT TO ROLL</small></p></div>
         <div className="control-hint"><span>＋</span><p><b>SCROLL</b><small>ZOOM</small></p></div>
-        <div className="status-pill"><i /> 1 / 7 TERRITORIES UNLOCKED</div>
+        <div className="status-pill"><i /> 2 / 8 TERRITORIES UNLOCKED</div>
       </footer>
     </main>
   );

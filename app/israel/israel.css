@@ -1,0 +1,25 @@
+.israel-room { position:fixed; inset:var(--trip-banner-height) 0 0; overflow:hidden; color:#fff; background:#050718; isolation:isolate; }
+.israel-room__viewport { position:absolute; inset:0; cursor:grab; touch-action:none; }
+.israel-room__viewport:active { cursor:grabbing; }
+.israel-room__viewport canvas { display:block; width:100%; height:100%; }
+.israel-room__wash { position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(3,6,24,.66),transparent 28%,transparent 67%,rgba(4,5,21,.72)),radial-gradient(circle at 50% 40%,transparent 25%,rgba(0,0,0,.38) 100%); }
+.israel-room__back { position:absolute; z-index:5; top:16px; left:16px; padding:11px 14px; border:1px solid rgba(127,220,255,.62); border-radius:999px; color:#fff; background:rgba(7,17,52,.78); box-shadow:0 8px 30px rgba(0,0,0,.38); backdrop-filter:blur(12px); font:900 10px/1 var(--font-geist-mono); letter-spacing:.1em; text-decoration:none; }
+.israel-room__back:hover,.israel-room__back:focus-visible { color:#ffe65b; border-color:#ffe65b; outline:0; }
+.israel-room__title { position:absolute; z-index:4; top:14px; left:50%; width:min(620px,62vw); transform:translateX(-50%); text-align:center; pointer-events:none; text-shadow:0 3px 18px #020318,0 0 22px #2558b8; }
+.israel-room__title small { color:#77dfff; font:900 9px/1 var(--font-geist-mono); letter-spacing:.18em; }
+.israel-room__title h1 { margin:6px 0 4px; color:#fff7bd; font:900 clamp(25px,3.7vw,52px)/.9 Impact,Arial,sans-serif; letter-spacing:.045em; }
+.israel-room__title p { margin:0; color:#ff76a9; font:900 clamp(8px,.9vw,12px)/1.2 var(--font-geist-mono); letter-spacing:.14em; }
+.israel-room__legend { position:absolute; z-index:5; right:18px; bottom:22px; display:grid; gap:7px; min-width:195px; padding:14px 16px; border:1px solid rgba(116,211,255,.45); border-radius:15px; color:#ccecff; background:rgba(5,14,45,.78); box-shadow:0 14px 40px rgba(0,0,0,.45),inset 0 0 24px rgba(45,123,255,.11); backdrop-filter:blur(13px); font:800 8px/1.15 var(--font-geist-mono); letter-spacing:.1em; }
+.israel-room__legend b { margin-bottom:2px; color:#ffe363; }
+.israel-room__message { position:absolute; z-index:5; left:50%; bottom:24px; max-width:55vw; margin:0; padding:10px 16px; transform:translateX(-50%); border:1px solid rgba(255,226,84,.54); border-radius:999px; color:#fff2a7; background:rgba(23,17,50,.8); box-shadow:0 0 24px rgba(255,65,138,.2); font:900 8px/1 var(--font-geist-mono); letter-spacing:.12em; white-space:nowrap; }
+.israel-room__hearts { position:absolute; z-index:4; left:18px; bottom:25px; color:#ff4f91; font-size:24px; letter-spacing:.15em; text-shadow:0 0 13px #ff3c89; animation:israel-heartbeat 1.2s ease-in-out infinite; pointer-events:none; }
+@keyframes israel-heartbeat { 50% { transform:scale(1.12); color:#ffe15f; } }
+@media (max-width:720px) {
+  .israel-room__back { top:10px; left:9px; padding:9px 10px; font-size:7px; }
+  .israel-room__title { top:56px; width:94vw; }
+  .israel-room__title h1 { font-size:29px; }
+  .israel-room__title p { font-size:7px; }
+  .israel-room__legend { right:8px; bottom:58px; min-width:0; padding:10px; font-size:6px; }
+  .israel-room__message { bottom:14px; max-width:92vw; overflow:hidden; font-size:6px; text-overflow:ellipsis; }
+  .israel-room__hearts { left:10px; bottom:66px; font-size:17px; }
+}

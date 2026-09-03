@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
 const BANANA_STORAGE_KEY = "trip.bananas.v1";
+const YOOHOO_STORAGE_KEY = "trip.yoohoo.v1";
 const WALLET_SEED_KEY = "trip.wallet.seed.v2";
 const REWARD_EVENT = "trip-rat-meat-earned";
 const BALANCE_EVENT = "trip-rat-meat-balance-changed";
 const BONGO_ACTION_EVENT = "trip-bongo-action";
+const YOOHOO_BALANCE_EVENT = "trip-yoohoo-balance-changed";
 
 function readRatMeat() {
   try {
@@ -19,11 +21,21 @@ function readRatMeat() {
   }
 }
 
+function readYoohoo() {
+  try {
+    const value = Number.parseInt(window.localStorage.getItem(YOOHOO_STORAGE_KEY) ?? "69", 10);
+    return Number.isFinite(value) ? Math.max(0, value) : 69;
+  } catch {
+    return 69;
+  }
+}
+
 export default function SiteBanner() {
   const pathname = usePathname();
   const isBongo = pathname.startsWith("/bongo");
   const [amount, setAmount] = useState(69);
   const [bananas, setBananas] = useState(69);
+  const [yoohoo, setYoohoo] = useState(69);
   const [visible, setVisible] = useState(true);
   const [earned, setEarned] = useState(false);
   const [bongoMenuOpen, setBongoMenuOpen] = useState(false);
@@ -48,6 +60,9 @@ export default function SiteBanner() {
         window.localStorage.setItem(BANANA_STORAGE_KEY, "69");
         window.localStorage.setItem(WALLET_SEED_KEY, "seeded");
       }
+      if (!window.localStorage.getItem(YOOHOO_STORAGE_KEY)) {
+        window.localStorage.setItem(YOOHOO_STORAGE_KEY, "69");
+      }
     } catch {
       /* The visible session defaults still work when storage is unavailable. */
     }
@@ -55,6 +70,7 @@ export default function SiteBanner() {
       setAmount(readRatMeat());
       const storedBananas = Number.parseInt(window.localStorage.getItem(BANANA_STORAGE_KEY) ?? "69", 10);
       setBananas(Number.isFinite(storedBananas) ? Math.max(0, storedBananas) : 69);
+      setYoohoo(readYoohoo());
     });
 
     const onReward = (event: MessageEvent) => {
@@ -85,15 +101,20 @@ export default function SiteBanner() {
 
     const onStorage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) setAmount(readRatMeat());
+      if (event.key === YOOHOO_STORAGE_KEY) setYoohoo(readYoohoo());
     };
+
+    const onYoohooBalance = () => setYoohoo(readYoohoo());
 
     window.addEventListener("message", onReward);
     window.addEventListener("storage", onStorage);
+    window.addEventListener(YOOHOO_BALANCE_EVENT, onYoohooBalance);
 
     return () => {
       window.cancelAnimationFrame(syncFrame);
       window.removeEventListener("message", onReward);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener(YOOHOO_BALANCE_EVENT, onYoohooBalance);
       if (burstTimer.current) clearTimeout(burstTimer.current);
     };
   }, []);
@@ -139,6 +160,12 @@ export default function SiteBanner() {
         </div>
         <div className="trip-banner__stat trip-banner__bananas" aria-label={`${bananas} bananas`}>
           <span aria-hidden="true">🍌</span><strong>Bananas</strong><b>{bananas}</b>
+        </div>
+        <div className="trip-banner__stat trip-banner__yoohoo" aria-label={`${yoohoo} Yoo-hoo cans`}>
+          <span className="trip-banner__yoohoo-can" aria-hidden="true">
+            <img src="/israel-room/yoohoo-can.jpg" alt="" />
+          </span>
+          <strong>Yoo-hoo</strong><b>{yoohoo}</b>
         </div>
         <div className="trip-banner__stat trip-banner__oil" aria-label="An unquenchable thirst for oil">
           <span aria-hidden="true">🛢️</span><strong>Oil thirst</strong><b>∞</b>

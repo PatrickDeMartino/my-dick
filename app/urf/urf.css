@@ -29,7 +29,7 @@
 .globe-canvas { display: block; cursor: grab; touch-action: none; filter: drop-shadow(0 0 45px rgba(34,130,172,.18)); }
 .globe-canvas:active { cursor: grabbing; }
 .globe-shadow { position: absolute; pointer-events: none; width: 62%; height: 8%; left: 19%; bottom: 4%; border-radius: 50%; background: rgba(0,0,0,.8); filter: blur(17px); z-index: -1; }
-.lock-marker, .antarctica-marker { position: absolute; transform: translate(-50%, -50%); transition: opacity .12s; }
+.lock-marker, .antarctica-marker, .israel-marker { position: absolute; transform: translate(-50%, -50%); transition: opacity .12s; }
 .lock-marker { display: grid; place-items: center; gap: 4px; color: #d5dbe0; text-shadow: 0 2px 8px #000; pointer-events: none; }
 .lock-marker span { font-size: clamp(13px, 1.5vw, 20px); filter: grayscale(1); }
 .lock-marker small { padding: 3px 6px; border-radius: 3px; color: #aab4ba; background: rgba(7,14,20,.65); font-size: clamp(7px, .7vw, 10px); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
@@ -39,6 +39,11 @@
 .marker-copy { display: grid; gap: 2px; }
 .marker-copy b { font-size: 11px; letter-spacing: .12em; }
 .marker-copy small { color: var(--cyan); font-size: 7px; letter-spacing: .16em; }
+.israel-marker { display: flex; align-items: center; gap: 7px; min-width: 28px; min-height: 28px; padding: 5px 8px 5px 5px; border: 1px solid rgba(112,232,255,.78); border-radius: 999px; color: white; background: rgba(4,18,41,.92); cursor: pointer; box-shadow: 0 0 17px rgba(65,194,255,.42); text-align: left; }
+.israel-marker:hover, .israel-marker:focus-visible { transform: translate(-50%, -50%) scale(1.1); border-color: #fff36b; outline: none; box-shadow: 0 0 0 3px rgba(255,243,107,.18),0 0 26px rgba(80,210,255,.55); }
+.israel-marker__pin { width: clamp(7px,.72vw,9px); height: clamp(7px,.72vw,9px); display: grid; place-items: center; color: #72e9ff; font-size: clamp(7px,.72vw,9px); line-height: 1; text-shadow: 0 0 8px #62e9ff; }
+.israel-marker .marker-copy { max-width: 0; overflow: hidden; opacity: 0; transition: max-width .22s ease,opacity .15s ease; }
+.israel-marker:hover .marker-copy, .israel-marker:focus-visible .marker-copy { max-width: 90px; opacity: 1; }
 .world-footer { position: absolute; z-index: 5; left: clamp(20px, 5vw, 72px); right: clamp(20px, 5vw, 72px); bottom: clamp(20px, 4vh, 48px); display: flex; align-items: center; gap: 28px; }
 .control-hint { display: flex; align-items: center; gap: 10px; color: #b8c5cd; }
 .control-hint > span { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(165,198,214,.24); border-radius: 7px; background: rgba(8,20,30,.76); }
