@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import PenguinTownScene3D from "./PenguinTownScene3D";
+import { JellyButtons } from "./JellyButtons";
 import {
   BUILDING_STORIES,
   CIRCUS_STOCK,
@@ -13,10 +14,12 @@ import {
   createDefaultTownLayout,
   flipperFlappington,
   isValidSavedTownLayout,
+  nextRotation,
   placementIssue,
   terrainInventoryInstruction,
   type GridPosition,
   type PlacementPreview,
+  type Rotation,
   type TownBuilding,
   type TownDialogSubject,
   type TownLayout,
@@ -298,6 +301,19 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const storedBuildings = buildings.filter((building) => townLayout[building.id]?.stored);
   const displayBuildingLabel = (building: TownBuilding) => building.id === "telescope" && telescopeUpgraded ? "METAL TELESCOPE" : building.label;
 
+  // Each resident gets their own painted backdrop behind the dialog portrait —
+  // an "oil painting" vibe unique to their story, not just a shared studio flat.
+  const DIALOG_THEME: Record<string, string> = {
+    plane: "theme-jungle-strip",
+    telescope: "theme-cosmic",
+    magic: "theme-tropical-tent",
+    igloo: "theme-jungle-lab",
+    sweatshop: "theme-factory",
+    docks: "theme-harbor",
+    arena: "theme-back-alley",
+    flipper: "theme-beach",
+  };
+
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem("trip.penguin-town-layout.v10");
@@ -348,7 +364,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         for (let offset = 0; offset < directions.length; offset += 1) {
           const direction = directions[(start + offset) % directions.length];
           const next = { column: position.column + direction.column, row: position.row + direction.row };
-          if (!placementIssue(boat, next, current)) return { ...current, docks: { ...next, stored: false } };
+          if (!placementIssue(boat, next, current, position.rotation)) return { ...current, docks: { ...next, stored: false, rotation: position.rotation } };
         }
         return current;
       });
@@ -380,11 +396,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   // the player orbits/taps around the island and reports what happened.
   const startPlacing = (id: string) => {
     const building = buildings.find((candidate) => candidate.id === id);
-    const position = townLayout[id] ?? building?.start;
+    const position = townLayout[id] ?? (building ? { ...building.start, stored: false, rotation: 0 as Rotation } : undefined);
     setPlacingBuildingId(id);
     setActiveBuildingId(null);
     if (building && position) {
-      setPlacementPreview({ id, column: position.column, row: position.row, valid: !placementIssue(building, position, townLayout) });
+      const rotation = position.rotation ?? 0;
+      setPlacementPreview({ id, column: position.column, row: position.row, rotation, valid: !placementIssue(building, position, townLayout, rotation) });
       setEditorMessage(terrainInventoryInstruction(building.terrain));
     }
   };
@@ -402,8 +419,17 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     setEditorMessage(message);
   };
 
-  const handleCommitPlacement = (id: string, position: GridPosition) => {
-    setTownLayout((current) => ({ ...current, [id]: { ...position, stored: false } }));
+  const handleRotatePlacement = () => {
+    if (!placingBuildingId) return;
+    const building = buildings.find((candidate) => candidate.id === placingBuildingId);
+    if (!building || !placementPreview) return;
+    const rotation = nextRotation(placementPreview.rotation);
+    const position = { column: placementPreview.column, row: placementPreview.row };
+    setPlacementPreview({ id: placingBuildingId, column: position.column, row: position.row, rotation, valid: !placementIssue(building, position, townLayout, rotation) });
+  };
+
+  const handleCommitPlacement = (id: string, position: GridPosition, rotation: Rotation) => {
+    setTownLayout((current) => ({ ...current, [id]: { ...position, stored: false, rotation } }));
     setActiveBuildingId(id);
     setPlacingBuildingId(null);
     setPlacementPreview(null);
@@ -502,6 +528,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           telescopeUpgraded={telescopeUpgraded}
           activeBuildingId={activeBuildingId}
           placingBuildingId={placingBuildingId}
+          placementRotation={placementPreview?.rotation ?? 0}
           onSelectBuilding={handleSelectBuilding}
           onPlacementPreview={handlePlacementPreview}
           onCommitPlacement={handleCommitPlacement}
@@ -521,25 +548,38 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               <b>{BUILDING_STORIES[activeBuilding.id].name}</b>
               <p>{BUILDING_STORIES[activeBuilding.id].description}</p>
             </div>
-            <div className="town-selection-actions">
-              {activeBuilding.id === "telescope" && !telescopeUpgraded && (
-                <button type="button" className="upgrade-building" onClick={upgradeTelescope}>UPGRADE · 69</button>
-              )}
-              <button type="button" onClick={() => visitBuilding(activeBuilding)}>ENTER</button>
-              <button type="button" onClick={() => startPlacing(activeBuilding.id)}>MOVE</button>
-              <button type="button" className="remove-building" onClick={() => {
-                setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
-                setActiveBuildingId(null);
-                setPlacementPreview(null);
-                setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
-              }}>REMOVE</button>
-            </div>
+            <JellyButtons
+              minHeight={104}
+              buttons={[
+                ...(activeBuilding.id === "telescope" && !telescopeUpgraded
+                  ? [{ key: "upgrade", label: "UPGRADE · 69", tone: "gold" as const, onClick: upgradeTelescope }]
+                  : []),
+                { key: "enter", label: "ENTER", tone: "primary" as const, onClick: () => visitBuilding(activeBuilding) },
+                { key: "move", label: "MOVE", onClick: () => startPlacing(activeBuilding.id) },
+                {
+                  key: "remove",
+                  label: "REMOVE",
+                  tone: "danger" as const,
+                  onClick: () => {
+                    setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
+                    setActiveBuildingId(null);
+                    setPlacementPreview(null);
+                    setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
+                  },
+                },
+              ]}
+            />
           </aside>
         )}
 
         {(placingBuildingId || editorMessage) && (
           <div className={`placement-hint${activeBuilding ? " with-editor" : ""}${placementPreview && !placementPreview.valid ? " is-error" : ""}`} aria-live="polite">
             {editorMessage ?? "SELECT A BUILDING TO MOVE"}
+            {placingBuildingId && (
+              <button type="button" className="rotate-placement" onClick={handleRotatePlacement} aria-label="Rotate building 90 degrees" onPointerDown={(event) => event.stopPropagation()}>
+                ⟳ ROTATE
+              </button>
+            )}
           </div>
         )}
 
@@ -582,7 +622,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         }}>
           <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}${isFlipper ? " flipper-dialog" : ""}${isTelescope ? " alien-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
-            <div className="dialog-character">
+            <div className={`dialog-character ${DIALOG_THEME[selectedBuilding.id] ?? "theme-studio"}`}>
               <span className="bad-tape" aria-hidden="true" />
               <img
                 src={selectedBuilding.id === "flipper" ? "/evil-penguin.jpg" : BUILDING_STORIES[selectedBuilding.id]?.character ?? "/evil-penguin.jpg"}
@@ -608,9 +648,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                       <b>RAT<br />MEAT</b>
                       <span>WORKER RATION</span>
                     </div>
-                    <button type="button" onClick={feedWorkers} disabled={workersFed}>
-                      {workersFed ? "WORKERS FED" : "FEED THE WORKERS"} <span>→</span>
-                    </button>
+                    <JellyButtons buttons={[{ key: "feed", label: workersFed ? "FED" : "FEED", tone: "primary", disabled: workersFed, onClick: feedWorkers }]} minHeight={100} />
                   </div>
                   <div className="ration-status" role="status" aria-live="polite">
                     {workersFed
@@ -624,29 +662,26 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 <>
                   <h2 id="dialog-title">Pre-fight wisdom.</h2>
                   <p>&ldquo;you can take the nigga out of the hood, but you can&apos;t take the hood out of the nigga&rdquo;</p>
-                  <button type="button" onClick={() => {
-                    setSelectedBuilding(null);
-                    setShowDogFightGame(true);
-                  }}>FIGHT ! <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "fight", label: "FIGHT!", tone: "danger", onClick: () => { setSelectedBuilding(null); setShowDogFightGame(true); } }]} minHeight={100} />
                 </>
               ) : isFlipper ? (
                 <>
                   <h2 id="dialog-title">Flipper Flappington.</h2>
                   <p>&ldquo;Suck my penguin cock&rdquo;</p>
-                  <button type="button" onClick={() => setSelectedBuilding(null)}>BACK TO TOWN <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "back", label: "BACK", tone: "primary", onClick: () => setSelectedBuilding(null) }]} minHeight={100} />
                 </>
               ) : isTelescope ? (
                 <>
                   <h2 id="dialog-title">Deep-space field report.</h2>
                   <p>&ldquo;aliens... for sure&rdquo;</p>
-                  {!telescopeUpgraded && <button type="button" onClick={upgradeTelescope}>UPGRADE TO METAL · 69 <span>→</span></button>}
+                  {!telescopeUpgraded && <JellyButtons buttons={[{ key: "upgrade", label: "UPGRADE · 69", tone: "gold", onClick: upgradeTelescope }]} minHeight={100} />}
                 </>
               ) : isIgloo ? (
                 <>
                   <h2 id="dialog-title">Dr. Bongo&apos;s drone depot.</h2>
                   <p>&ldquo;Three cans and the sky belongs to the apes.&rdquo;</p>
                   <div className="mini-bongo-ragdoll" aria-hidden="true"><img src="/media/dr-bongo-model-icon-v1.png" alt="" /></div>
-                  <button type="button" disabled={purchases.includes("Drone Swarm")} onClick={() => spendRatMeat("Drone Swarm", 3)}>{purchases.includes("Drone Swarm") ? "DRONE SWARM OWNED" : "BUY DRONE SWARM · 3"} <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "drone", label: purchases.includes("Drone Swarm") ? "OWNED" : "BUY · 3", tone: "gold", disabled: purchases.includes("Drone Swarm"), onClick: () => spendRatMeat("Drone Swarm", 3) }]} minHeight={100} />
                 </>
               ) : isCircus ? (
                 <>
@@ -661,13 +696,13 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                   <h2 id="dialog-title">Mobile offshore rat farm.</h2>
                   <p>&ldquo;The sea provides. Mostly rats.&rdquo;</p>
                   <div className="rat-farm-card"><img src="/media/lab-rat-v1.png" alt="Laboratory rat" /><span>+3 RAT MEAT</span></div>
-                  <button type="button" disabled={farmCooldown > 0} onClick={farmRats}>{farmCooldown ? `FARM COOLDOWN · ${farmCooldown}s` : "FARM RATS · +3"} <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "farm", label: farmCooldown ? `${farmCooldown}s` : "FARM +3", tone: "primary", disabled: farmCooldown > 0, onClick: farmRats }]} minHeight={100} />
                 </>
               ) : (
                 <>
                   <h2 id="dialog-title">Listen, pal.</h2>
                   <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
-                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "fair", label: "FAIR ENOUGH", onClick: () => setSelectedBuilding(null) }]} minHeight={100} />
                 </>
               )}
             </div>

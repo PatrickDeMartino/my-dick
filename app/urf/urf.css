@@ -57,7 +57,11 @@
   background: radial-gradient(circle at 50% 40%, #102b46, #02070d 68%);
 }
 .town-screen::before { content: ""; position: absolute; inset: 0; opacity: .16; background-image: linear-gradient(rgba(111,198,234,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(111,198,234,.2) 1px, transparent 1px); background-size: 46px 46px; }
-.town-map { position: relative; height: 100svh; width: min(100vw, 66.667svh); aspect-ratio: 2 / 3; overflow: hidden; background: #0b4d96; box-shadow: 0 0 90px #000, 0 0 0 1px rgba(151,216,242,.25); }
+/* Mobile-first, full-bleed: the map always fills the screen. On a portrait
+   phone that's a tall sliver of island + lots of sky; on a wide desktop
+   window the same camera framing just reveals more open ocean on either
+   side, rather than the old fixed 2:3 letterboxed card. */
+.town-map { position: relative; height: 100dvh; width: 100dvw; overflow: hidden; background: #0b4d96; box-shadow: inset 0 0 120px rgba(0,0,0,.4); }
 .town-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; user-select: none; }
 .town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .town-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
@@ -218,6 +222,13 @@
 }
 .placement-hint.with-editor { bottom: 188px; }
 .placement-hint.is-error { border-color: rgba(255, 112, 106, .72); color: #ffd2ce; box-shadow: 0 0 22px rgba(244, 72, 66, .2); }
+.placement-hint { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.rotate-placement {
+  flex: 0 0 auto; padding: 5px 10px 5px 8px; border: 1px solid rgba(112, 236, 243, .55); border-radius: 999px;
+  background: rgba(74, 224, 234, .16); color: #d9fbfc; font-size: 7px; font-weight: 900; letter-spacing: .1em; cursor: pointer;
+}
+.rotate-placement:hover { background: #62dfe7; color: #041419; }
+.rotate-placement:active { transform: rotate(90deg) scale(.94); }
 .town-inventory {
   position: absolute; z-index: 25; left: 8px; right: 8px; bottom: 8px; height: 78px; display: grid; grid-template-columns: 74px 1fr; gap: 7px;
   padding: 7px; border: 1px solid rgba(165, 224, 238, .28); border-radius: 14px; background: rgba(2, 12, 29, .9);
@@ -247,11 +258,49 @@
 .dog-game-header button:hover { border-color: #e6493c; color: #ff8d83; }
 .dog-game-frame { position: absolute; top: 54px; left: 0; width: 100%; height: calc(100% - 54px); border: 0; background: #120b14; }
 .dialog-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,5,12,.68); backdrop-filter: blur(5px) saturate(.7); animation: backdrop-in .18s ease-out; }
-.penguin-dialog { position: relative; width: min(920px, 95vw); min-height: min(510px, 78svh); display: grid; grid-template-columns: .82fr 1.18fr; align-items: stretch; border: 1px solid rgba(148,221,238,.4); border-radius: 7px; background: linear-gradient(140deg, rgba(4,19,34,.97), rgba(2,8,17,.98)); box-shadow: 0 28px 90px #000, inset 0 1px rgba(255,255,255,.06); overflow: hidden; animation: dialog-in .28s cubic-bezier(.2,.9,.2,1); }
-.penguin-dialog::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: linear-gradient(90deg, #68e4ed, #5262da 60%, transparent); }
+.penguin-dialog {
+  position: relative; width: min(920px, 95vw); min-height: min(510px, 78svh); display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
+  border: 3px solid rgba(148,221,238,.5); background: linear-gradient(140deg, rgba(4,19,34,.97), rgba(2,8,17,.98));
+  box-shadow: 0 28px 90px #000, 0 0 0 8px rgba(104,228,237,.06), inset 0 1px rgba(255,255,255,.06); overflow: hidden;
+  animation: dialog-in .28s cubic-bezier(.2,.9,.2,1), goo-wobble 11s ease-in-out infinite 0.3s, goo-glow 7s ease-in-out infinite;
+}
+/* Kept modest on purpose: the corners still have to hold real content (a
+   jelly button can drift there), so this reads as "organic blob" without
+   eating deep enough into the box to clip anything inside it. */
+@keyframes goo-wobble {
+  0%, 100% { border-radius: 17% 23% 22% 16% / 19% 15% 21% 20%; }
+  20% { border-radius: 22% 18% 15% 23% / 14% 21% 16% 24%; }
+  40% { border-radius: 18% 22% 23% 15% / 23% 16% 22% 15%; }
+  60% { border-radius: 23% 15% 17% 21% / 18% 22% 15% 20%; }
+  80% { border-radius: 16% 22% 20% 18% / 21% 17% 22% 16%; }
+}
+@keyframes goo-glow {
+  0%, 100% { filter: drop-shadow(0 0 26px rgba(104,228,237,.22)); }
+  50% { filter: drop-shadow(0 0 34px rgba(160,111,240,.24)); }
+}
 .dialog-close { position: absolute; z-index: 4; top: 14px; right: 14px; width: 36px; height: 36px; border: 1px solid rgba(160,205,220,.35); border-radius: 50%; color: #a6bac4; background: #071522; font-size: 23px; cursor: pointer; }
 .dialog-close:hover { color: white; border-color: white; }
-.dialog-character { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 46px 28px 25px; background: radial-gradient(circle at 50% 45%, rgba(54,70,179,.35), transparent 47%), repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 1px, transparent 1px 9px); border-right: 1px solid rgba(142,196,216,.17); }
+.dialog-character {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 46px 28px 25px;
+  background-size: cover; background-position: center;
+  border-right: 1px solid rgba(142,196,216,.17);
+}
+.dialog-character::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; mix-blend-mode: multiply; opacity: .55;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.22), transparent 55%),
+    repeating-linear-gradient(128deg, rgba(20,10,5,.05) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(38deg, rgba(255,250,235,.05) 0 2px, transparent 2px 7px);
+}
+.dialog-character.theme-studio { background: radial-gradient(circle at 50% 45%, rgba(54,70,179,.35), transparent 47%), repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 1px, transparent 1px 9px); }
+.dialog-character.theme-jungle-strip { background-image: linear-gradient(180deg, #bfe8c9 0%, #6fae6a 30%, #2f6b45 55%, #17402c 78%, #0c2419 100%), radial-gradient(circle at 75% 25%, #ffe9a8, transparent 40%); background-blend-mode: normal; }
+.dialog-character.theme-cosmic { background-image: radial-gradient(circle at 30% 70%, #3a2c73, transparent 55%), radial-gradient(circle at 75% 20%, #7a4fc9, transparent 45%), linear-gradient(200deg, #120a2e 0%, #241147 45%, #401a5c 75%, #170a30 100%); }
+.dialog-character.theme-tropical-tent { background-image: linear-gradient(180deg, #ffd873 0%, #ff9d5c 32%, #e0507a 62%, #7c2e63 88%, #3d1638 100%); }
+.dialog-character.theme-jungle-lab { background-image: radial-gradient(circle at 70% 30%, rgba(122,255,180,.28), transparent 50%), linear-gradient(190deg, #103824 0%, #1c5237 38%, #0e3025 68%, #071a13 100%); }
+.dialog-character.theme-factory { background-image: linear-gradient(200deg, #6b6f73 0%, #46494e 32%, #2b2e33 62%, #17181b 100%), radial-gradient(circle at 80% 15%, rgba(255,158,74,.35), transparent 40%); }
+.dialog-character.theme-harbor { background-image: linear-gradient(180deg, #9fd7e8 0%, #4f9fc0 30%, #1f5d7c 62%, #0e3245 88%, #071a24 100%); }
+.dialog-character.theme-back-alley { background-image: linear-gradient(200deg, #4a2530 0%, #2c1620 40%, #1a0e16 72%, #0c0709 100%), radial-gradient(circle at 25% 20%, rgba(230,73,60,.32), transparent 42%); }
+.dialog-character.theme-beach { background-image: linear-gradient(180deg, #bdeaf6 0%, #7fd6e6 26%, #f4dfa0 58%, #dcb35f 78%, #a9772f 100%); }
 .dialog-character img { position: relative; z-index: 1; width: 100%; max-height: 380px; aspect-ratio: .88; object-fit: cover; border: 8px solid #eee; transform: rotate(-2deg); filter: contrast(1.08) saturate(1.12); box-shadow: 10px 15px 0 rgba(0,0,0,.24); }
 .flipper-dialog .dialog-character img { object-fit: contain; background: #e7f2f3; }
 .bad-tape { position: absolute; z-index: 2; width: 92px; height: 24px; top: 38px; left: 50%; transform: translateX(-50%) rotate(5deg); background: rgba(220,213,160,.83); box-shadow: 0 2px 5px rgba(0,0,0,.2); }
@@ -273,6 +322,24 @@
 .speech-panel > button { align-self: flex-start; margin-top: 34px; padding: 12px 16px; border: 1px solid #4a7180; border-radius: 3px; color: #d5e3e8; background: transparent; font-size: 9px; font-weight: 800; letter-spacing: .15em; cursor: pointer; }
 .speech-panel > button:hover { color: #051013; background: #67dfe8; border-color: #67dfe8; }
 .speech-panel > button span { margin-left: 12px; }
+
+.jelly-field { position: relative; width: 100%; margin-top: 28px; }
+.jelly-btn {
+  position: absolute; top: 0; left: 0; width: 84px; height: 84px; display: grid; place-items: center;
+  padding: 6px; border: none; border-radius: 50%; cursor: pointer; text-align: center;
+  color: #06181d; font-size: 10px; font-weight: 900; letter-spacing: .06em; line-height: 1.15;
+  background: radial-gradient(circle at 35% 28%, #b3fbf4, #63e0ee 55%, #2ea8bb 100%);
+  box-shadow: inset 0 -8px 14px rgba(0,0,0,.18), inset 0 6px 10px rgba(255,255,255,.4), 0 10px 22px rgba(0,0,0,.35);
+  will-change: transform;
+}
+.jelly-btn:hover { filter: brightness(1.08); }
+.jelly-btn:active { filter: brightness(.94); }
+.jelly-btn:disabled { cursor: default; filter: grayscale(.6) brightness(.75); }
+.jelly-btn-primary { background: radial-gradient(circle at 35% 28%, #d6ffe4, #4be091 55%, #1f9a5c 100%); }
+.jelly-btn-danger { background: radial-gradient(circle at 35% 28%, #ffd9d4, #f4636a 55%, #a92a35 100%); color: #2b0507; }
+.jelly-btn-gold { background: radial-gradient(circle at 35% 28%, #fff2c9, #f8c84f 55%, #b5822a 100%); color: #2b1c04; }
+.jelly-btn-static { position: relative; display: inline-grid; margin: 4px; }
+.jelly-field:has(.jelly-btn-static) { display: flex; flex-wrap: wrap; gap: 6px; min-height: auto !important; }
 .alien-dialog .dialog-character img { object-fit: contain; border: 0; background: radial-gradient(circle,#293674,transparent 68%); box-shadow: none; }
 .mini-bongo-ragdoll { width: 82px; height: 82px; margin: 14px 0 -18px 55%; animation: mini-bongo-bounce 1.05s cubic-bezier(.3,.7,.4,1) infinite alternate; }
 .mini-bongo-ragdoll img { width: 100%; height: 100%; object-fit: contain; }
@@ -331,7 +398,6 @@
   .control-hint p { display: none; }
   .status-pill { font-size: 7px; padding: 9px; }
   .lock-marker small { display: none; }
-  .town-map { width: 100vw; height: min(150vw, 100svh); }
   .town-side { display: none; }
   .town-header { top: 8px; }
   .town-header > div { padding-right: 7px; }
@@ -347,9 +413,10 @@
   .town-selection-card .upgrade-building { grid-column:auto; }
   .placement-hint.with-editor { bottom:184px; }
   .dialog-backdrop { padding: 12px; align-items: end; }
-  .penguin-dialog { width: 100%; min-height: auto; max-height: 92svh; grid-template-columns: 118px 1fr; }
+  .penguin-dialog { width: 100%; min-height: auto; max-height: 92svh; grid-template-columns: 1fr 1fr; }
   .dialog-character { padding: 52px 12px 18px; }
   .dialog-character img { border-width: 4px; max-height: 190px; }
+  .jelly-btn { width: 68px; height: 68px; font-size: 9px; }
   .bad-tape { width: 58px; height: 17px; top: 43px; }
   .character-tag { width: 110%; padding: 6px 8px; }
   .character-tag b { font-size: 11px; }
@@ -366,8 +433,8 @@
 
 @media (max-width: 430px) {
   .penguin-dialog { display: block; }
-  .dialog-character { display: none; }
-  .speech-panel { min-height: 420px; padding: 68px 30px 34px; }
+  .dialog-character { height: 44svh; padding: 46px 16px 14px; border-right: 0; }
+  .speech-panel { min-height: 420px; padding: 24px 24px 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

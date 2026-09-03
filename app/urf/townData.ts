@@ -91,12 +91,22 @@ export const CIRCUS_STOCK = [
   ["Pigeons", 3], ["Seagulls", 4], ["Parrots", 6], ["Quad-copter Drones", 10], ["Drone Swarms", 12], ["Fully Autonomous Robot Army", 13],
 ] as const;
 
+export type Rotation = 0 | 90 | 180 | 270;
+export const ROTATIONS: readonly Rotation[] = [0, 90, 180, 270];
+export const nextRotation = (rotation: Rotation): Rotation => ROTATIONS[(ROTATIONS.indexOf(rotation) + 1) % ROTATIONS.length];
+
 export type GridPosition = { column: number; row: number };
-export type TownLayout = Record<string, GridPosition & { stored: boolean }>;
-export type PlacementPreview = GridPosition & { id: string; valid: boolean };
+export type TownLayout = Record<string, GridPosition & { stored: boolean; rotation: Rotation }>;
+export type PlacementPreview = GridPosition & { id: string; valid: boolean; rotation: Rotation };
+
+/** A building rotated 90°/270° occupies its footprint sideways for placement and collision purposes. */
+export const rotatedFootprint = (building: TownBuilding, rotation: Rotation): { width: number; height: number } => {
+  const { width, height } = building.footprint;
+  return rotation === 90 || rotation === 270 ? { width: height, height: width } : { width, height };
+};
 
 export const createDefaultTownLayout = (): TownLayout => Object.fromEntries(
-  buildings.map((building) => [building.id, { ...building.start, stored: false }]),
+  buildings.map((building) => [building.id, { ...building.start, stored: false, rotation: 0 as Rotation }]),
 );
 
 export const pointInPolygon = ([x, y]: TerrainPoint, polygon: readonly TerrainPoint[]): boolean => {
@@ -167,10 +177,11 @@ export const terrainInventoryInstruction = (terrain: PlaceableTerrain): string =
   return "LAND BUILDINGS REQUIRE OPEN SNOW CELLS";
 };
 
-export const placementIssue = (building: TownBuilding, position: GridPosition, layout: TownLayout): string | null => {
+export const placementIssue = (building: TownBuilding, position: GridPosition, layout: TownLayout, rotation: Rotation = 0): string | null => {
+  const footprint = rotatedFootprint(building, rotation);
   const cells: string[] = [];
-  for (let row = position.row; row < position.row + building.footprint.height; row += 1) {
-    for (let column = position.column; column < position.column + building.footprint.width; column += 1) {
+  for (let row = position.row; row < position.row + footprint.height; row += 1) {
+    for (let column = position.column; column < position.column + footprint.width; column += 1) {
       if (column < GRID_COLUMN_MIN || row < GRID_ROW_MIN || column >= GRID_COLUMN_MAX || row >= GRID_ROW_MAX) return "OUTSIDE THE BUILD GRID";
       if (terrainAt(column, row) !== building.terrain) {
         return terrainPlacementIssue(building.terrain);
@@ -184,8 +195,9 @@ export const placementIssue = (building: TownBuilding, position: GridPosition, l
     if (other.id === building.id || layout[other.id]?.stored) continue;
     const placed = layout[other.id];
     if (!placed) continue;
-    for (let row = placed.row; row < placed.row + other.footprint.height; row += 1) {
-      for (let column = placed.column; column < placed.column + other.footprint.width; column += 1) {
+    const otherFootprint = rotatedFootprint(other, placed.rotation ?? 0);
+    for (let row = placed.row; row < placed.row + otherFootprint.height; row += 1) {
+      for (let column = placed.column; column < placed.column + otherFootprint.width; column += 1) {
         occupied.add(`${column}:${row}`);
       }
     }
@@ -196,7 +208,8 @@ export const placementIssue = (building: TownBuilding, position: GridPosition, l
 export const isValidSavedTownLayout = (layout: TownLayout): boolean => buildings.every((building) => {
   const position = layout[building.id];
   if (!position || !Number.isInteger(position.column) || !Number.isInteger(position.row) || typeof position.stored !== "boolean") return false;
-  return position.stored || placementIssue(building, position, layout) === null;
+  if (!ROTATIONS.includes(position.rotation)) return false;
+  return position.stored || placementIssue(building, position, layout, position.rotation) === null;
 });
 
 export const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
@@ -236,9 +249,10 @@ export const tierBaseHeight = (tier: TownTier): number => {
 };
 
 /** Center-of-footprint world position (feet on the ground) for a building at a grid position. */
-export const buildingWorldPosition = (building: TownBuilding, position: GridPosition): { x: number; y: number; z: number } => {
-  const centerColumn = position.column + building.footprint.width / 2;
-  const centerRow = position.row + building.footprint.height / 2;
+export const buildingWorldPosition = (building: TownBuilding, position: GridPosition, rotation: Rotation = 0): { x: number; y: number; z: number } => {
+  const footprint = rotatedFootprint(building, rotation);
+  const centerColumn = position.column + footprint.width / 2;
+  const centerRow = position.row + footprint.height / 2;
   const screenX = ISO_ORIGIN_X + (centerColumn - centerRow) * ISO_CELL_X;
   const screenY = ISO_ORIGIN_Y + (centerColumn + centerRow) * ISO_CELL_Y;
   const { x, z } = percentToWorldXZ(screenX, screenY);
@@ -247,14 +261,15 @@ export const buildingWorldPosition = (building: TownBuilding, position: GridPosi
 };
 
 /** Inverse of buildingWorldPosition's XZ math: a raycast hit on the ground -> the grid cell it should snap a building to. */
-export const gridPositionFromWorld = (building: TownBuilding, worldX: number, worldZ: number): GridPosition => {
+export const gridPositionFromWorld = (building: TownBuilding, worldX: number, worldZ: number, rotation: Rotation = 0): GridPosition => {
+  const footprint = rotatedFootprint(building, rotation);
   const { x: screenX, y: screenY } = worldXZToPercent(worldX, worldZ);
   const deltaX = (screenX - ISO_ORIGIN_X) / ISO_CELL_X;
   const deltaY = (screenY - ISO_ORIGIN_Y) / ISO_CELL_Y;
   const centerColumn = (deltaY + deltaX) / 2;
   const centerRow = (deltaY - deltaX) / 2;
   return {
-    column: Math.max(GRID_COLUMN_MIN, Math.min(GRID_COLUMN_MAX - building.footprint.width, Math.round(centerColumn - building.footprint.width / 2))),
-    row: Math.max(GRID_ROW_MIN, Math.min(GRID_ROW_MAX - building.footprint.height, Math.round(centerRow - building.footprint.height / 2))),
+    column: Math.max(GRID_COLUMN_MIN, Math.min(GRID_COLUMN_MAX - footprint.width, Math.round(centerColumn - footprint.width / 2))),
+    row: Math.max(GRID_ROW_MIN, Math.min(GRID_ROW_MAX - footprint.height, Math.round(centerRow - footprint.height / 2))),
   };
 };
