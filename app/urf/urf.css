@@ -30,20 +30,19 @@
 .globe-canvas:active { cursor: grabbing; }
 .globe-shadow { position: absolute; pointer-events: none; width: 62%; height: 8%; left: 19%; bottom: 4%; border-radius: 50%; background: rgba(0,0,0,.8); filter: blur(17px); z-index: -1; }
 .lock-marker, .antarctica-marker, .israel-marker { position: absolute; transform: translate(-50%, -50%); transition: opacity .12s; }
-.lock-marker { display: grid; place-items: center; gap: 4px; color: #d5dbe0; text-shadow: 0 2px 8px #000; pointer-events: none; }
+.lock-marker { display: grid; place-items: center; gap: 4px; padding:0; border:0; color: #d5dbe0; background:transparent; text-shadow: 0 2px 8px #000; cursor:pointer; }
 .lock-marker span { font-size: clamp(13px, 1.5vw, 20px); filter: grayscale(1); }
 .lock-marker small { padding: 3px 6px; border-radius: 3px; color: #aab4ba; background: rgba(7,14,20,.65); font-size: clamp(7px, .7vw, 10px); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
-.antarctica-marker { display: flex; align-items: center; gap: 10px; background: rgba(3,15,24,.88); color: white; border: 1px solid rgba(111,232,239,.65); border-radius: 5px; padding: 8px 13px 8px 9px; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 20px rgba(67,224,235,.15); text-align: left; }
-.antarctica-marker:hover { transform: translate(-50%, -50%) scale(1.05); background: #0b2730; border-color: var(--cyan); }
-.marker-dot { width: 11px; height: 11px; border: 2px solid white; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 5px rgba(99,224,238,.15), 0 0 13px var(--cyan); }
-.marker-copy { display: grid; gap: 2px; }
-.marker-copy b { font-size: 11px; letter-spacing: .12em; }
-.marker-copy small { color: var(--cyan); font-size: 7px; letter-spacing: .16em; }
-.israel-marker { display: flex; align-items: center; gap: 7px; min-width: 28px; min-height: 28px; padding: 5px 8px 5px 5px; border: 1px solid rgba(112,232,255,.78); border-radius: 999px; color: white; background: rgba(4,18,41,.92); cursor: pointer; box-shadow: 0 0 17px rgba(65,194,255,.42); text-align: left; }
-.israel-marker:hover, .israel-marker:focus-visible { transform: translate(-50%, -50%) scale(1.1); border-color: #fff36b; outline: none; box-shadow: 0 0 0 3px rgba(255,243,107,.18),0 0 26px rgba(80,210,255,.55); }
-.israel-marker__pin { width: clamp(7px,.72vw,9px); height: clamp(7px,.72vw,9px); display: grid; place-items: center; color: #72e9ff; font-size: clamp(7px,.72vw,9px); line-height: 1; text-shadow: 0 0 8px #62e9ff; }
-.israel-marker .marker-copy { max-width: 0; overflow: hidden; opacity: 0; transition: max-width .22s ease,opacity .15s ease; }
-.israel-marker:hover .marker-copy, .israel-marker:focus-visible .marker-copy { max-width: 90px; opacity: 1; }
+.lock-marker:hover,.lock-marker:focus-visible,.lock-marker.is-glowing { transform:translate(-50%,-50%) scale(1.12); outline:0; }
+.lock-marker.is-glowing span { filter:none drop-shadow(0 0 11px #fff36b); }
+.lock-marker.is-glowing small { color:#fff8a3; border:1px solid rgba(255,239,94,.65); box-shadow:0 0 22px rgba(255,225,67,.55); }
+.location-marker { pointer-events:auto; }
+.location-marker small { color:#d9faff; border:1px solid rgba(111,232,239,.58); box-shadow:0 0 14px rgba(67,224,235,.22); }
+.dart-marker { position:relative; width:38px; height:18px; display:block; transform:rotate(-43deg); filter:none!important; transform-style:preserve-3d; }
+.dart-marker i { position:absolute; left:2px; top:7px; width:25px; height:5px; border-radius:4px; background:linear-gradient(#e0e5e6,#616d75 45%,#252d32 55%,#aeb9be); box-shadow:0 2px 4px #000,0 0 8px rgba(111,232,239,.55); }
+.dart-marker b { position:absolute; right:0; top:6px; width:10px; height:7px; clip-path:polygon(0 40%,100% 0,100% 100%); background:linear-gradient(90deg,#525b62,#eef3f3); }
+.dart-marker em { position:absolute; left:0; top:0; width:12px; height:18px; clip-path:polygon(100% 50%,0 0,24% 50%,0 100%); background:linear-gradient(135deg,#b92535,#ffda54); }
+.location-marker:hover .dart-marker,.location-marker:focus-visible .dart-marker { filter:drop-shadow(0 0 9px #6defff)!important; }
 .world-footer { position: absolute; z-index: 5; left: clamp(20px, 5vw, 72px); right: clamp(20px, 5vw, 72px); bottom: clamp(20px, 4vh, 48px); display: flex; align-items: center; gap: 28px; }
 .control-hint { display: flex; align-items: center; gap: 10px; color: #b8c5cd; }
 .control-hint > span { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(165,198,214,.24); border-radius: 7px; background: rgba(8,20,30,.76); }
@@ -144,6 +143,10 @@
 .town-district-status span { padding: 7px 9px; border: 1px solid rgba(166,233,242,.24); border-radius: 5px; background: rgba(3,16,34,.78); color: #9cbac7; font-size: clamp(5px,.62vw,8px); font-weight: 800; letter-spacing: .1em; box-shadow: 0 7px 22px rgba(0,0,0,.22); backdrop-filter: blur(9px); }
 .town-district-status span:last-child { border-color: rgba(255,103,94,.34); color: #ffafa8; }
 .town-district-status i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #6ef3e8; box-shadow: 0 0 9px #6ef3e8; }
+.town-camera-controls { position:absolute; z-index:19; top:calc(var(--trip-banner-height,0px) + 74px); left:2.5%; display:flex; align-items:center; gap:5px; padding:5px; border:1px solid rgba(166,233,242,.25); border-radius:999px; background:rgba(3,16,34,.78); box-shadow:0 7px 22px rgba(0,0,0,.25); backdrop-filter:blur(9px); }
+.town-camera-controls button { width:30px; height:30px; padding:0; display:grid; place-items:center; border:1px solid rgba(126,225,237,.38); border-radius:50%; color:#defcff; background:rgba(44,111,133,.35); font-size:17px; cursor:pointer; }
+.town-camera-controls button:hover,.town-camera-controls button:focus-visible { color:#07161d; background:#72e6f0; outline:0; }
+.town-camera-controls small { padding:0 8px 0 4px; color:#a9dce3; font-size:7px; font-weight:900; letter-spacing:.1em; }
 .town-grid {
   position: absolute; z-index: 4; inset: 0;
   pointer-events: none; opacity: 0; transition: opacity .18s ease-out;
@@ -202,6 +205,8 @@
   .town-district-status { top: calc(var(--trip-banner-height, 0px) + 62px); right: 10px; flex-direction: column; align-items: flex-end; }
   .town-district-status span:nth-child(2) { display: none; }
   .town-header small { max-width: 64vw; line-height: 1.35; }
+  .town-camera-controls { top:calc(var(--trip-banner-height,0px) + 112px); }
+  .town-camera-controls small { display:none; }
 }
 .building-hotspot:hover .building-label, .building-hotspot:focus-visible .building-label, .building-hotspot.is-selected .building-label { opacity: 1; transform: translate(-50%, 0); }
 
@@ -260,6 +265,12 @@
   box-shadow: 0 6px 16px rgba(0,0,0,.5), 0 0 14px rgba(255, 227, 93, .35); display: grid; place-items: center;
 }
 .building-popup-close:hover { background: #ffe35d; color: #2a1600; transform: scale(1.08); }
+.building-popup-rotation-ring { position:absolute; z-index:4; inset:-8px; border:2px solid rgba(112,236,243,.44); border-radius:50%; pointer-events:none; box-shadow:0 0 18px rgba(80,218,238,.2),inset 0 0 14px rgba(80,218,238,.12); }
+.building-popup-rotation-ring::after { content:"ROTATE BUILDING 360°"; position:absolute; left:50%; bottom:-19px; transform:translateX(-50%); width:max-content; color:#a9eff5; font:800 7px/1 var(--font-geist-mono); letter-spacing:.12em; text-shadow:0 2px 5px #000; }
+.building-popup-rotation-knob { position:absolute; width:34px; height:34px; padding:0; transform:translate(-50%,-50%); display:grid; place-items:center; pointer-events:auto; touch-action:none; border:2px solid #fff39c; border-radius:50%; color:#1d1238; background:radial-gradient(circle at 35% 30%,#fff8bd,#ffc94f 58%,#d56e28); box-shadow:0 5px 13px rgba(0,0,0,.55),0 0 14px rgba(255,228,85,.5); cursor:grab; }
+.building-popup-rotation-knob:active { cursor:grabbing; }
+.building-popup-rotation-knob:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+.building-popup-rotation-knob span { font-size:17px; font-weight:900; }
 .building-popup-circle {
   position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; isolation: isolate;
   border: 3px solid rgba(255, 210, 140, .55);
@@ -402,7 +413,7 @@
 .bad-tape { position: absolute; z-index: 2; width: 92px; height: 24px; top: 38px; left: 50%; transform: translateX(-50%) rotate(5deg); background: rgba(220,213,160,.83); box-shadow: 0 2px 5px rgba(0,0,0,.2); }
 .sweatshop-dialog .bad-tape, .dog-fighter-dialog .bad-tape { display: none; }
 .sweatshop-dialog .dialog-character img { aspect-ratio: 1; object-fit: contain; background: white; }
-.dog-fighter-dialog .dialog-character img { aspect-ratio: 2 / 3; object-fit: cover; object-position: center top; background: #20d42c; }
+.dog-fighter-dialog .dialog-character img { width:94%; margin-inline:auto; aspect-ratio:2 / 3; object-fit:contain; object-position:center top; background:#20d42c; transform:rotate(-2deg) scale(.92); }
 .dog-fighter-dialog .character-tag { border-left-color: #d84432; }
 .dog-fighter-dialog .character-tag small { color: #ef7566; }
 .character-tag { position: relative; z-index: 3; align-self: center; margin-top: -13px; min-width: 75%; padding: 8px 15px; transform: rotate(1deg); border-left: 3px solid #6fe4ed; background: #081522; box-shadow: 0 7px 20px rgba(0,0,0,.4); }

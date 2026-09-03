@@ -55,13 +55,15 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
   const [landFeatures, setLandFeatures] = useState<LandFeature[]>([]);
   const [texture, setTexture] = useState<HTMLImageElement | null>(null);
   const [textureDrift, setTextureDrift] = useState(0);
+  const [lockedGlow, setLockedGlow] = useState<string | null>(null);
+  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const image = new Image();
     image.src = "/media/psychedelic-earth-texture-v1.png";
     image.onload = () => setTexture(image);
     const timer = window.setInterval(() => setTextureDrift((value) => (value + 1) % 360), 140);
-    return () => window.clearInterval(timer);
+    return () => { window.clearInterval(timer); if (glowTimerRef.current) window.clearTimeout(glowTimerRef.current); };
   }, []);
 
   useEffect(() => {
@@ -196,6 +198,27 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
 
     drawLand(false);
     drawLand(true);
+    if (lockedGlow) {
+      const selected = continentMarkers.find((continent) => continent.name === lockedGlow);
+      const glow = selected ? project(selected.center) : null;
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,229,91,.94)";
+      ctx.lineWidth = 2.4;
+      ctx.shadowColor = "#fff06a";
+      ctx.shadowBlur = 22;
+      ctx.beginPath();
+      landFeatures.filter((land) => !land.antarctic).forEach((land) => path(land.feature));
+      ctx.stroke();
+      if (glow?.visible) {
+        const aura = ctx.createRadialGradient(glow.x, glow.y, 2, glow.x, glow.y, radius * .25);
+        aura.addColorStop(0, "rgba(255,240,94,.62)");
+        aura.addColorStop(.35, "rgba(255,180,52,.2)");
+        aura.addColorStop(1, "rgba(255,180,52,0)");
+        ctx.fillStyle = aura;
+        ctx.fillRect(glow.x-radius*.25,glow.y-radius*.25,radius*.5,radius*.5);
+      }
+      ctx.restore();
+    }
     ctx.restore();
 
     const rim = ctx.createRadialGradient(cx, cy, radius * .82, cx, cy, radius * 1.08);
@@ -205,7 +228,7 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
     rim.addColorStop(1, "rgba(92,202,255,0)");
     ctx.fillStyle = rim;
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
-  }, [landFeatures, rotation, size, texture, textureDrift, zoom]);
+  }, [landFeatures, lockedGlow, project, rotation, size, texture, textureDrift, zoom]);
 
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
@@ -253,35 +276,37 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
         }}
       />
       {markers.map((marker) => (
-        <div
-          className="lock-marker"
+        <button
+          type="button"
+          className={`lock-marker${lockedGlow === marker.name ? " is-glowing" : ""}`}
           key={marker.name}
-          style={{ left: `${marker.projected.x}px`, top: `${marker.projected.y}px`, opacity: marker.projected.visible ? "1" : "0" }}
-          aria-hidden="true"
+          style={{ left: `${marker.projected.x}px`, top: `${marker.projected.y}px`, opacity: marker.projected.visible ? "1" : "0", pointerEvents: marker.projected.visible ? "auto" : "none" }}
+          aria-label={`${marker.name} is locked`}
+          onClick={() => { setLockedGlow(marker.name); if (glowTimerRef.current) window.clearTimeout(glowTimerRef.current); glowTimerRef.current = window.setTimeout(() => setLockedGlow(null), 1100); }}
         >
           <span>🔒</span>
           <small>{marker.name}</small>
-        </div>
+        </button>
       ))}
       <button
         type="button"
-        className="antarctica-marker"
+        className="lock-marker location-marker antarctica-marker"
         style={{ left: `${south.x}px`, top: `${south.y}px`, opacity: south.visible ? "1" : "0", pointerEvents: south.visible ? "auto" : "none" }}
         onClick={onEnter}
         aria-label="Enter Antarctica"
       >
-        <span className="marker-dot" />
-        <span className="marker-copy"><b>ANTARCTICA</b><small>AVAILABLE</small></span>
+        <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
+        <small>Antarctica</small>
       </button>
       <button
         type="button"
-        className="israel-marker"
+        className="lock-marker location-marker israel-marker"
         style={{ left: `${israel.x}px`, top: `${israel.y}px`, opacity: israel.visible ? "1" : "0", pointerEvents: israel.visible ? "auto" : "none" }}
         onClick={onEnterIsrael}
         aria-label="Enter Israel"
       >
-        <span className="israel-marker__pin" aria-hidden="true">✦</span>
-        <span className="marker-copy"><b>ISRAEL</b><small>AVAILABLE</small></span>
+        <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
+        <small>Israel</small>
       </button>
       <div className="globe-shadow" />
     </div>
@@ -302,6 +327,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const [showDogFightGame, setShowDogFightGame] = useState(false);
   const [purchases, setPurchases] = useState<string[]>([]);
   const [farmCooldown, setFarmCooldown] = useState(0);
+  const [buildingYaw, setBuildingYaw] = useState<Record<string, number>>({});
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
   const isFlipper = selectedBuilding?.id === "flipper";
@@ -546,6 +572,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           placingBuildingId={placingBuildingId}
           placementRotation={placementPreview?.rotation ?? 0}
           popupOpen={popupOpen}
+          buildingYaw={buildingYaw}
           onSelectBuilding={handleSelectBuilding}
           onPlacementPreview={handlePlacementPreview}
           onCommitPlacement={handleCommitPlacement}
@@ -562,6 +589,13 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           <span>RAT-MEAT ECONOMY</span>
           <span>NO LAW · NO REFUNDS</span>
         </aside>
+        <div className="town-camera-controls" aria-label="Island camera controls" onPointerDown={(event)=>event.stopPropagation()}>
+          <button type="button" aria-label="Zoom island out" onClick={()=>window.dispatchEvent(new CustomEvent("penguin-town-camera",{detail:{action:"zoom-out"}}))}>−</button>
+          <button type="button" aria-label="Zoom island in" onClick={()=>window.dispatchEvent(new CustomEvent("penguin-town-camera",{detail:{action:"zoom-in"}}))}>+</button>
+          <button type="button" aria-label="Rotate island left within 180 degrees" onClick={()=>window.dispatchEvent(new CustomEvent("penguin-town-camera",{detail:{action:"rotate-left"}}))}>↺</button>
+          <button type="button" aria-label="Rotate island right within 180 degrees" onClick={()=>window.dispatchEvent(new CustomEvent("penguin-town-camera",{detail:{action:"rotate-right"}}))}>↻</button>
+          <small>ZOOM · 180° VIEW</small>
+        </div>
 
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
           <div onPointerDown={(event) => event.stopPropagation()}>
@@ -570,6 +604,8 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               role={BUILDING_STORIES[activeBuilding.id].role}
               name={displayBuildingLabel(activeBuilding)}
               onClose={() => setActiveBuildingId(null)}
+              rotationDegrees={buildingYaw[activeBuilding.id] ?? 0}
+              onRotationChange={(degrees)=>setBuildingYaw((current)=>({...current,[activeBuilding.id]:degrees}))}
               buttons={[
                 ...(activeBuilding.id === "telescope" && !telescopeUpgraded
                   ? [{ key: "upgrade", label: "UPGRADE · 69", tone: "gold" as const, onClick: upgradeTelescope }]

@@ -39,6 +39,7 @@ type Props = {
    * and raises its target so the whole island stays visible above the popup
    * instead of being partly covered by it. No-op on the wide desktop framing. */
   popupOpen: boolean;
+  buildingYaw: Record<string, number>;
   onSelectBuilding: (id: string) => void;
   onPlacementPreview: (preview: PlacementPreview | null) => void;
   onCommitPlacement: (id: string, position: GridPosition, rotation: Rotation) => void;
@@ -946,18 +947,19 @@ export default function PenguinTownScene3D({
   placingBuildingId,
   placementRotation,
   popupOpen,
+  buildingYaw,
   onSelectBuilding,
   onPlacementPreview,
   onCommitPlacement,
   onPlacementMessage,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const propsRef = useRef({ townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen });
+  const propsRef = useRef({ townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen, buildingYaw });
   const callbacksRef = useRef({ onSelectBuilding, onPlacementPreview, onCommitPlacement, onPlacementMessage });
 
   useEffect(() => {
-    propsRef.current = { townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen };
-  }, [townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen]);
+    propsRef.current = { townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen, buildingYaw };
+  }, [townLayout, telescopeUpgraded, activeBuildingId, placingBuildingId, placementRotation, popupOpen, buildingYaw]);
 
   useEffect(() => {
     callbacksRef.current = { onSelectBuilding, onPlacementPreview, onCommitPlacement, onPlacementMessage };
@@ -1000,8 +1002,8 @@ export default function PenguinTownScene3D({
     controls.minPolarAngle = .72;
     controls.maxPolarAngle = 1.18;
     const openingAzimuth = Math.atan2(camera.position.x, camera.position.z);
-    controls.minAzimuthAngle = openingAzimuth - .48;
-    controls.maxAzimuthAngle = openingAzimuth + .48;
+    controls.minAzimuthAngle = openingAzimuth - Math.PI / 2;
+    controls.maxAzimuthAngle = openingAzimuth + Math.PI / 2;
     let compactMode = false;
     const frameCamera = () => {
       compactMode = width / height < .72;
@@ -1014,6 +1016,21 @@ export default function PenguinTownScene3D({
     };
     frameCamera();
     controls.update();
+    const handleCameraCommand = (event: Event) => {
+      const action = (event as CustomEvent<{action:string}>).detail?.action;
+      const offset = camera.position.clone().sub(controls.target);
+      if (action === "zoom-in" || action === "zoom-out") {
+        const factor = action === "zoom-in" ? .86 : 1.16;
+        const distance = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
+        camera.position.copy(controls.target).add(offset.setLength(distance));
+      }
+      if (action === "rotate-left" || action === "rotate-right") {
+        offset.applyAxisAngle(new THREE.Vector3(0,1,0), action === "rotate-left" ? -.18 : .18);
+        camera.position.copy(controls.target).add(offset);
+      }
+      controls.update();
+    };
+    window.addEventListener("penguin-town-camera",handleCameraCommand);
 
     // Building-popup camera pull-back: on the compact (mobile-proportioned)
     // framing, opening the round popup eases the camera further back and its
@@ -1701,7 +1718,7 @@ export default function PenguinTownScene3D({
         const rotation = saved.rotation ?? 0;
         const worldPosition = buildingWorldPosition(building, saved, rotation);
         group.position.set(worldPosition.x, worldPosition.y, worldPosition.z);
-        group.rotation.y = (rotation * Math.PI) / 180;
+        group.rotation.y = ((rotation + (props.buildingYaw[building.id] ?? 0)) * Math.PI) / 180;
         applyGhostTint(building.id, null);
 
         if (building.id === "telescope") {
@@ -1740,6 +1757,7 @@ export default function PenguinTownScene3D({
       dom.removeEventListener("pointerup", onPointerUp);
       dom.removeEventListener("pointercancel", onPointerUp);
       controls.dispose();
+      window.removeEventListener("penguin-town-camera",handleCameraCommand);
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();

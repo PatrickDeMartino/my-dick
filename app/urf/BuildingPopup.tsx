@@ -1,6 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { JellyButtons, type JellyButtonSpec } from "./JellyButtons";
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
   name: string;
   buttons: JellyButtonSpec[];
   onClose: () => void;
+  rotationDegrees?: number;
+  onRotationChange?: (degrees: number) => void;
 };
 
 /**
@@ -19,12 +22,22 @@ type Props = {
  * ENTER/MOVE/etc. buttons drifting and bouncing off the circular wall.
  * A small "×" badge sits half outside the rim, top-right, to close it.
  */
-export function BuildingPopup({ character, role, name, buttons, onClose }: Props) {
+export function BuildingPopup({ character, role, name, buttons, onClose, rotationDegrees = 0, onRotationChange }: Props) {
+  const updateRotation = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!onRotationChange) return;
+    const ring = event.currentTarget.parentElement;
+    if (!ring) return;
+    const rect = ring.getBoundingClientRect();
+    const angle = Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2));
+    onRotationChange(Math.round(((angle * 180 / Math.PI) + 90 + 360) % 360));
+  };
+  const radians = (rotationDegrees - 90) * Math.PI / 180;
   const popup = (
     <aside className="building-popup" aria-label={`${name} controls`}>
       <button type="button" className="building-popup-close" onClick={onClose} aria-label="Close">
         ×
       </button>
+      {onRotationChange && <div className="building-popup-rotation-ring" aria-hidden="false"><button type="button" role="slider" aria-label={`Rotate ${name} on the map`} aria-valuemin={0} aria-valuemax={359} aria-valuenow={rotationDegrees} className="building-popup-rotation-knob" style={{left:`${50+50*Math.cos(radians)}%`,top:`${50+50*Math.sin(radians)}%`}} onPointerDown={(event)=>{event.currentTarget.setPointerCapture(event.pointerId);updateRotation(event);}} onPointerMove={(event)=>{if(event.currentTarget.hasPointerCapture(event.pointerId))updateRotation(event);}} onKeyDown={(event)=>{if(event.key==="ArrowLeft"||event.key==="ArrowDown"){event.preventDefault();onRotationChange((rotationDegrees+355)%360);}if(event.key==="ArrowRight"||event.key==="ArrowUp"){event.preventDefault();onRotationChange((rotationDegrees+5)%360);}}}><span aria-hidden="true">↻</span></button></div>}
       <div className="building-popup-circle">
         <div className="building-popup-sunset" aria-hidden="true">
           <span className="building-popup-sunset-sun" />

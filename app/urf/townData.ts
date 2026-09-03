@@ -91,9 +91,9 @@ export const BUILDING_STORIES: Record<string, { character: string; name: string;
   telescope: { character: "/media/alien-astronomer-v1.png", name: "ALIEN PERVY PEEPER", role: "NOSY EXTRATERRESTRIAL", description: "A giant brass eye aimed directly at whatever the government denies." },
   magic: { character: "/evil-penguin.jpg", name: "RINGMASTER WADDLES", role: "BLACK-MARKET RINGMASTER", description: "Questionable creatures, weaponized drones, and absolutely no refunds." },
   igloo: { character: "/media/dr-bongo-model-icon-v1.png", name: "DR. BONGO", role: "DRONE WARLORD", description: "A warm igloo, a cold laboratory, and an ape planning air superiority." },
-  sweatshop: { character: "/penguinaroo.png", name: "PENGUINAROO", role: "SWEATSHOP TYRANT", description: "Cheap shit goes in. Profitable shit comes out. Nobody gets a lunch break." },
+  sweatshop: { character: "/penguinaroo.png", name: "PINGUWINOORU", role: "GLORIOUS LEADER", description: "Make great very good number one glorious Leader of supper fast number 1 sweatshop." },
   docks: { character: "/media/rat-photo-hires.jpg", name: "SQUEEK", role: "OFFSHORE RAT BARON", description: "A filthy cargo tub breeding rats faster than customs can count them." },
-  arena: { character: "/vicheal-nic.jpg", name: "VICHEAL NIC", role: "DOG-FIGHT PROMOTER", description: "A frozen boxing pit where bad dogs settle worse gambling debts." },
+  arena: { character: "/vicheal-nic.jpg", name: "VICHEAL MIC", role: "DOG FIGHT ENTHUSIAST", description: "Vicheal Mic is a dog fight enthusiast." },
 };
 
 export const CIRCUS_STOCK = [

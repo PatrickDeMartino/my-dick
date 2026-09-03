@@ -53,6 +53,7 @@ export function Can3D({ size = 40, variant = "rat" }: Can3DProps) {
       label.colorSpace = THREE.SRGBColorSpace;
       const sideMaterial = new THREE.MeshStandardMaterial({ map: label, roughness: 0.5, metalness: 0.12 });
       const metalMaterial = new THREE.MeshStandardMaterial({ color: 0xc3ccce, roughness: 0.28, metalness: 0.85 });
+      const highlightMaterial = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: .11, roughness: .08, metalness: .1, transmission: .08, depthWrite: false });
 
       const canGroup = new THREE.Group();
       const radius = variant === "yoohoo" ? 0.49 : 0.6;
@@ -60,6 +61,18 @@ export function Can3D({ size = 40, variant = "rat" }: Can3DProps) {
       const cylinder = new THREE.CylinderGeometry(radius, radius, height, 40);
       const canMesh = new THREE.Mesh(cylinder, [sideMaterial, metalMaterial, metalMaterial]);
       canGroup.add(canMesh);
+      const shoulderGeo = new THREE.CylinderGeometry(radius * .92, radius, height * .13, 40, 1, true);
+      const topShoulder = new THREE.Mesh(shoulderGeo, metalMaterial);
+      topShoulder.position.y = height * .435;
+      canGroup.add(topShoulder);
+      const bottomShoulder = topShoulder.clone();
+      bottomShoulder.position.y = -height * .435;
+      bottomShoulder.rotation.z = Math.PI;
+      canGroup.add(bottomShoulder);
+      const lidGeo = new THREE.CylinderGeometry(radius * .91, radius * .91, .035, 40);
+      const lid = new THREE.Mesh(lidGeo, metalMaterial);
+      lid.position.y = height / 2 + .012;
+      canGroup.add(lid);
       const rimGeo = new THREE.TorusGeometry(radius, 0.045, 8, 32);
       const rimTop = new THREE.Mesh(rimGeo, metalMaterial);
       rimTop.rotation.x = Math.PI / 2;
@@ -68,6 +81,16 @@ export function Can3D({ size = 40, variant = "rat" }: Can3DProps) {
       const rimBottom = rimTop.clone();
       rimBottom.position.y = -height / 2;
       canGroup.add(rimBottom);
+      const pullTabGeo = new THREE.TorusGeometry(radius * .16, radius * .035, 8, 24);
+      const pullTab = new THREE.Mesh(pullTabGeo, metalMaterial);
+      pullTab.rotation.x = Math.PI / 2;
+      pullTab.scale.y = .58;
+      pullTab.position.set(radius * .12, height / 2 + .035, 0);
+      canGroup.add(pullTab);
+      const shineGeo = new THREE.CylinderGeometry(radius * 1.008, radius * 1.008, height * .86, 40, 1, true, -.55, .58);
+      const shine = new THREE.Mesh(shineGeo, highlightMaterial);
+      shine.renderOrder = 3;
+      canGroup.add(shine);
       canGroup.rotation.z = 0.1;
       canGroup.rotation.y = 0.6;
       scene.add(canGroup);
@@ -97,9 +120,14 @@ export function Can3D({ size = 40, variant = "rat" }: Can3DProps) {
         cancelAnimationFrame(localRaf);
         renderer.dispose();
         cylinder.dispose();
+        shoulderGeo.dispose();
+        lidGeo.dispose();
         rimGeo.dispose();
+        pullTabGeo.dispose();
+        shineGeo.dispose();
         sideMaterial.dispose();
         metalMaterial.dispose();
+        highlightMaterial.dispose();
         label.dispose();
         if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
       };
