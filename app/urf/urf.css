@@ -59,6 +59,8 @@
 .town-screen::before { content: ""; position: absolute; inset: 0; opacity: .16; background-image: linear-gradient(rgba(111,198,234,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(111,198,234,.2) 1px, transparent 1px); background-size: 46px 46px; }
 .town-map { position: relative; height: 100svh; width: min(100vw, 66.667svh); aspect-ratio: 2 / 3; overflow: hidden; background: #0b4d96; box-shadow: 0 0 90px #000, 0 0 0 1px rgba(151,216,242,.25); }
 .town-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; user-select: none; }
+.town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.town-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
 .sweatshop-smoke { position: absolute; z-index: 2; left: 83.8%; top: 19.4%; width: 15%; height: 15.3%; pointer-events: none; }
 .smoke-puff {
   --puff-drift: 130%;
