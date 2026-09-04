@@ -1561,3 +1561,28 @@ button, input { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .guide-orb__face { animation: none; }
 }
+
+.choice-preview-link {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 5;
+  padding: 9px 13px;
+  border: 1px solid rgba(116, 247, 237, .48);
+  border-radius: 999px;
+  background: rgba(2, 9, 17, .76);
+  color: #9ffbf2;
+  font: 800 12px/1 var(--font-geist-mono), Consolas, monospace;
+  letter-spacing: .04em;
+  text-decoration: none;
+  backdrop-filter: blur(9px);
+  box-shadow: 0 0 22px rgba(86, 238, 228, .13);
+}
+
+.choice-preview-link:hover,
+.choice-preview-link:focus-visible {
+  border-color: #ffe35d;
+  color: #ffe35d;
+  outline: none;
+  transform: translateY(-2px);
+}

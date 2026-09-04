@@ -59,6 +59,35 @@ test("renders the Dr. Bongo neural-link scene", async () => {
   assert.match(html, /Fuck this Noise/);
 });
 
+test("links to the Penguin Town hex district from the landing page", async () => {
+  const response = await request("/");
+  const html = await response.text();
+  assert.match(html, /href="\/penguin-town"/);
+});
+
+test("renders the Penguin Town hex board shell", async () => {
+  const response = await request("/penguin-town");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<title>Penguin Town<\/title>/i);
+  assert.match(html, /Who(?:&#x27;|')s building\?/);
+  assert.match(html, /Instagram/);
+});
+
+test("hex claims and profiles degrade gracefully without D1", async () => {
+  const hexResponse = await request("/api/hex?board=penguin-town");
+  const hexPayload = await hexResponse.json();
+  assert.ok(hexResponse.status === 200 ? Array.isArray(hexPayload.claims) : /hex_claims table is unavailable/.test(hexPayload.error));
+
+  const profileResponse = await request("/api/profile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: "test-id", platform: "instagram", handle: "test.user" }),
+  });
+  const profilePayload = await profileResponse.json();
+  assert.ok(profileResponse.status === 201 ? profilePayload.profile.handle === "test.user" : /profiles table is unavailable/.test(profilePayload.error));
+});
+
 test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
   const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");

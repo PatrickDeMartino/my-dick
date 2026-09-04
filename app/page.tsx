@@ -92,6 +92,15 @@ export default function LandingPage() {
         <span className="guide-orb__label">ship&apos;s chart</span>
       </a>
 
+      <a
+        className="choice-preview-link"
+        href="/penguin-town"
+        aria-label="Open the Penguin Town hex district"
+        onClick={(event) => warpTo(event, "/penguin-town")}
+      >
+        🐧 Penguin Town: hex district
+      </a>
+
       {showUrf && (
         <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
           <iframe className="urf-modal-frame" src="/urf" title="Planet Urf territory selector" />
