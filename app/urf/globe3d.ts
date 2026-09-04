@@ -81,17 +81,21 @@ const PHYSICS_STEP = 1 / 240;
 const IMPACT_RADIUS = GLOBE_RADIUS + 0.012;
 const STUCK_LIFETIME = 5;
 
-const ALIEN_SCALE = 0.56;
+const ALIEN_SCALE = 0.8;
 const WALK_SPEED = 0.42;
 /** The walkable slab is tilted toward the camera, so walking "back" also
  * walks up the screen — an isometric read that keeps depth legible under an
  * orthographic camera. */
-const SLAB_RISE = 0.3;
-const SLAB_DEPTH = 0.62;
-const SLAB_BASE_Y = -1.06;
+const SLAB_RISE = 0.22;
+const SLAB_DEPTH = 0.5;
+const SLAB_BASE_Y = -0.72;
 const SLAB_BASE_Z = 2.45;
-const SLAB_RADIUS = 0.5;
-const WALK_LIMIT_X = 0.36;
+const SLAB_RADIUS = 0.42;
+/** The archer stands on a ledge off the planet's left limb rather than under
+ * it, so shots travel across the view instead of straight up — the stance the
+ * reference art is built around. */
+const WALK_ORIGIN_X = -0.9;
+const WALK_LIMIT_X = 0.22;
 
 const LAND_STOPS: { at: number; rgb: [number, number, number] }[] = [
   { at: 0, rgb: [0x18, 0x3f, 0x43] },
@@ -298,119 +302,243 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.Buf
 type AlienRig = {
   group: THREE_NS.Group;
   body: THREE_NS.Group;
-  leftLeg: THREE_NS.Group;
-  rightLeg: THREE_NS.Group;
-  bowArm: THREE_NS.Group;
-  drawArm: THREE_NS.Group;
+  torso: THREE_NS.Group;
+  head: THREE_NS.Group;
+  frontLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
+  backLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
+  bowArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
+  drawArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
   bow: THREE_NS.Group;
-  string: THREE_NS.Mesh;
+  stringUpper: THREE_NS.Mesh;
+  stringLower: THREE_NS.Mesh;
+  nockedArrow: THREE_NS.Group;
   nock: THREE_NS.Object3D;
 };
 
-/** A low-poly alien archer, built from primitives so it ships with no asset. */
+/** Bow limb half-length, in the bow's own local space. */
+const BOW_REACH = 0.34;
+
+/**
+ * The Urf scout: a low-poly alien archer built to the reference art — bright
+ * green faceted body, big teardrop skull with black almond eyes, violet bands
+ * at the biceps, waist, thighs and ankles, a quiver of purple-fletched arrows
+ * across the back, and a dark recurve bow with a real string that bends to the
+ * nock as the shot is drawn.
+ *
+ * Every joint is a group so the animation code can pose it: two-bone arms and
+ * legs, a torso that twists and leans into the shot, and a head that tracks.
+ */
 function buildAlien(THREE: typeof THREE_NS): AlienRig {
-  const skin = new THREE.MeshStandardMaterial({ color: 0x6fd63a, flatShading: true, roughness: 0.72, metalness: 0.03 });
-  const skinDark = new THREE.MeshStandardMaterial({ color: 0x4fae2b, flatShading: true, roughness: 0.78 });
-  const gear = new THREE.MeshStandardMaterial({ color: 0x7b3fbf, flatShading: true, roughness: 0.6, metalness: 0.12 });
-  const eye = new THREE.MeshStandardMaterial({ color: 0x0a0713, roughness: 0.22, metalness: 0.35 });
-  const wood = new THREE.MeshStandardMaterial({ color: 0x6b4126, flatShading: true, roughness: 0.85 });
-  const cord = new THREE.MeshStandardMaterial({ color: 0xe8f5c8, roughness: 0.5 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0x7fd93f, flatShading: true, roughness: 0.62, metalness: 0.04 });
+  const skinShade = new THREE.MeshStandardMaterial({ color: 0x5fb62c, flatShading: true, roughness: 0.7 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x7a3fc9, flatShading: true, roughness: 0.5, metalness: 0.15 });
+  const eye = new THREE.MeshStandardMaterial({ color: 0x0a0610, roughness: 0.12, metalness: 0.5 });
+  const wood = new THREE.MeshStandardMaterial({ color: 0x8a5730, flatShading: true, roughness: 0.78 });
+  const cord = new THREE.MeshStandardMaterial({ color: 0xf0e6cf, roughness: 0.45 });
+  const leather = new THREE.MeshStandardMaterial({ color: 0x40261a, flatShading: true, roughness: 0.9 });
+  const fletch = new THREE.MeshStandardMaterial({ color: 0xa855f7, flatShading: true, roughness: 0.55, side: THREE.DoubleSide });
+  const steel = new THREE.MeshStandardMaterial({ color: 0xc8d4e0, flatShading: true, roughness: 0.25, metalness: 0.8 });
 
   const group = new THREE.Group();
   const body = new THREE.Group();
   group.add(body);
 
-  const limb = (length: number, radius: number, material: THREE_NS.Material) => {
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.82, radius, length, 6), material);
+  /** A tapered faceted limb segment, hanging down from its pivot. */
+  const bone = (length: number, top: number, bottom: number, material: THREE_NS.Material) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(top, bottom, length, 5), material);
     mesh.position.y = -length / 2;
     return mesh;
   };
 
-  const leftLeg = new THREE.Group();
-  leftLeg.position.set(-0.062, 0.44, 0);
-  leftLeg.add(limb(0.44, 0.05, skin));
-  const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.17), skinDark);
-  leftFoot.position.set(0, -0.44, 0.03);
-  leftLeg.add(leftFoot);
+  const ring = (radius: number, thickness: number) => new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, thickness, 6), band);
 
-  const rightLeg = new THREE.Group();
-  rightLeg.position.set(0.062, 0.44, 0);
-  rightLeg.add(limb(0.44, 0.05, skin));
-  const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.17), skinDark);
-  rightFoot.position.set(0, -0.44, 0.03);
-  rightLeg.add(rightFoot);
+  // ---------------------------------------------------------- legs ----
+  // A wide archer stance: front leg planted forward, back leg braced.
+  const buildLeg = (forward: number) => {
+    const hip = new THREE.Group();
+    hip.position.set(forward * 0.055, 0.5, forward * 0.15);
+    body.add(hip);
 
-  body.add(leftLeg, rightLeg);
+    hip.add(bone(0.28, 0.058, 0.05, skin));
+    const thighBand = ring(0.062, 0.03);
+    thighBand.position.y = -0.1;
+    hip.add(thighBand);
 
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.3, 7), skin);
-  torso.position.y = 0.59;
+    const knee = new THREE.Group();
+    knee.position.y = -0.28;
+    hip.add(knee);
+    knee.add(bone(0.26, 0.05, 0.036, skin));
+
+    const ankleBand = ring(0.045, 0.026);
+    ankleBand.position.y = -0.22;
+    knee.add(ankleBand);
+
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.16), skinShade);
+    foot.position.set(0, -0.27, 0.04);
+    knee.add(foot);
+
+    return { hip, knee };
+  };
+  const frontLeg = buildLeg(1);
+  const backLeg = buildLeg(-1);
+
+  // --------------------------------------------------------- torso ----
+  const torso = new THREE.Group();
+  torso.position.y = 0.5;
   body.add(torso);
 
-  const vest = new THREE.Mesh(new THREE.CylinderGeometry(0.107, 0.126, 0.19, 7), gear);
-  vest.position.y = 0.585;
-  body.add(vest);
+  const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.072, 0.1, 6), skin);
+  pelvis.position.y = 0.04;
+  torso.add(pelvis);
 
-  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.132, 0.132, 0.035, 7), gear);
-  belt.position.y = 0.45;
-  body.add(belt);
+  const waist = ring(0.092, 0.038);
+  waist.position.y = 0.075;
+  torso.add(waist);
 
-  const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 1), skin);
-  head.scale.set(0.95, 1.32, 1.05);
-  head.position.y = 0.87;
-  body.add(head);
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.082, 0.25, 6), skin);
+  chest.position.y = 0.21;
+  torso.add(chest);
 
-  const eyeGeometry = new THREE.IcosahedronGeometry(0.052, 1);
-  const leftEye = new THREE.Mesh(eyeGeometry, eye);
-  leftEye.scale.set(0.85, 1.5, 0.5);
-  leftEye.position.set(-0.062, 0.885, 0.125);
-  leftEye.rotation.z = 0.32;
-  const rightEye = new THREE.Mesh(eyeGeometry, eye);
-  rightEye.scale.set(0.85, 1.5, 0.5);
-  rightEye.position.set(0.062, 0.885, 0.125);
-  rightEye.rotation.z = -0.32;
-  body.add(leftEye, rightEye);
+  // Sash across the chest, the way the reference art wears it.
+  const sash = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.32, 0.19), band);
+  sash.position.set(0, 0.2, 0);
+  sash.rotation.x = 0.32;
+  torso.add(sash);
 
-  // Quiver across the back, with arrows poking out of it.
-  const quiver = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.052, 0.28, 6), gear);
-  quiver.position.set(-0.02, 0.6, -0.12);
-  quiver.rotation.set(0.28, 0, 0.42);
-  body.add(quiver);
-  for (let index = 0; index < 3; index += 1) {
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.2, 4), wood);
-    shaft.position.set(-0.055 + index * 0.022, 0.78, -0.15);
-    shaft.rotation.set(0.28, 0, 0.42);
-    body.add(shaft);
+  // ---------------------------------------------------------- head ----
+  const head = new THREE.Group();
+  head.position.y = 0.37;
+  torso.add(head);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.042, 0.06, 5), skin);
+  neck.position.y = -0.02;
+  head.add(neck);
+
+  // The classic teardrop cranium: wide and tall up top, tapering to a chin.
+  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 1), skin);
+  skull.scale.set(0.92, 1.24, 1.02);
+  skull.position.y = 0.11;
+  head.add(skull);
+
+  const jaw = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.13, 6), skin);
+  jaw.rotation.x = Math.PI;
+  jaw.position.y = 0.02;
+  head.add(jaw);
+
+  [-1, 1].forEach((side) => {
+    const almond = new THREE.Mesh(new THREE.IcosahedronGeometry(0.062, 1), eye);
+    almond.scale.set(0.8, 1.15, 0.55);
+    almond.position.set(side * 0.078, 0.12, 0.072);
+    almond.rotation.z = side * 0.46;
+    almond.rotation.y = side * -0.55;
+    head.add(almond);
+  });
+
+  // -------------------------------------------------------- quiver ----
+  const quiver = new THREE.Group();
+  quiver.position.set(-0.03, 0.25, -0.085);
+  quiver.rotation.set(0.24, 0, 0.42);
+  torso.add(quiver);
+
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.046, 0.21, 6), leather);
+  quiver.add(tube);
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.3, 0.13), band);
+  strap.rotation.z = -0.38;
+  strap.position.set(0.05, 0.02, 0.06);
+  quiver.add(strap);
+
+  for (let index = 0; index < 4; index += 1) {
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 4), wood);
+    shaft.position.set((index - 1.5) * 0.02, 0.19, (index % 2) * 0.016 - 0.008);
+    quiver.add(shaft);
+    const vane = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.07, 4), fletch);
+    vane.position.set((index - 1.5) * 0.02, 0.3, (index % 2) * 0.016 - 0.008);
+    quiver.add(vane);
   }
 
-  // Arms. The bow arm points forward along +Z; the draw arm pulls the string.
-  const bowArm = new THREE.Group();
-  bowArm.position.set(-0.105, 0.7, 0);
-  const bowUpper = limb(0.34, 0.036, skin);
-  bowArm.add(bowUpper);
-  body.add(bowArm);
+  // ---------------------------------------------------------- arms ----
+  const buildArm = (side: number) => {
+    const shoulder = new THREE.Group();
+    shoulder.position.set(side * 0.1, 0.31, 0);
+    torso.add(shoulder);
 
-  const drawArm = new THREE.Group();
-  drawArm.position.set(0.105, 0.7, 0);
-  drawArm.add(limb(0.32, 0.036, skin));
-  body.add(drawArm);
+    const cap = new THREE.Mesh(new THREE.IcosahedronGeometry(0.052, 0), skin);
+    shoulder.add(cap);
+    shoulder.add(bone(0.23, 0.045, 0.036, skin));
 
+    const bicep = ring(0.05, 0.028);
+    bicep.position.y = -0.11;
+    shoulder.add(bicep);
+
+    const elbow = new THREE.Group();
+    elbow.position.y = -0.23;
+    shoulder.add(elbow);
+    elbow.add(bone(0.22, 0.036, 0.028, skin));
+
+    const wrist = ring(0.036, 0.024);
+    wrist.position.y = -0.19;
+    elbow.add(wrist);
+
+    const hand = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 0), skinShade);
+    hand.scale.set(0.9, 1.1, 0.7);
+    hand.position.y = -0.24;
+    elbow.add(hand);
+
+    return { shoulder, elbow };
+  };
+  const bowArm = buildArm(1);
+  const drawArm = buildArm(-1);
+
+  // ----------------------------------------------------------- bow ----
+  // A recurve profile swept along a curve, so the limbs actually curl back at
+  // the tips the way the reference bow does.
   const bow = new THREE.Group();
-  const limbGeometry = new THREE.TorusGeometry(0.3, 0.014, 5, 18, Math.PI * 0.95);
-  const bowMesh = new THREE.Mesh(limbGeometry, wood);
-  bowMesh.rotation.z = Math.PI * 0.525;
-  bow.add(bowMesh);
+  const spine = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, -BOW_REACH, 0.055),
+    new THREE.Vector3(0, -BOW_REACH * 0.72, -0.012),
+    new THREE.Vector3(0, -BOW_REACH * 0.3, -0.045),
+    new THREE.Vector3(0, 0, -0.052),
+    new THREE.Vector3(0, BOW_REACH * 0.3, -0.045),
+    new THREE.Vector3(0, BOW_REACH * 0.72, -0.012),
+    new THREE.Vector3(0, BOW_REACH, 0.055),
+  ]);
+  const limb = new THREE.Mesh(new THREE.TubeGeometry(spine, 26, 0.018, 5, false), wood);
+  bow.add(limb);
 
-  const string = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.58, 3), cord);
-  bow.add(string);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.1, 6), leather);
+  grip.position.z = -0.052;
+  bow.add(grip);
+
+  const stringUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 4), cord);
+  const stringLower = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 4), cord);
+  bow.add(stringUpper, stringLower);
+
+  // The arrow sitting on the string, shown only while the bow is drawn.
+  const nockedArrow = new THREE.Group();
+  const nockedShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.66, 5), wood);
+  nockedShaft.rotation.x = Math.PI / 2;
+  nockedArrow.add(nockedShaft);
+  const nockedHead = new THREE.Mesh(new THREE.ConeGeometry(0.019, 0.06, 4), steel);
+  nockedHead.rotation.x = Math.PI / 2;
+  nockedHead.position.z = 0.36;
+  nockedArrow.add(nockedHead);
+  for (let index = 0; index < 3; index += 1) {
+    const vane = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.05), fletch);
+    vane.position.z = -0.3;
+    vane.rotation.z = (index / 3) * Math.PI * 2;
+    vane.rotation.y = Math.PI / 2;
+    nockedArrow.add(vane);
+  }
+  bow.add(nockedArrow);
 
   const nock = new THREE.Object3D();
-  nock.position.set(0, 0, 0);
   bow.add(nock);
 
-  bow.position.set(0, -0.34, 0.03);
-  bowArm.add(bow);
+  // The bow hangs from the bow hand.
+  bow.position.set(0, -0.26, 0.02);
+  bowArm.elbow.add(bow);
 
-  return { group, body, leftLeg, rightLeg, bowArm, drawArm, bow, string, nock };
+  return { group, body, torso, head, frontLeg, backLeg, bowArm, drawArm, bow, stringUpper, stringLower, nockedArrow, nock };
 }
 
 function buildSatellite(THREE: typeof THREE_NS) {
@@ -618,7 +746,7 @@ export async function createGlobe3D(
   // face follows the same line the archer walks along.
   const platform = buildPlatform(THREE);
   platform.rotation.x = Math.atan2(SLAB_RISE, SLAB_DEPTH);
-  platform.position.set(0, SLAB_BASE_Y + SLAB_RISE * 0.5 - 0.05, SLAB_BASE_Z - SLAB_DEPTH * 0.5);
+  platform.position.set(WALK_ORIGIN_X, SLAB_BASE_Y + SLAB_RISE * 0.5 - 0.05, SLAB_BASE_Z - SLAB_DEPTH * 0.5);
   scene.add(platform);
 
   const alien = buildAlien(THREE);
@@ -642,26 +770,41 @@ export async function createGlobe3D(
     }
   });
 
-  const arrowShaft = new THREE.MeshStandardMaterial({ color: 0x7d4a24, flatShading: true, roughness: 0.8 });
-  const arrowTip = new THREE.MeshStandardMaterial({ color: 0xdfe9f4, flatShading: true, roughness: 0.3, metalness: 0.7 });
-  const arrowFletch = new THREE.MeshStandardMaterial({ color: 0xff58c8, flatShading: true, roughness: 0.6, side: THREE.DoubleSide });
+  // Loose arrows use the same palette as the one on the string, so a shot in
+  // flight reads as the arrow that was just nocked.
+  const arrowShaft = new THREE.MeshStandardMaterial({ color: 0x6b4126, flatShading: true, roughness: 0.82 });
+  const arrowTip = new THREE.MeshStandardMaterial({ color: 0xc8d4e0, flatShading: true, roughness: 0.25, metalness: 0.8 });
+  const arrowFletch = new THREE.MeshStandardMaterial({ color: 0xa855f7, flatShading: true, roughness: 0.55, side: THREE.DoubleSide });
+  const arrowGlow = new THREE.MeshBasicMaterial({ color: 0xd9b6ff, transparent: true, opacity: 0.4 });
 
   const makeArrow = () => {
     const group = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 5), arrowShaft);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.4, 5), arrowShaft);
     shaft.rotation.x = Math.PI / 2;
     group.add(shaft);
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.085, 5), arrowTip);
+    // A faceted broadhead rather than a plain cone — it catches the key light
+    // and stays readable against the land it lands on.
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.11, 4), arrowTip);
     tip.rotation.x = Math.PI / 2;
-    tip.position.z = 0.21;
+    tip.rotation.z = Math.PI / 4;
+    tip.position.z = 0.24;
     group.add(tip);
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 5), arrowTip);
+    collar.rotation.x = Math.PI / 2;
+    collar.position.z = 0.185;
+    group.add(collar);
     for (let index = 0; index < 3; index += 1) {
-      const fin = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.085), arrowFletch);
-      fin.position.z = -0.155;
+      const fin = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.075), arrowFletch);
+      fin.position.z = -0.16;
       fin.rotation.z = (index / 3) * Math.PI * 2;
       fin.rotation.y = Math.PI / 2;
       group.add(fin);
     }
+    // A soft tracer so the arc is legible against the psychedelic ocean.
+    const tracer = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.022, 0.34, 5, 1, true), arrowGlow);
+    tracer.rotation.x = -Math.PI / 2;
+    tracer.position.z = -0.36;
+    group.add(tracer);
     return group;
   };
 
@@ -676,7 +819,7 @@ export async function createGlobe3D(
   const aim = { x: 0.35, y: 0.35 };
   const move = { x: 0, y: 0 };
   const keys = { up: false, down: false, left: false, right: false };
-  const walker = { x: -0.52, z: 0.3, facing: 0, stride: 0 };
+  const walker = { x: 0, z: 0.3, facing: 0, stride: 0 };
 
   let drawing = false;
   let drawStartedAt = 0;
@@ -696,6 +839,18 @@ export async function createGlobe3D(
   const bowWorld = new THREE.Vector3();
   const aimTarget = new THREE.Vector3();
   const aimDirection = new THREE.Vector3(0, 0.4, -1);
+  const cordUp = new THREE.Vector3(0, 1, 0);
+  const cordMid = new THREE.Vector3();
+  const cordDir = new THREE.Vector3();
+  const bowTipUpper = new THREE.Vector3();
+  const bowTipLower = new THREE.Vector3();
+  const nockPoint = new THREE.Vector3();
+  const ikTarget = new THREE.Vector3();
+  const ikDirection = new THREE.Vector3();
+  const ikAim = new THREE.Quaternion();
+  const ikBend = new THREE.Quaternion();
+  const limbDown = new THREE.Vector3(0, -1, 0);
+  const limbHinge = new THREE.Vector3(1, 0, 0);
 
   const applyView = () => {
     const half = 0.5 / (0.43 * zoom);
@@ -872,6 +1027,46 @@ export async function createGlobe3D(
     }
   };
 
+  /** Spans a unit-height cylinder between two points in its parent's space. */
+  const spanCord = (mesh: THREE_NS.Mesh, from: THREE_NS.Vector3, to: THREE_NS.Vector3) => {
+    cordMid.copy(from).add(to).multiplyScalar(0.5);
+    cordDir.copy(to).sub(from);
+    const length = cordDir.length();
+    if (length < 0.0001) return;
+    mesh.position.copy(cordMid);
+    mesh.scale.set(1, length, 1);
+    mesh.quaternion.setFromUnitVectors(cordUp, cordDir.divideScalar(length));
+  };
+
+  /**
+   * Two-bone IK. Points the upper arm so that, with the elbow bent by the
+   * angle the triangle demands, the hand lands on `targetWorld`.
+   */
+  const solveArm = (
+    arm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group },
+    targetWorld: THREE_NS.Vector3,
+    upper: number,
+    fore: number,
+  ) => {
+    const parent = arm.shoulder.parent;
+    if (!parent) return;
+    parent.updateWorldMatrix(true, false);
+    ikTarget.copy(targetWorld);
+    parent.worldToLocal(ikTarget);
+    ikDirection.copy(ikTarget).sub(arm.shoulder.position);
+    const reach = clamp(ikDirection.length(), Math.abs(upper - fore) + 0.02, upper + fore - 0.015);
+    if (reach < 0.0001) return;
+    ikDirection.normalize();
+
+    const shoulderAngle = Math.acos(clamp((upper * upper + reach * reach - fore * fore) / (2 * upper * reach), -1, 1));
+    ikAim.setFromUnitVectors(limbDown, ikDirection);
+    ikBend.setFromAxisAngle(limbHinge, shoulderAngle);
+    arm.shoulder.quaternion.copy(ikAim).multiply(ikBend);
+
+    const elbowAngle = Math.acos(clamp((upper * upper + fore * fore - reach * reach) / (2 * upper * fore), -1, 1));
+    arm.elbow.rotation.set(-(Math.PI - elbowAngle), 0, 0);
+  };
+
   const stepAlien = (delta: number, elapsed: number) => {
     const inputX = clamp(move.x + (keys.right ? 1 : 0) - (keys.left ? 1 : 0), -1, 1);
     const inputZ = clamp(move.y + (keys.up ? 1 : 0) - (keys.down ? 1 : 0), -1, 1);
@@ -880,46 +1075,98 @@ export async function createGlobe3D(
     walker.x = clamp(walker.x + inputX * WALK_SPEED * delta, -WALK_LIMIT_X, WALK_LIMIT_X);
     walker.z = clamp(walker.z + inputZ * WALK_SPEED * delta, 0, 1);
 
-    const worldX = walker.x;
+    const worldX = WALK_ORIGIN_X + walker.x;
     const worldY = SLAB_BASE_Y + walker.z * SLAB_RISE;
     const worldZ = SLAB_BASE_Z - walker.z * SLAB_DEPTH;
     alien.group.position.set(worldX, worldY, worldZ);
 
-    // Aim: from the bow toward wherever the player is pointing on the globe.
+    // Aim: from the archer toward wherever the player is pointing on the globe.
     const target = worldFromScreen(aim.x, aim.y);
     aimDirection.copy(target).sub(alien.group.position);
     aimDirection.y += 0.12;
     if (aimDirection.lengthSq() < 0.0001) aimDirection.set(0, 0.3, -1);
     aimDirection.normalize();
 
+    // The whole body turns to face the shot, so the arms only ever have to
+    // pose along the body's own forward axis. That keeps the draw readable
+    // from any angle instead of fighting the aim direction.
     const facing = Math.atan2(aimDirection.x, aimDirection.z);
-    walker.facing = facing;
-    alien.group.rotation.y = facing;
+    walker.facing += ((facing - walker.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, delta * 9);
+    alien.group.rotation.y = walker.facing;
 
     const pitch = Math.asin(clamp(aimDirection.y, -1, 1));
-    alien.bowArm.rotation.x = -Math.PI / 2 - pitch * 0.9;
-    alien.bowArm.rotation.z = 0.12;
-    alien.drawArm.rotation.x = -Math.PI / 2.35 - pitch * 0.75 + charge * 0.12;
-    alien.drawArm.rotation.z = -0.42 - charge * 0.24;
 
-    // Draw the string back as the shot charges.
-    const pull = 0.02 + charge * 0.2;
-    alien.string.position.set(0, 0, -pull);
-    alien.string.scale.set(1, 1, 1);
-    alien.string.rotation.set(0, 0, 0);
-    alien.nock.position.set(0, 0, 0.24 - pull * 0.2);
+    // The archer stands below the planet, so the shot is steeply uphill. Rather
+    // than winching the arm over its head, the whole body leans back into the
+    // shot — which is what an archer actually does — and the arms keep the
+    // classic level silhouette relative to the body.
+    alien.body.rotation.x = -pitch * 0.62;
+    const armPitch = pitch * 0.34;
+
+    // Side-on stance: the torso is turned across the line of the shot.
+    alien.torso.rotation.x = -pitch * 0.12;
+    alien.torso.rotation.y = -0.3 + charge * 0.12;
+    alien.torso.rotation.z = 0.04 - charge * 0.04;
+    alien.head.rotation.x = -pitch * 0.16;
+    alien.head.rotation.y = 0.3 - charge * 0.05;
+
+    // Bow arm: aimed straight down the line of the shot. Pointing the limb
+    // rather than dialling in Euler angles keeps the bow square to the shot no
+    // matter how the body is turned or leaning.
+    alien.torso.updateWorldMatrix(true, false);
+    alien.torso.getWorldQuaternion(ikAim);
+    ikAim.invert();
+    ikDirection.copy(aimDirection).applyQuaternion(ikAim).normalize();
+    // Ease the bow down toward chest height; the arrow still leaves along the
+    // true line of the shot, the archer just doesn't hold it over their face.
+    ikDirection.y -= 0.26;
+    ikDirection.normalize();
+    alien.bowArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
+    alien.bowArm.elbow.rotation.set(0.1 - charge * 0.08, 0, 0);
+    // The bow hangs off the hand with its arrow axis running down the arm and
+    // its limbs standing upright across it.
+    alien.bow.rotation.set(-Math.PI / 2, 0, 0);
+
+    // The string bends to the nock, and the arrow rides on it.
+    const pull = 0.03 + charge * 0.3;
+    bowTipUpper.set(0, BOW_REACH, 0.055);
+    bowTipLower.set(0, -BOW_REACH, 0.055);
+    nockPoint.set(0, 0, 0.055 + pull);
+    spanCord(alien.stringUpper, bowTipUpper, nockPoint);
+    spanCord(alien.stringLower, bowTipLower, nockPoint);
+    alien.nock.position.copy(nockPoint);
+    alien.nockedArrow.visible = charge > 0.02;
+    alien.nockedArrow.position.set(0, 0, nockPoint.z - 0.3);
+    alien.nockedArrow.rotation.set(0, Math.PI, 0);
+
+    // Draw arm: solved so the hand actually holds the string where it is,
+    // instead of miming near it. Two bones, one hinge, closed form.
+    alien.nock.updateWorldMatrix(true, false);
+    alien.nock.getWorldPosition(ikTarget);
+    solveArm(alien.drawArm, ikTarget, 0.23, 0.24);
 
     if (moving) {
-      walker.stride += delta * 9;
-      const swing = Math.sin(walker.stride) * 0.55;
-      alien.leftLeg.rotation.x = swing;
-      alien.rightLeg.rotation.x = -swing;
-      alien.body.position.y = Math.abs(Math.sin(walker.stride)) * 0.02;
+      // Walk cycle: hips swing, knees bend on the back stroke.
+      walker.stride += delta * 8.5;
+      const swing = Math.sin(walker.stride) * 0.5;
+      alien.frontLeg.hip.rotation.x = swing;
+      alien.backLeg.hip.rotation.x = -swing;
+      alien.frontLeg.knee.rotation.x = Math.max(0, -swing) * 0.9;
+      alien.backLeg.knee.rotation.x = Math.max(0, swing) * 0.9;
+      alien.body.position.y = Math.abs(Math.sin(walker.stride)) * 0.022;
+      alien.body.rotation.z = Math.sin(walker.stride) * 0.03;
     } else {
+      // Braced archer stance: front leg forward and straight, back leg bent.
       walker.stride = 0;
-      alien.leftLeg.rotation.x *= 0.82;
-      alien.rightLeg.rotation.x *= 0.82;
-      alien.body.position.y = Math.sin(elapsed * 1.8) * 0.012;
+      const settleTo = (node: THREE_NS.Object3D, axis: "x" | "z", value: number) => {
+        node.rotation[axis] += (value - node.rotation[axis]) * Math.min(1, delta * 7);
+      };
+      settleTo(alien.frontLeg.hip, "x", -0.24 - charge * 0.05);
+      settleTo(alien.backLeg.hip, "x", 0.3 + charge * 0.06);
+      settleTo(alien.frontLeg.knee, "x", 0.16);
+      settleTo(alien.backLeg.knee, "x", 0.34 + charge * 0.1);
+      settleTo(alien.body, "z", 0);
+      alien.body.position.y = Math.sin(elapsed * 1.7) * 0.011 - charge * 0.015;
     }
   };
 

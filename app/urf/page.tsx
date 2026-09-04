@@ -14,6 +14,10 @@ type LandFeature = {
 
 const wrapAngle = (value: number) => ((value + 540) % 360) - 180;
 const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
+const formatCoordinate = (value: number, axis: "NS" | "EW") => {
+  const hemisphere = axis === "NS" ? (value >= 0 ? "N" : "S") : (value >= 0 ? "E" : "W");
+  return `${Math.abs(value).toFixed(1)}° ${hemisphere}`;
+};
 
 const continentMarkers: { name: string; center: Point }[] = [
   { name: "North America", center: [-105, 48] },
@@ -48,6 +52,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [stick, setStick] = useState({ x: 0, y: 0 });
   const [reticle, setReticle] = useState<{ x: number; y: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; tone: string } | null>(null);
+  const [selector, setSelector] = useState<{ name: string; unlocked: boolean; lon: number; lat: number } | null>(null);
 
   const territories = useMemo<Territory[]>(
     () => [
@@ -124,19 +129,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           onCharge: setCharge,
           onQuiver: setQuiver,
           onShot: (result) => {
+            // Water is just a miss. Land opens the territory's entry screen.
             if (!result.territory) {
               setFlash({ text: "SPLASH · OPEN WATER", tone: "water" });
               return;
             }
-            const label = result.territory.toUpperCase();
-            if (result.territory === "Antarctica") {
-              setFlash({ text: `${label} · ENTERING`, tone: "open" });
-              window.setTimeout(() => onEnterRef.current(), 720);
-              return;
-            }
-            setFlash({
-              text: result.unlocked ? `${label} · AVAILABLE` : `LOCKED · ${label}`,
-              tone: result.unlocked ? "open" : "locked",
+            setSelector({
+              name: result.territory,
+              unlocked: result.unlocked,
+              lon: result.lon,
+              lat: result.lat,
             });
           },
         }),
@@ -450,6 +452,39 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             </div>
           )}
           {flash && <div className={`archer-flash is-${flash.tone}`} role="status">{flash.text}</div>}
+        </div>
+      )}
+      {selector && (
+        <div className="territory-selector" role="dialog" aria-modal="false" aria-label={`${selector.name} entry`}>
+          <button
+            type="button"
+            className="territory-selector__close"
+            aria-label={`Close ${selector.name}`}
+            onClick={() => setSelector(null)}
+          >×</button>
+          <div className="territory-selector__body">
+            <div className="eyebrow"><span /> ARROW LANDED</div>
+            <h2>{selector.name}</h2>
+            <p className="territory-selector__coords">{formatCoordinate(selector.lat, "NS")} · {formatCoordinate(selector.lon, "EW")}</p>
+            {selector.unlocked ? (
+              <>
+                <p className="territory-selector__copy">Territory is open. Drop in.</p>
+                <button
+                  type="button"
+                  className="territory-selector__enter"
+                  onClick={() => {
+                    setSelector(null);
+                    onEnterRef.current();
+                  }}
+                >ENTER {selector.name.toUpperCase()}</button>
+              </>
+            ) : (
+              <>
+                <p className="territory-selector__copy">No route down yet. This one is still locked.</p>
+                <button type="button" className="territory-selector__enter is-locked" disabled>🔒 LOCKED</button>
+              </>
+            )}
+          </div>
         </div>
       )}
       <div className="globe-shadow" />

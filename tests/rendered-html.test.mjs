@@ -246,7 +246,9 @@ test("the alien archer replaces the dart throw as the territory selector", async
 
   // Hits are read back as a territory, and Antarctica still opens Penguin Town.
   assert.match(world, /territoryAt/);
-  assert.match(globe, /result\.territory === "Antarctica"/);
+  assert.match(globe, /setSelector\(\{/);
+  assert.match(globe, /className="territory-selector"/);
+  assert.match(globe, /className="territory-selector__close"/);
   assert.match(globe, /onEnterRef\.current\(\)/);
   assert.match(globe, /className="archer-fire"/);
   assert.match(globe, /className="archer-stick"/);
