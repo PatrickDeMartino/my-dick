@@ -138,15 +138,57 @@ export default function OrangutanWidget() {
     brainBumpTexture.wrapS = THREE.RepeatWrapping;
     brainBumpTexture.wrapT = THREE.RepeatWrapping;
     brainBumpTexture.repeat.set(2.6, 1.8);
+    const brainColorCanvas = document.createElement("canvas");
+    brainColorCanvas.width = 512;
+    brainColorCanvas.height = 512;
+    const brainColorContext = brainColorCanvas.getContext("2d");
+    if (brainColorContext) {
+      const tissue = brainColorContext.createLinearGradient(0, 0, 512, 512);
+      tissue.addColorStop(0, "#8f455a");
+      tissue.addColorStop(.42, "#d78796");
+      tissue.addColorStop(.72, "#ad5a70");
+      tissue.addColorStop(1, "#6f3045");
+      brainColorContext.fillStyle = tissue;
+      brainColorContext.fillRect(0, 0, 512, 512);
+      brainColorContext.globalCompositeOperation = "soft-light";
+      for (let index = 0; index < 900; index++) {
+        const x = (Math.sin(index * 71.231) * 43758.5453 % 1 + 1) % 1 * 512;
+        const y = (Math.sin(index * 19.117 + 4.2) * 24631.435 % 1 + 1) % 1 * 512;
+        const radius = 1 + ((index * 17) % 7);
+        brainColorContext.fillStyle = index % 4 ? "rgba(255,205,202,.13)" : "rgba(86,13,35,.18)";
+        brainColorContext.beginPath();
+        brainColorContext.arc(x, y, radius, 0, Math.PI * 2);
+        brainColorContext.fill();
+      }
+      brainColorContext.globalCompositeOperation = "source-over";
+      brainColorContext.lineCap = "round";
+      for (let vein = 0; vein < 22; vein++) {
+        const startY = 18 + vein * 23;
+        brainColorContext.strokeStyle = vein % 3 === 0 ? "rgba(78,15,34,.48)" : "rgba(128,28,55,.3)";
+        brainColorContext.lineWidth = vein % 3 === 0 ? 2.4 : 1.15;
+        brainColorContext.beginPath();
+        brainColorContext.moveTo(-10, startY);
+        for (let point = 0; point <= 8; point++) {
+          brainColorContext.lineTo(point * 70, startY + Math.sin(point * 1.8 + vein) * 18);
+        }
+        brainColorContext.stroke();
+      }
+    }
+    const brainColorTexture = new THREE.CanvasTexture(brainColorCanvas);
+    brainColorTexture.colorSpace = THREE.SRGBColorSpace;
+    brainColorTexture.wrapS = THREE.RepeatWrapping;
+    brainColorTexture.wrapT = THREE.RepeatWrapping;
+    brainColorTexture.repeat.set(1.8, 1.35);
     const brainMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd96583,
+      color: 0xe3a0a8,
+      map: brainColorTexture,
       emissive: 0x300817,
       emissiveIntensity: 0.25,
-      roughness: 0.64,
+      roughness: 0.48,
       bumpMap: brainBumpTexture,
       bumpScale: 0.026,
-      clearcoat: 0.32,
-      clearcoatRoughness: 0.4,
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.27,
       sheen: 0.38,
       sheenColor: new THREE.Color(0xffa4b7),
     });
@@ -204,7 +246,7 @@ export default function OrangutanWidget() {
     const brainRig = new THREE.Group();
     brainRig.position.set(0, 0.205, 0.205);
     const brainTissueRig = new THREE.Group();
-    const brainLeft = new THREE.Mesh(new THREE.SphereGeometry(0.235, 34, 26), brainMat);
+    const brainLeft = new THREE.Mesh(new THREE.SphereGeometry(0.235, 48, 36), brainMat);
     brainLeft.position.set(-0.105, 0.075, 0.012);
     brainLeft.scale.set(0.86, 0.78, 0.8);
     const brainRight = brainLeft.clone();
@@ -215,10 +257,10 @@ export default function OrangutanWidget() {
     // hemispheres recognizable gyri instead of a cluster of pink spheres.
     for (const side of [-1, 1]) {
       const centerX = side * 0.105;
-      for (let row = 0; row < 6; row++) {
+      for (let row = 0; row < 8; row++) {
         const points: THREE.Vector3[] = [];
-        for (let point = 0; point < 10; point++) {
-          const progress = point / 9;
+        for (let point = 0; point < 14; point++) {
+          const progress = point / 13;
           const localX = (progress - 0.5) * 0.25;
           const y = -0.035 + row * 0.047 + Math.sin(progress * Math.PI * 4 + row * 1.7) * 0.014;
           const normalizedX = localX / 0.145;
@@ -227,7 +269,7 @@ export default function OrangutanWidget() {
           points.push(new THREE.Vector3(centerX + localX, y, 0.155 + surface * 0.065));
         }
         const groove = new THREE.Mesh(
-          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 28, 0.008, 7, false),
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 40, 0.007, 8, false),
           sulcusMat,
         );
         brainTissueRig.add(groove);
@@ -294,6 +336,39 @@ export default function OrangutanWidget() {
         brainRig.add(chipPin);
       }
     }
+    const circuitBoardMat = new THREE.MeshPhysicalMaterial({ color: 0x123d31, roughness: 0.34, metalness: 0.62, clearcoat: 0.45 });
+    const goldTraceMat = new THREE.MeshStandardMaterial({ color: 0xd9a84f, emissive: 0x6a3510, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.86 });
+    const ceramicMat = new THREE.MeshPhysicalMaterial({ color: 0x243246, roughness: 0.26, metalness: 0.55, clearcoat: 0.42 });
+    const neuralLeds: THREE.MeshStandardMaterial[] = [];
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.27, 0.028), circuitBoardMat);
+    board.position.set(0.055, 0.112, 0.214);
+    board.rotation.z = -0.1;
+    brainRig.add(board);
+    const traceRoutes = [
+      [-0.14, -0.08, 0.11, -0.08], [-0.14, -0.035, 0.17, -0.035], [-0.14, 0.01, 0.145, 0.01],
+      [-0.14, 0.055, 0.18, 0.055], [-0.11, 0.1, 0.16, 0.1],
+    ];
+    for (const [x1, y1, x2, y2] of traceRoutes) {
+      const trace = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(x2 - x1), 0.008, 0.008), goldTraceMat);
+      trace.position.set(0.055 + (x1 + x2) / 2, 0.112 + (y1 + y2) / 2, 0.234);
+      trace.rotation.z = -0.1;
+      brainRig.add(trace);
+    }
+    for (let component = 0; component < 14; component++) {
+      const column = component % 7;
+      const row = Math.floor(component / 7);
+      const capacitor = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.014 + row * 0.006, 0.018), ceramicMat);
+      capacitor.position.set(-0.095 + column * 0.047, 0.026 + row * 0.19, 0.247);
+      capacitor.rotation.z = -0.1;
+      brainRig.add(capacitor);
+    }
+    for (let ledIndex = 0; ledIndex < 4; ledIndex++) {
+      const ledMaterial = new THREE.MeshStandardMaterial({ color: ledIndex % 2 ? 0x7ffff0 : 0xff52db, emissive: ledIndex % 2 ? 0x28c8b5 : 0xb91681, emissiveIntensity: 2.2, roughness: 0.2 });
+      neuralLeds.push(ledMaterial);
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), ledMaterial);
+      led.position.set(-0.075 + ledIndex * 0.075, 0.225, 0.258);
+      brainRig.add(led);
+    }
     const implantPorts = [
       [-0.21, 0.08, cyanImplantMat],
       [-0.05, 0.205, purpleImplantMat],
@@ -312,6 +387,9 @@ export default function OrangutanWidget() {
       roughness: 0.46,
       metalness: 0.65,
     });
+    const cableRedMat = new THREE.MeshPhysicalMaterial({ color: 0x9f1f38, roughness: 0.38, metalness: 0.52, clearcoat: 0.4 });
+    const cableBlueMat = new THREE.MeshPhysicalMaterial({ color: 0x1765b5, roughness: 0.35, metalness: 0.48, clearcoat: 0.4 });
+    const cableGoldMat = new THREE.MeshPhysicalMaterial({ color: 0xc59a35, roughness: 0.38, metalness: 0.67, clearcoat: 0.35 });
     const cablePaths = [
       [new THREE.Vector3(-0.05, 0.205, 0.25), new THREE.Vector3(0.01, 0.19, 0.3), new THREE.Vector3(0.07, 0.17, 0.27)],
       [new THREE.Vector3(0.185, 0.13, 0.26), new THREE.Vector3(0.255, 0.1, 0.29), new THREE.Vector3(0.23, 0.025, 0.25)],
@@ -320,6 +398,21 @@ export default function OrangutanWidget() {
     for (const points of cablePaths) {
       const curve = new THREE.CatmullRomCurve3(points);
       brainRig.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.016, 6, false), cableMaterial));
+    }
+    const externalCablePaths = [
+      { material: cableRedMat, points: [new THREE.Vector3(-0.19, 0.18, 0.23), new THREE.Vector3(-0.38, 0.18, 0.1), new THREE.Vector3(-0.43, -0.12, -0.02)] },
+      { material: cableBlueMat, points: [new THREE.Vector3(-0.13, 0.23, 0.24), new THREE.Vector3(-0.32, 0.34, 0.03), new THREE.Vector3(-0.39, 0.02, -0.08)] },
+      { material: cableGoldMat, points: [new THREE.Vector3(0.2, 0.16, 0.24), new THREE.Vector3(0.39, 0.24, 0.06), new THREE.Vector3(0.42, -0.08, -0.02)] },
+      { material: cableMaterial, points: [new THREE.Vector3(0.14, 0.24, 0.23), new THREE.Vector3(0.34, 0.39, -0.02), new THREE.Vector3(0.36, 0.02, -0.1)] },
+    ];
+    for (const cable of externalCablePaths) {
+      const curve = new THREE.CatmullRomCurve3(cable.points);
+      const sheath = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.012, 10, false), cable.material);
+      brainRig.add(sheath);
+      const connector = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.05, 10), chromeMat);
+      connector.rotation.x = Math.PI / 2;
+      connector.position.copy(cable.points[0]);
+      brainRig.add(connector);
     }
     headRig.add(brainRig);
 
@@ -970,6 +1063,9 @@ export default function OrangutanWidget() {
       cheekR.scale.y = 0.72 - chewPuff;
 
       brainMat.emissiveIntensity = 0.24 + Math.sin(phase * 4.2) * 0.035 + eatPulse * 0.16;
+      neuralLeds.forEach((material, index) => {
+        material.emissiveIntensity = 1.35 + Math.max(0, Math.sin(phase * (5.2 + index * .7) + index * 1.9)) * 3.6;
+      });
       brainTissueRig.scale.set(1, 1 + Math.sin(phase * 4.7) * 0.007 + eatPulse * 0.012, 1);
 
       contactShadow.position.x = ape.position.x;
@@ -1113,6 +1209,7 @@ export default function OrangutanWidget() {
       if (bloodTimerRef.current) window.clearTimeout(bloodTimerRef.current);
       chipLabelTexture.dispose();
       brainBumpTexture.dispose();
+      brainColorTexture.dispose();
       bananaTexture.dispose();
       batTexture.dispose();
       for (const b of bananas) scene.remove(b.group);
@@ -1132,7 +1229,7 @@ export default function OrangutanWidget() {
       <div
         ref={mountRef}
         className="orangutan-playfield"
-        aria-label="Interactive 3D Dr. Bongo — drag and throw him anywhere on the screen; use his banner menu to feed or beat him"
+        aria-label="Interactive 3D Dr. Bongo — drag and throw him anywhere on the screen; use the floating controls to feed or beat him"
       />
       <div ref={bloodOverlayRef} className="bongo-blood-spatter" aria-hidden="true" />
     </>

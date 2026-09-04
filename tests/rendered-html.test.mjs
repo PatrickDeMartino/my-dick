@@ -257,3 +257,34 @@ test("Penguin Town V2 keeps the mobile-first 3D island and circular popup system
   assert.match(can, /pullTabGeo/);
   assert.match(can, /canGroup\.rotation\.y \+= 0\.011/);
 });
+
+test("renders Claude's Map Room integration with every current playable destination", async () => {
+  const response = await request("/map");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Chart of the Labyrinth/);
+  assert.match(html, /href="\/urf"/);
+  assert.match(html, /href="\/brain-room"/);
+  assert.match(html, /href="\/bongo"/);
+  assert.match(html, /href="\/anubis"/);
+  assert.match(html, /href="\/israel"/);
+});
+
+test("scene warps and visible Bongo ragdoll controls are wired into the game", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const warp = await readFile(new URL("../app/components/SceneWarp.tsx", import.meta.url), "utf8");
+  const bongoPage = await readFile(new URL("../app/bongo/page.tsx", import.meta.url), "utf8");
+  const bongoRig = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
+  assert.match(layout, /<SceneWarp \/>/);
+  assert.match(landing, /triggerSceneWarp/);
+  assert.match(landing, /ship&apos;s chart/);
+  assert.match(warp, /pickSceneWarpVariant/);
+  assert.match(bongoPage, /bongo-action-bubble/);
+  assert.match(bongoPage, />FEED</);
+  assert.match(bongoPage, />BEAT</);
+  assert.match(bongoRig, /brainColorTexture/);
+  assert.match(bongoRig, /circuitBoardMat/);
+  assert.match(bongoRig, /externalCablePaths/);
+  assert.match(bongoRig, /neuralLeds/);
+});

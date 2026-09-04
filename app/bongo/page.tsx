@@ -20,7 +20,12 @@ export default function Home() {
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [linkMode, setLinkMode] = useState<"ready" | "transmitting">("ready");
+  const [actionsOpen, setActionsOpen] = useState(true);
   const transcriptEnd = useRef<HTMLDivElement>(null);
+
+  const interactWithBongo = (action: "feed" | "beat") => {
+    window.dispatchEvent(new CustomEvent("trip-bongo-action", { detail: { action } }));
+  };
 
   useEffect(() => {
     transcriptEnd.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,6 +100,21 @@ export default function Home() {
           <span><b>MOOD</b> BANANA</span>
         </div>
         <OrangutanWidget />
+        {actionsOpen ? (
+          <aside className="bongo-action-bubble" aria-label="Interact with Dr. Bongo">
+            <button className="bongo-action-bubble__close" type="button" aria-label="Close Dr. Bongo controls" onClick={() => setActionsOpen(false)}>×</button>
+            <div className="bongo-action-bubble__portrait" aria-hidden="true"><img src="/media/dr-bongo-model-icon-v1.png" alt="" /></div>
+            <p><b>DR. BONGO</b><small>RAGDOLL CONTROLS</small></p>
+            <button className="bongo-action-jelly bongo-action-jelly--feed" type="button" onClick={() => interactWithBongo("feed")}>
+              <img src="/media/bongo-banana-cutout-v1.png" alt="" /><span><b>FEED</b><small>throw banana</small></span>
+            </button>
+            <button className="bongo-action-jelly bongo-action-jelly--beat" type="button" onClick={() => interactWithBongo("beat")}>
+              <img src="/media/bongo-bat-cutout-v1.png" alt="" /><span><b>BEAT</b><small>barbed-wire bat</small></span>
+            </button>
+          </aside>
+        ) : (
+          <button className="bongo-action-reopen" type="button" onClick={() => setActionsOpen(true)}>BONGO CONTROLS</button>
+        )}
       </section>
 
       <section className="neural-console" aria-label="Neural chat console">

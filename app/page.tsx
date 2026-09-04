@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { triggerSceneWarp } from "./lib/sceneWarp";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
 
 export default function LandingPage() {
   const [showUrf, setShowUrf] = useState(false);
+
+  const warpTo = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    event.preventDefault();
+    triggerSceneWarp(href);
+  };
 
   useEffect(() => {
     const closeUrf = () => setShowUrf(false);
@@ -53,6 +59,7 @@ export default function LandingPage() {
           href="/brain-room"
           data-portal="brain"
           aria-label="Open Dr. Bongo"
+          onClick={(event) => warpTo(event, "/brain-room")}
         >
           <span className="choice-object-visual" aria-hidden="true" />
           <span className="choice-smoke" aria-hidden="true">
@@ -70,8 +77,14 @@ export default function LandingPage() {
         className="choice-kicker"
         href="/anubis"
         aria-label="Enter the Anubis television room"
+        onClick={(event) => warpTo(event, "/anubis")}
       >
         <span>I&apos;m genuinely skitzofrenic</span>
+      </a>
+
+      <a className="guide-orb" href="/map" aria-label="Open the ship's chart of the labyrinth" onClick={(event) => warpTo(event, "/map")}>
+        <span className="guide-orb__face" aria-hidden="true">👽</span>
+        <span className="guide-orb__label">ship&apos;s chart</span>
       </a>
 
       {showUrf && (

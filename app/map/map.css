@@ -1,0 +1,25 @@
+.chart-room { position:relative; min-height:100svh; padding:clamp(76px,9vw,108px) clamp(14px,4vw,48px) 38px; display:flex; flex-direction:column; align-items:center; gap:clamp(16px,3vw,28px); overflow:hidden; color:#f4e6c9; background:radial-gradient(120% 100% at 50% 0%,#342112 0%,#130b06 70%); }
+.chart-room::before { content:""; position:absolute; inset:0; opacity:.14; pointer-events:none; background:repeating-linear-gradient(118deg,transparent 0 19px,rgba(232,194,119,.15) 20px 21px); }
+.chart-room__back { position:absolute; z-index:5; top:14px; left:14px; padding:11px 15px; border:1px solid rgba(244,230,201,.35); border-radius:999px; color:#f4e6c9; background:rgba(0,0,0,.5); text-decoration:none; font:800 12px/1 var(--font-geist-mono); letter-spacing:.1em; }
+.chart-room__back:hover,.chart-room__back:focus-visible { color:#24160b; background:#f4e6c9; outline:0; }
+.chart-room__title { position:relative; z-index:1; max-width:680px; text-align:center; }
+.chart-room__title small { display:inline-block; margin-bottom:8px; color:#e5bd68; font:800 12px/1 var(--font-geist-mono); letter-spacing:.3em; }
+.chart-room__title h1 { margin:0 0 10px; font:700 clamp(30px,5.4vw,52px)/1 Georgia,"Times New Roman",serif; text-shadow:0 4px 0 rgba(0,0,0,.35); }
+.chart-room__title p { margin:0; color:#cfb68c; font-size:clamp(14px,2vw,16px); }
+.chart-room__parchment { position:relative; z-index:1; width:min(1000px,100%); aspect-ratio:3/2; overflow:hidden; border:10px solid #68451f; border-radius:20px; outline:2px solid rgba(0,0,0,.6); box-shadow:inset 0 0 95px rgba(54,26,5,.58),0 24px 70px rgba(0,0,0,.58); background:radial-gradient(120% 90% at 15% 10%,rgba(255,244,214,.16),transparent 55%),repeating-radial-gradient(circle at 50% 50%,rgba(110,71,28,.07) 0 2px,transparent 2px 5px),linear-gradient(160deg,#edd9ad,#d5b371 52%,#ad8044); }
+.chart-room__compass,.chart-room__monster { position:absolute; color:#68451f; opacity:.5; }
+.chart-room__compass { top:6%; right:6%; font-size:clamp(30px,4vw,46px); transform:rotate(12deg); }
+.chart-room__monster { right:8%; bottom:4%; font-size:clamp(25px,3.6vw,38px); transform:scaleX(-1) rotate(-8deg); filter:sepia(1); }
+.chart-room__routes { position:absolute; inset:0; width:100%; height:100%; }
+.chart-room__route { fill:none; stroke:#65431e; stroke-width:.55; stroke-dasharray:1.6 1.35; stroke-linecap:round; opacity:.7; }
+.chart-room__node { position:absolute; width:clamp(72px,13vw,124px); display:flex; flex-direction:column; align-items:center; gap:5px; transform:translate(-50%,-50%); color:#34200d; text-align:center; text-decoration:none; }
+.chart-room__icon { display:grid; place-items:center; width:clamp(40px,6vw,58px); aspect-ratio:1; border:2px solid #68451f; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff8e7,#e8cd94 55%,#ae7d3d); box-shadow:0 7px 16px rgba(0,0,0,.38); font-size:clamp(19px,3vw,29px); transition:transform .18s ease,box-shadow .18s ease; }
+.chart-room__node.is-home .chart-room__icon { background:radial-gradient(circle at 35% 30%,#fff,#ffe9a8 55%,#d8a53f); }
+.chart-room__label { display:flex; flex-direction:column; gap:2px; }
+.chart-room__label b { font:700 clamp(9px,1.5vw,13px)/1.05 Georgia,"Times New Roman",serif; letter-spacing:.04em; text-shadow:0 1px rgba(255,255,255,.35); }
+.chart-room__label small { display:none; max-width:145px; color:#4d3417; font-size:11px; line-height:1.2; }
+.chart-room__node:hover .chart-room__icon,.chart-room__node:focus-visible .chart-room__icon { transform:scale(1.14) translateY(-2px); box-shadow:0 11px 23px rgba(0,0,0,.48); }
+.chart-room__node:hover .chart-room__label small,.chart-room__node:focus-visible .chart-room__label small { display:block; }
+.chart-room__node:focus-visible { border-radius:12px; outline:3px solid #34200d; outline-offset:6px; }
+@media(max-width:700px){.chart-room{padding-inline:8px}.chart-room__parchment{aspect-ratio:3/4;border-width:7px}.chart-room__label small{display:block;font-size:9px}.chart-room__label b{font-size:9px}.chart-room__node{width:78px}.chart-room__title p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.chart-room__icon{transition:none}}
