@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import PenguinTownScene3D from "./PenguinTownScene3D";
 import { JellyButtons } from "./JellyButtons";
@@ -117,6 +117,7 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
       x: Math.round((size.width / 2 + radius * cameraX) * 1000) / 1000,
       y: Math.round((size.height / 2 - radius * rolledY) * 1000) / 1000,
       visible: cameraZ > 0.03,
+      frontness: cameraZ,
     };
   }, [rotation, size, zoom]);
 
@@ -233,6 +234,13 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
   const markers = useMemo(() => continentMarkers.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
   const israel = project([34.85, 31.5]);
+  const isFrontCentered = (projected: ReturnType<typeof project>) => projected.visible && projected.frontness > .82;
+  const dartStyle = (projected: ReturnType<typeof project>) => ({
+    left: `${projected.x}px`,
+    top: `${projected.y}px`,
+    "--dart-launch-x": projected.x < size.width / 2 ? "-72vw" : "72vw",
+    "--dart-launch-y": projected.y < size.height / 2 ? "-48vh" : "48vh",
+  }) as CSSProperties;
 
   const moveDrag = (x: number, y: number) => {
     if (!dragRef.current.active) return;
@@ -275,39 +283,43 @@ function Globe({ onEnter, onEnterIsrael }: { onEnter: () => void; onEnterIsrael:
           setZoom((value) => Math.max(.72, Math.min(1.16, value - event.deltaY * .0008)));
         }}
       />
-      {markers.map((marker) => (
+      {markers.filter((marker) => isFrontCentered(marker.projected)).map((marker) => (
         <button
           type="button"
-          className={`lock-marker${lockedGlow === marker.name ? " is-glowing" : ""}`}
+          className={`lock-marker globe-target-marker is-aimed${lockedGlow === marker.name ? " is-glowing" : ""}`}
           key={marker.name}
-          style={{ left: `${marker.projected.x}px`, top: `${marker.projected.y}px`, opacity: marker.projected.visible ? "1" : "0", pointerEvents: marker.projected.visible ? "auto" : "none" }}
+          style={dartStyle(marker.projected)}
           aria-label={`${marker.name} is locked`}
           onClick={() => { setLockedGlow(marker.name); if (glowTimerRef.current) window.clearTimeout(glowTimerRef.current); glowTimerRef.current = window.setTimeout(() => setLockedGlow(null), 1100); }}
         >
-          <span>🔒</span>
-          <small>{marker.name}</small>
+          <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
+          <small>🔒 {marker.name}</small>
         </button>
       ))}
-      <button
-        type="button"
-        className="lock-marker location-marker antarctica-marker"
-        style={{ left: `${south.x}px`, top: `${south.y}px`, opacity: south.visible ? "1" : "0", pointerEvents: south.visible ? "auto" : "none" }}
-        onClick={onEnter}
-        aria-label="Enter Antarctica"
-      >
-        <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
-        <small>Antarctica</small>
-      </button>
-      <button
-        type="button"
-        className="lock-marker location-marker israel-marker"
-        style={{ left: `${israel.x}px`, top: `${israel.y}px`, opacity: israel.visible ? "1" : "0", pointerEvents: israel.visible ? "auto" : "none" }}
-        onClick={onEnterIsrael}
-        aria-label="Enter Israel"
-      >
-        <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
-        <small>Israel</small>
-      </button>
+      {isFrontCentered(south) && (
+        <button
+          type="button"
+          className="lock-marker globe-target-marker is-aimed location-marker antarctica-marker"
+          style={dartStyle(south)}
+          onClick={onEnter}
+          aria-label="Enter Antarctica"
+        >
+          <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
+          <small>Antarctica</small>
+        </button>
+      )}
+      {isFrontCentered(israel) && (
+        <button
+          type="button"
+          className="lock-marker globe-target-marker is-aimed location-marker israel-marker"
+          style={dartStyle(israel)}
+          onClick={onEnterIsrael}
+          aria-label="Enter Israel"
+        >
+          <span className="dart-marker" aria-hidden="true"><i/><b/><em/></span>
+          <small>Israel</small>
+        </button>
+      )}
       <div className="globe-shadow" />
     </div>
   );

@@ -760,14 +760,39 @@ function buildIgloo(): THREE.Group {
   const brickTexture = buildIceBrickTexture();
   const brickBump = buildNoiseBumpTexture(1971);
   const domeMaterial = new THREE.MeshStandardMaterial({ map: brickTexture, bumpMap: brickBump, bumpScale: .05, roughness: .82, flatShading: false });
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(1.03, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), domeMaterial);
+  const domeRadius = 1.18;
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(domeRadius, 36, 18, 0, Math.PI * 2, 0, Math.PI / 2), domeMaterial);
   dome.position.y = 0; dome.castShadow = true; dome.receiveShadow = true; g.add(dome);
-  for (const y of [.23, .48, .73]) {
-    const radius = Math.sqrt(Math.max(.1, 1.03 * 1.03 - y * y));
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, .018, 5, 32), mat(seam));
+  for (const y of [.22, .45, .69, .92]) {
+    const radius = Math.sqrt(Math.max(.1, domeRadius * domeRadius - y * y));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, .018, 5, 40), mat(seam));
     ring.position.y = y; ring.rotation.x = Math.PI / 2; g.add(ring);
   }
-  const tunnel = box(g, [.7, .62, .78], [0, .31, -1.03], 0xeaf8ff);
+  // Raised, offset masonry courses make the silhouette read as an actual
+  // block-built igloo even from the town's default oblique camera.
+  const courses = [
+    { y: .12, radius: 1.14, count: 16, width: .39 },
+    { y: .37, radius: 1.07, count: 15, width: .39 },
+    { y: .62, radius: .96, count: 13, width: .4 },
+    { y: .86, radius: .75, count: 10, width: .42 },
+  ];
+  courses.forEach((course, courseIndex) => {
+    for (let index = 0; index < course.count; index += 1) {
+      const angle = (index / course.count) * Math.PI * 2 + (courseIndex % 2 ? Math.PI / course.count : 0);
+      const brick = box(
+        g,
+        [course.width, .17, .1],
+        [Math.cos(angle) * course.radius, course.y, Math.sin(angle) * course.radius],
+        courseIndex % 2 ? 0xd9f1fa : 0xeaf9ff,
+        [0, -angle + Math.PI / 2, 0],
+      );
+      brick.castShadow = true;
+    }
+  });
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.17, .075, 8, 40), new THREE.MeshStandardMaterial({ color: 0xf2fcff, roughness: .9 }));
+  baseRing.position.y = .045; baseRing.rotation.x = Math.PI / 2; g.add(baseRing);
+
+  const tunnel = box(g, [.82, .66, .96], [0, .33, -1.2], 0xeaf8ff);
   tunnel.material = new THREE.MeshStandardMaterial({ map: brickTexture, roughness: .85 });
   // Real wooden door with a round porthole window, like the reference igloo art —
   // previously just a flat dark rectangle.
@@ -783,9 +808,14 @@ function buildIgloo(): THREE.Group {
   const handle = new THREE.Mesh(new THREE.SphereGeometry(.02, 8, 6), mat(0x3a2c1a));
   handle.position.set(-.12, -.02, .04);
   doorGroup.add(handle);
-  doorGroup.position.set(0, .24, -1.44);
+  doorGroup.position.set(0, .24, -1.7);
   g.add(doorGroup);
-  for (const x of [-.34, .34]) box(g, [.06, .54, .7], [x, .3, -1.07], seam);
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(.34, .09, 8, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0xdff5fd, roughness: .86 }));
+  arch.position.set(0, .28, -1.735); arch.castShadow = true; g.add(arch);
+  for (const x of [-.38, .38]) {
+    for (const y of [.12, .31, .5]) box(g, [.16, .18, .14], [x, y, -1.69], y === .31 ? 0xd9f1fa : 0xeaf9ff);
+  }
+  box(g, [.72, .09, .3], [0, .045, -1.68], 0xcceaf5);
   return g;
 }
 
@@ -997,7 +1027,7 @@ export default function PenguinTownScene3D({
     controls.enableDamping = true;
     controls.dampingFactor = 0.07;
     controls.enablePan = false;
-    controls.minDistance = 13;
+    controls.minDistance = 5.2;
     controls.maxDistance = 27;
     controls.minPolarAngle = .72;
     controls.maxPolarAngle = 1.18;
@@ -1008,7 +1038,7 @@ export default function PenguinTownScene3D({
     const frameCamera = () => {
       compactMode = width / height < .72;
       camera.fov = compactMode ? 68 : 42;
-      controls.minDistance = compactMode ? 25 : 13;
+      controls.minDistance = compactMode ? 7.2 : 5.2;
       controls.maxDistance = compactMode ? 42 : 27;
       if (compactMode && camera.position.length() < 34) camera.position.setLength(36);
       if (!compactMode && camera.position.length() > 28) camera.position.setLength(26);
@@ -1020,7 +1050,7 @@ export default function PenguinTownScene3D({
       const action = (event as CustomEvent<{action:string}>).detail?.action;
       const offset = camera.position.clone().sub(controls.target);
       if (action === "zoom-in" || action === "zoom-out") {
-        const factor = action === "zoom-in" ? .86 : 1.16;
+        const factor = action === "zoom-in" ? .72 : 1.16;
         const distance = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
         camera.position.copy(controls.target).add(offset.setLength(distance));
       }
@@ -1101,6 +1131,7 @@ export default function PenguinTownScene3D({
     type PenguinMode = "idle" | "walk" | "held" | "ragdoll" | "toss" | "swim" | "return";
     type PenguinAI = {
       group: THREE.Group;
+      selectionRing: THREE.Group;
       mode: PenguinMode;
       target: THREE.Vector3;
       timer: number;
@@ -1141,8 +1172,24 @@ export default function PenguinTownScene3D({
       const facing = seededRandom(x * z + 80) * Math.PI * 2;
       model.rotation.y = facing;
       penguinGroup.add(model);
+      const selectionRing = new THREE.Group();
+      const outerGlow = new THREE.Mesh(
+        new THREE.RingGeometry(.42, .56, 56),
+        new THREE.MeshBasicMaterial({ color: 0x64efff, transparent: true, opacity: .72, side: THREE.DoubleSide, depthWrite: false }),
+      );
+      const innerGlow = new THREE.Mesh(
+        new THREE.RingGeometry(.31, .39, 56),
+        new THREE.MeshBasicMaterial({ color: 0xf8ffff, transparent: true, opacity: .42, side: THREE.DoubleSide, depthWrite: false }),
+      );
+      outerGlow.rotation.x = innerGlow.rotation.x = -Math.PI / 2;
+      outerGlow.renderOrder = innerGlow.renderOrder = 8;
+      selectionRing.add(outerGlow, innerGlow);
+      selectionRing.position.set(x, ISLAND_HEIGHT + .055, z);
+      selectionRing.visible = false;
+      scene.add(selectionRing);
       penguins.push({
         group: model,
+        selectionRing,
         mode: "idle",
         target: start.clone(),
         timer: 1 + seededRandom(index + 40) * 3,
@@ -1320,9 +1367,17 @@ export default function PenguinTownScene3D({
     let lastPlacingId: string | null = null;
     let hoveredBuildingId: string | null = null;
     let activePenguinIndex: number | null = null;
+    let selectedPenguinIndex: number | null = null;
     let penguinWasMoved = false;
     const lastPenguinPoint = new THREE.Vector3();
     let lastPenguinMoveTime = performance.now();
+
+    function selectPenguin(index: number | null) {
+      selectedPenguinIndex = index;
+      penguins.forEach((penguin, penguinIndex) => {
+        penguin.selectionRing.visible = penguinIndex === index;
+      });
+    }
 
     function setPointerFromEvent(event: PointerEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -1385,6 +1440,7 @@ export default function PenguinTownScene3D({
       const penguinIndex = penguinHits.length ? (penguinHits[0].object.userData.penguinIndex as number | undefined) : undefined;
       if (typeof penguinIndex === "number") {
         const penguin = penguins[penguinIndex];
+        selectPenguin(penguinIndex);
         activePenguinIndex = penguinIndex;
         penguin.mode = "held";
         penguin.velocity.set(0, 0, 0);
@@ -1393,6 +1449,8 @@ export default function PenguinTownScene3D({
         lastPenguinMoveTime = performance.now();
         controls.enabled = false;
         dom.style.cursor = "grabbing";
+      } else {
+        selectPenguin(null);
       }
     }
 
@@ -1632,6 +1690,21 @@ export default function PenguinTownScene3D({
             const swimBob = Math.sin(elapsed * 5) * 0.02;
             group.position.y = distance > 1.5 ? 0.02 + swimBob : ISLAND_HEIGHT + 0.05;
           }
+        }
+
+        const percent = worldXZToPercent(group.position.x, group.position.z);
+        const overPlateau = pointInPolygon([percent.x, percent.y], TERRAIN_REGIONS.upperPlateau.bounds);
+        const overIsland = pointInPolygon([percent.x, percent.y], TERRAIN_REGIONS.lowerIsland.bounds);
+        const floorY = overPlateau ? ISLAND_HEIGHT + PLATEAU_HEIGHT : overIsland ? ISLAND_HEIGHT : 0;
+        penguin.selectionRing.position.set(group.position.x, floorY + .065, group.position.z);
+        penguin.selectionRing.visible = penguins[selectedPenguinIndex ?? -1] === penguin;
+        if (penguin.selectionRing.visible) {
+          const pulse = 1 + Math.sin(elapsed * 5.4) * .09;
+          penguin.selectionRing.scale.setScalar(pulse);
+          penguin.selectionRing.children.forEach((ringPart, ringIndex) => {
+            const material = (ringPart as THREE.Mesh).material as THREE.MeshBasicMaterial;
+            material.opacity = (ringIndex === 0 ? .7 : .4) + Math.sin(elapsed * 5.4) * .12;
+          });
         }
       }
 

@@ -30,19 +30,31 @@
 .globe-canvas:active { cursor: grabbing; }
 .globe-shadow { position: absolute; pointer-events: none; width: 62%; height: 8%; left: 19%; bottom: 4%; border-radius: 50%; background: rgba(0,0,0,.8); filter: blur(17px); z-index: -1; }
 .lock-marker, .antarctica-marker, .israel-marker { position: absolute; transform: translate(-50%, -50%); transition: opacity .12s; }
-.lock-marker { display: grid; place-items: center; gap: 4px; padding:0; border:0; color: #d5dbe0; background:transparent; text-shadow: 0 2px 8px #000; cursor:pointer; }
-.lock-marker span { font-size: clamp(13px, 1.5vw, 20px); filter: grayscale(1); }
-.lock-marker small { padding: 3px 6px; border-radius: 3px; color: #aab4ba; background: rgba(7,14,20,.65); font-size: clamp(7px, .7vw, 10px); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
+.lock-marker { display: grid; place-items: center; gap: 5px; padding:0; border:0; color: #d5dbe0; background:transparent; text-shadow: 0 2px 8px #000; cursor:pointer; }
+.globe-target-marker { z-index:7; opacity:1; pointer-events:auto; perspective:900px; }
+.lock-marker small { opacity:0; padding: 4px 7px; border-radius: 3px; color: #aab4ba; background: rgba(7,14,20,.82); border:1px solid rgba(160,182,196,.28); box-shadow:0 5px 16px rgba(0,0,0,.5); font-size: clamp(7px, .7vw, 10px); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
+.globe-target-marker.is-aimed small { animation:dart-label-arrival .24s ease-out .78s both; }
 .lock-marker:hover,.lock-marker:focus-visible,.lock-marker.is-glowing { transform:translate(-50%,-50%) scale(1.12); outline:0; }
-.lock-marker.is-glowing span { filter:none drop-shadow(0 0 11px #fff36b); }
+.lock-marker.is-glowing .dart-marker { filter:drop-shadow(0 0 12px #fff36b)!important; }
 .lock-marker.is-glowing small { color:#fff8a3; border:1px solid rgba(255,239,94,.65); box-shadow:0 0 22px rgba(255,225,67,.55); }
 .location-marker { pointer-events:auto; }
 .location-marker small { color:#d9faff; border:1px solid rgba(111,232,239,.58); box-shadow:0 0 14px rgba(67,224,235,.22); }
-.dart-marker { position:relative; width:38px; height:18px; display:block; transform:rotate(-43deg); filter:none!important; transform-style:preserve-3d; }
-.dart-marker i { position:absolute; left:2px; top:7px; width:25px; height:5px; border-radius:4px; background:linear-gradient(#e0e5e6,#616d75 45%,#252d32 55%,#aeb9be); box-shadow:0 2px 4px #000,0 0 8px rgba(111,232,239,.55); }
-.dart-marker b { position:absolute; right:0; top:6px; width:10px; height:7px; clip-path:polygon(0 40%,100% 0,100% 100%); background:linear-gradient(90deg,#525b62,#eef3f3); }
-.dart-marker em { position:absolute; left:0; top:0; width:12px; height:18px; clip-path:polygon(100% 50%,0 0,24% 50%,0 100%); background:linear-gradient(135deg,#b92535,#ffda54); }
+.dart-marker { position:relative; width:58px; height:24px; display:block; transform:rotate(-42deg) rotateX(8deg); transform-style:preserve-3d; transform-origin:82% 50%; filter:drop-shadow(0 4px 4px rgba(0,0,0,.8))!important; }
+.globe-target-marker.is-aimed .dart-marker { animation:dart-flight .82s cubic-bezier(.12,.72,.18,1) both; }
+.dart-marker i { position:absolute; left:10px; top:9px; width:38px; height:7px; border-radius:50% 4px 4px 50%; background:linear-gradient(180deg,#f8ffff 0%,#9ba8ae 28%,#36434a 52%,#0e171c 69%,#c8d3d7 100%); border-top:1px solid rgba(255,255,255,.82); box-shadow:inset 0 -2px 2px rgba(0,0,0,.68),0 0 8px rgba(111,232,239,.38); }
+.dart-marker i::after { content:""; position:absolute; inset:2px 4px; border-radius:50%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.64),transparent); }
+.dart-marker b { position:absolute; right:0; top:6px; width:13px; height:13px; clip-path:polygon(0 38%,100% 0,78% 50%,100% 100%,0 62%); background:linear-gradient(135deg,#f8ffff 0%,#77858b 36%,#172127 62%,#dce7ea 100%); box-shadow:0 2px 4px rgba(0,0,0,.75); }
+.dart-marker em { position:absolute; left:0; top:0; width:18px; height:24px; clip-path:polygon(100% 50%,0 0,26% 50%,0 100%); background:linear-gradient(135deg,#7a071b 0%,#e82e45 36%,#ffd65a 52%,#8f0c25 100%); box-shadow:inset -2px 0 2px rgba(0,0,0,.42); }
+.dart-marker em::after { content:""; position:absolute; left:5px; top:3px; width:10px; height:18px; clip-path:polygon(100% 50%,0 0,28% 50%,0 100%); background:linear-gradient(135deg,#ffda54,#a60b25); transform:rotateY(72deg) translateZ(5px); transform-origin:right center; }
 .location-marker:hover .dart-marker,.location-marker:focus-visible .dart-marker { filter:drop-shadow(0 0 9px #6defff)!important; }
+@keyframes dart-flight {
+  0% { opacity:0; transform:translate3d(var(--dart-launch-x),var(--dart-launch-y),460px) rotate(-42deg) rotateX(28deg) rotateY(-18deg) scale(5.2); filter:blur(2px) drop-shadow(0 14px 16px rgba(0,0,0,.75))!important; }
+  10% { opacity:1; }
+  72% { transform:translate3d(7px,-4px,24px) rotate(-42deg) rotateX(12deg) rotateY(-4deg) scale(1.28); }
+  88% { transform:translate3d(-3px,2px,-5px) rotate(-39deg) rotateX(5deg) scale(.94); }
+  100% { opacity:1; transform:translate3d(0,0,0) rotate(-42deg) rotateX(8deg) scale(1); filter:drop-shadow(0 4px 4px rgba(0,0,0,.8))!important; }
+}
+@keyframes dart-label-arrival { from { opacity:0; transform:translateY(-7px) scale(.82); } to { opacity:1; transform:translateY(0) scale(1); } }
 .world-footer { position: absolute; z-index: 5; left: clamp(20px, 5vw, 72px); right: clamp(20px, 5vw, 72px); bottom: clamp(20px, 4vh, 48px); display: flex; align-items: center; gap: 28px; }
 .control-hint { display: flex; align-items: center; gap: 10px; color: #b8c5cd; }
 .control-hint > span { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(165,198,214,.24); border-radius: 7px; background: rgba(8,20,30,.76); }
@@ -504,7 +516,7 @@
   .world-footer { gap: 12px; bottom: 18px; }
   .control-hint p { display: none; }
   .status-pill { font-size: 7px; padding: 9px; }
-  .lock-marker small { display: none; }
+  .lock-marker small { display: block; font-size: 7px; max-width: 96px; overflow: hidden; text-overflow: ellipsis; }
   .town-side { display: none; }
   .town-header { top: calc(var(--trip-banner-height, 0px) + 8px); }
   .town-header > div { padding-right: 7px; }
