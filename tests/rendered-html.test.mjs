@@ -251,3 +251,23 @@ test("the alien archer replaces the dart throw as the territory selector", async
   assert.match(globe, /className="archer-fire"/);
   assert.match(globe, /className="archer-stick"/);
 });
+
+test("the lab rat is a real 3D ragdoll, not a flat sprite", async () => {
+  const room = await readFile(new URL("../app/brain-room/page.tsx", import.meta.url), "utf8");
+  const rat = await readFile(new URL("../app/brain-room/LabRatWidget.tsx", import.meta.url), "utf8");
+
+  // The brain room mounts the 3D widget where the CSS-dragged image used to be.
+  assert.match(room, /import LabRatWidget from "\.\/LabRatWidget"/);
+  assert.match(room, /className="brain-room__rat3d"/);
+  assert.doesNotMatch(room, /className=\{`brain-room__rat\$\{/);
+
+  // Built like Bongo: real geometry, real physics, grab and throw.
+  assert.match(rat, /from "three"/);
+  assert.match(rat, /flatShading: true/);
+  assert.match(rat, /GRAVITY \* delta/);
+  assert.match(rat, /MAX_THROW_SPEED/);
+  assert.match(rat, /raycaster\.intersectObjects\(grabbable/);
+  // Articulated: a springy tail chain plus legs and ears that lag the body.
+  assert.match(rat, /TAIL_LINKS/);
+  assert.match(rat, /function settle\(joint/);
+});

@@ -2,18 +2,15 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import OrangutanWidget from "../bongo/OrangutanWidget";
+import LabRatWidget from "./LabRatWidget";
 
 type Subject = "bongo" | "rat";
-type Motion = { x: number; y: number; vx: number; vy: number };
 type Message = { role: "user" | "assistant"; content: string };
 const opening: Message = { role: "assistant", content: "Bongo online. The room is a brain, the brain is a room, and I still require bananas." };
 
 export default function BrainRoom() {
   const roomRef = useRef<HTMLElement>(null);
-  const dragRef = useRef<{ pointer: number; dx: number; dy: number; lastX: number; lastY: number; lastTime: number } | null>(null);
-  const motionRef = useRef<Motion>({ x: 55, y: 40, vx: 0, vy: 0 });
   const [subject, setSubject] = useState<Subject | null>(null);
-  const [ratMotion, setRatMotion] = useState(motionRef.current);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [pov, setPov] = useState(false);
   const [walker, setWalker] = useState({ x: 50, y: 66 });
@@ -28,27 +25,6 @@ export default function BrainRoom() {
     setRoomEvent("DRAG · THROW · BOUNCE");
     if (next === "bongo") setConsoleOpen(true);
   };
-
-  useEffect(() => {
-    if (subject !== "rat" || pov) return;
-    let frame = 0;
-    let previous = performance.now();
-    const animate = (now: number) => {
-      const dt = Math.min((now - previous) / 1000, .035);
-      previous = now;
-      if (!dragRef.current) {
-        const next = { ...motionRef.current };
-        next.vy += 52 * dt; next.x += next.vx * dt; next.y += next.vy * dt;
-        next.vx *= Math.pow(.985, dt * 60);
-        if (next.x < 2 || next.x > 78) { next.x = Math.max(2, Math.min(78, next.x)); next.vx *= -.72; }
-        if (next.y < 2 || next.y > 70) { next.y = Math.max(2, Math.min(70, next.y)); next.vy *= -.66; }
-        motionRef.current = next; setRatMotion(next);
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [subject, pov]);
 
   useEffect(() => {
     if (!pov) return;
@@ -96,13 +72,7 @@ export default function BrainRoom() {
     {subject && <button className="brain-room__pov" type="button" onClick={() => setPov((value) => !value)}>{pov ? "EXIT POV" : "SWITCH TO POV"}</button>}
     {subject === "bongo" && !pov && <div className="brain-room__bongo"><OrangutanWidget /></div>}
 
-    {subject === "rat" && !pov && <button type="button" className={`brain-room__rat${Math.abs(ratMotion.vx) + Math.abs(ratMotion.vy) > 7 ? " is-flying" : ""}`} aria-label="Drag and throw the articulated laboratory rat" style={{ left: `${ratMotion.x}%`, top: `${ratMotion.y}%`, transform: `rotate(${Math.max(-28, Math.min(28, ratMotion.vx * .6))}deg)` }}
-      onPointerDown={(event) => { const bounds = roomRef.current?.getBoundingClientRect(); if (!bounds) return; event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { pointer: event.pointerId, dx: event.clientX - bounds.left - bounds.width * ratMotion.x / 100, dy: event.clientY - bounds.top - bounds.height * ratMotion.y / 100, lastX: event.clientX, lastY: event.clientY, lastTime: performance.now() }; }}
-      onPointerMove={(event) => { const drag = dragRef.current; const bounds = roomRef.current?.getBoundingClientRect(); if (!drag || drag.pointer !== event.pointerId || !bounds) return; const now = performance.now(); const elapsed = Math.max(now - drag.lastTime, 8); const next = { x: Math.max(2, Math.min(78, (event.clientX - bounds.left - drag.dx) / bounds.width * 100)), y: Math.max(2, Math.min(70, (event.clientY - bounds.top - drag.dy) / bounds.height * 100)), vx: (event.clientX - drag.lastX) / bounds.width * 100000 / elapsed, vy: (event.clientY - drag.lastY) / bounds.height * 100000 / elapsed }; drag.lastX = event.clientX; drag.lastY = event.clientY; drag.lastTime = now; motionRef.current = next; setRatMotion(next); }}
-      onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }}>
-      <span className="rat-joint rat-tail" /><span className="rat-joint rat-ear" /><span className="rat-joint rat-paw rat-paw-one" /><span className="rat-joint rat-paw rat-paw-two" />
-      <img src="/media/lab-rat-ragdoll-v2.png" alt="A realistic white laboratory rat" draggable={false} />
-    </button>}
+    {subject === "rat" && !pov && <div className="brain-room__rat3d"><LabRatWidget /></div>}
 
     {pov && subject && <section className="brain-room__pov-world" aria-label="Navigable third-person brain room">
       <button className="brain-hotspot brain-window" type="button" onClick={() => { setRoomEvent("VOID ACCEPTED · RESPAWNING SUBJECT"); setWalker({ x: 50, y: 66 }); }}>JUMP OUT WINDOW <small>(suicide)</small></button>
