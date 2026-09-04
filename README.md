@@ -1,3 +1,17 @@
+.....................  .. .... ...... ... ----- ---------- ------- - - -- ---------- -- ---------- ------ ----- --------- - -- ------------ -- - ------ -------- - - -
+triptoropic.com      ....   https://www.instagram.com/patrick_allan_demartino/   - - - -------   https://x.com/dose_the_online   -__-    bobo the chimpanzee ---------
+------------------- ---------------- ------------------------- -------------- ----------- --------------------- ----------------------------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+made mostly by codex ai.... a Open ai    product....     from the time when machines where  commoditity  .   value $$$  Ruled the Land ....   
+    if computers survive the appocolypse.... whenever it comes.... an acurate account of human history.... would be essentially impossible to preserve ....
+
+    ...................................
+    for this reason, and many others. I am starting my own agency of intelegence .... to gather information on members of the population.... 
+           FOR EVIL  INTENT
+
+DOOM industries,   Skynet  ,  go team .
+
+
 # Planet Urf
 
 V1 of an interactive click-through adventure site.
