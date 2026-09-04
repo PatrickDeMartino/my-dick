@@ -142,6 +142,12 @@ export default function SiteBanner() {
         <div className="trip-banner__stat trip-banner__bananas" aria-label={`${bananas} bananas`}>
           <span aria-hidden="true">🍌</span><strong>Bananas</strong><b>{bananas}</b>
         </div>
+        <div className="trip-banner__stat trip-banner__yoohoo" aria-label="69 Yoo-hoo cans">
+          <span className="trip-banner__mini-can" aria-hidden="true">
+            <Can3D size={34} variant="yoohoo" />
+          </span>
+          <strong>Yoo-hoo</strong><b>69</b>
+        </div>
         <div className="trip-banner__stat trip-banner__oil" aria-label="Thirst for Oil: perpetually redlining">
           <OilGauge />
           <strong>Thirst for Oil</strong>

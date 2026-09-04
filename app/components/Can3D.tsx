@@ -11,7 +11,49 @@ import { useEffect, useRef } from "react";
  * lazily so pages that never look at the banner's can don't pay for it in
  * their initial bundle.
  */
-export function Can3D({ size = 40 }: { size?: number }) {
+type CanVariant = "rat-meat" | "yoohoo";
+
+function makeYoohooLabel(THREE: typeof import("three")) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#f8c52a");
+  gradient.addColorStop(.48, "#ffed6f");
+  gradient.addColorStop(1, "#d88a0e");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#3a160d";
+  context.fillRect(0, 0, canvas.width, 72);
+  context.fillRect(0, canvas.height - 72, canvas.width, 72);
+
+  for (let offset = -80; offset < canvas.width + 260; offset += 330) {
+    context.save();
+    context.translate(offset + 165, 260);
+    context.rotate(-.08);
+    context.lineJoin = "round";
+    context.strokeStyle = "#fff3bd";
+    context.lineWidth = 22;
+    context.font = "900 108px Impact, Arial Black, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.strokeText("YOO-HOO", 0, 0);
+    context.fillStyle = "#4a1e10";
+    context.fillText("YOO-HOO", 0, 0);
+    context.restore();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+export function Can3D({ size = 40, variant = "rat-meat" }: { size?: number; variant?: CanVariant }) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,13 +86,15 @@ export function Can3D({ size = 40 }: { size?: number }) {
       rim.position.set(-2, -1, -2);
       scene.add(rim);
 
-      const label = new THREE.TextureLoader().load("/media/rat-meat-can-v2.png");
-      label.colorSpace = THREE.SRGBColorSpace;
+      const label = variant === "yoohoo"
+        ? makeYoohooLabel(THREE)
+        : new THREE.TextureLoader().load("/media/rat-meat-can-v2.png");
+      if (label) label.colorSpace = THREE.SRGBColorSpace;
       const sideMaterial = new THREE.MeshStandardMaterial({ map: label, roughness: 0.5, metalness: 0.12 });
       const metalMaterial = new THREE.MeshStandardMaterial({ color: 0xc3ccce, roughness: 0.28, metalness: 0.85 });
 
       const canGroup = new THREE.Group();
-      const cylinder = new THREE.CylinderGeometry(0.6, 0.6, 1.28, 32);
+      const cylinder = new THREE.CylinderGeometry(0.6, 0.6, 1.28, 40);
       const canMesh = new THREE.Mesh(cylinder, [sideMaterial, metalMaterial, metalMaterial]);
       canGroup.add(canMesh);
       const rimGeo = new THREE.TorusGeometry(0.6, 0.045, 8, 28);
@@ -93,7 +137,7 @@ export function Can3D({ size = 40 }: { size?: number }) {
         rimGeo.dispose();
         sideMaterial.dispose();
         metalMaterial.dispose();
-        label.dispose();
+        label?.dispose();
         if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
       };
     });
@@ -103,7 +147,7 @@ export function Can3D({ size = 40 }: { size?: number }) {
       cancelAnimationFrame(raf);
       cleanup?.();
     };
-  }, [size]);
+  }, [size, variant]);
 
   return <div ref={mountRef} className="trip-can-3d" aria-hidden="true" />;
 }

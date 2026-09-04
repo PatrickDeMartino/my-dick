@@ -1101,7 +1101,6 @@ export async function createGlobe3D(
     // shot — which is what an archer actually does — and the arms keep the
     // classic level silhouette relative to the body.
     alien.body.rotation.x = -pitch * 0.62;
-    const armPitch = pitch * 0.34;
 
     // Side-on stance: the torso is turned across the line of the shot.
     alien.torso.rotation.x = -pitch * 0.12;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import type { Globe3DHandle, Territory } from "./globe3d";
+import Prop3D from "../components/Prop3D";
 
 type Point = [number, number];
 
@@ -1072,7 +1073,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="ocean-life" aria-hidden="true"><span className="ocean-wave wave-one" /><span className="ocean-wave wave-two" /><span className="ocean-dolphin">🐬</span><span className="ocean-squid">🦑</span></div>
         <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
-          <div><small>FULL-TERRAIN ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
+          <Prop3D prop="penguin" className="town-header__penguin" /><div><small>FULL-TERRAIN ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
         </header>
         <div className={`town-grid${placementPreview ? " is-active" : ""}`} aria-hidden="true">
           {Array.from({ length: GRID_COLUMNS * GRID_ROWS }, (_, index) => {

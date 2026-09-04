@@ -273,3 +273,28 @@ test("the lab rat is a real 3D ragdoll, not a flat sprite", async () => {
   assert.match(rat, /TAIL_LINKS/);
   assert.match(rat, /function settle\(joint/);
 });
+
+test("the flat collectible icons are backed by real 3D props", async () => {
+  const props = await readFile(new URL("../app/lib/props3d.ts", import.meta.url), "utf8");
+  const view = await readFile(new URL("../app/components/Prop3D.tsx", import.meta.url), "utf8");
+  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
+  const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+
+  // Every collectible on the banner has a model, plus the gold tin and Yoo-hoo.
+  ["rat-meat", "rat-meat-gold", "yoohoo", "banana", "oil-drum", "penguin"].forEach((name) => {
+    assert.match(props, new RegExp(`"${name}"`));
+  });
+  assert.match(props, /flatShading: true/);
+
+  // The upgrade is progressive: the old icon is the fallback child, and it is
+  // only replaced once a model is actually rendering.
+  assert.match(view, /\{!live && children\}/);
+  assert.match(view, /prefers-reduced-motion/);
+
+  // Wired into the banner and Penguin Town without dropping the flat art.
+  assert.match(banner, /<Prop3D prop=\{earned \? "rat-meat-gold" : "rat-meat"\}>/);
+  assert.match(banner, /rat-meat-can-v2\.png/);
+  assert.match(banner, /<Prop3D prop="banana">/);
+  assert.match(banner, /<Prop3D prop="oil-drum">/);
+  assert.match(town, /<Prop3D prop="penguin"/);
+});

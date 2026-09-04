@@ -127,6 +127,23 @@ html.trip-embedded .trip-banner { display: none; }
 
 .trip-can-3d { width: 100%; height: 100%; display: block; }
 .trip-can-3d canvas { display: block; width: 100% !important; height: 100% !important; }
+.trip-banner__mini-can {
+  width: 34px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 9px;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 222, 79, .18), rgba(21, 2, 35, .55));
+  box-shadow: inset 0 0 0 1px rgba(255, 242, 165, .2), 0 0 13px rgba(255, 196, 48, .2);
+}
+
+/* Shared procedural prop stages used throughout the new 3D layer. */
+.prop-3d { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; font-size: 24px; line-height: 1; }
+.prop-3d__stage { position: absolute; inset: 0; }
+.prop-3d__stage canvas { display: block; }
+.trip-banner__can .prop-3d { width: 100%; height: 100%; }
+.trip-banner__can .prop-3d.is-live { background: radial-gradient(circle at 50% 42%, rgba(78,32,110,.85), rgba(6,2,12,.95)); }
 
 /* Thirst for Oil: an analog dial that's always redlining, driven by
    OilGauge.tsx via refs/rAF so it can flutter every frame without
@@ -390,6 +407,7 @@ html.trip-embedded .trip-banner { display: none; }
   .trip-banner__stat strong { display: none; }
   .trip-banner__stat b { min-width: 25px; padding: 4px 6px; font-size: 12px; }
   .trip-oil-gauge { width: 34px; }
+  .trip-banner__mini-can { width: 27px; height: 37px; }
   .trip-oil-gauge-readout > span { min-width: 30px; padding: 2px 4px; font-size: 9px; }
   .trip-banner__links a { width: 31px; height: 31px; }
 }
