@@ -579,3 +579,21 @@ button, input { font: inherit; }
   .choice-portal { min-width: 128px; padding: 12px 15px; }
   .choice-portal strong { font-size: 19px; }
 }
+
+.choice-preview-link {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 5;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(2, 9, 7, .7);
+  color: var(--acid);
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+}
+
+.choice-preview-link:hover, .choice-preview-link:focus-visible { border-color: var(--acid); outline: none; }

@@ -42,6 +42,50 @@ test("renders the Dr. Bongo neural-link scene", async () => {
   assert.match(html, /orangutan-aliens\.jpg/);
 });
 
+test("links to the Penguin Town preview from the landing page", async () => {
+  const response = await request("/");
+  const html = await response.text();
+  assert.match(html, /href="\/penguin-town"/);
+});
+
+test("renders the Penguin Town hex board shell", async () => {
+  const response = await request("/penguin-town");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>Penguin Town<\/title>/i);
+  assert.match(html, /Who(?:&#x27;|')s building\?/);
+  assert.match(html, /Instagram/);
+});
+
+test("hex claims degrade gracefully without a D1 binding", async () => {
+  const response = await request("/api/hex?board=penguin-town");
+  const payload = await response.json();
+
+  if (response.status === 200) {
+    assert.ok(Array.isArray(payload.claims));
+  } else {
+    assert.equal(response.status, 500);
+    assert.match(payload.error, /hex_claims table is unavailable/);
+  }
+});
+
+test("profile creation degrades gracefully without a D1 binding", async () => {
+  const response = await request("/api/profile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: "test-id", platform: "instagram", handle: "test.user" }),
+  });
+  const payload = await response.json();
+
+  if (response.status === 201) {
+    assert.equal(payload.profile.handle, "test.user");
+  } else {
+    assert.equal(response.status, 500);
+    assert.match(payload.error, /profiles table is unavailable/);
+  }
+});
+
 test("chat remains interactive without an API key", async () => {
   const response = await request("/api/chat", {
     method: "POST",

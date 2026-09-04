@@ -28,6 +28,10 @@ export default function LandingPage() {
         <strong>that fucking other thing</strong>
         <small>Enter the unknown</small>
       </a>
+
+      <a className="choice-preview-link" href="/penguin-town" aria-label="Preview Penguin Town">
+        🐧 Penguin Town (preview)
+      </a>
     </main>
   );
 }
