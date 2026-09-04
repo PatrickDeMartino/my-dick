@@ -183,3 +183,71 @@ test("world globe clips coastlines cleanly and supports full rotation", async ()
   assert.match(town, /roll: wrapAngle/);
   assert.doesNotMatch(town, /Math\.max\(-55, Math\.min\(55/);
 });
+
+test("renders the Map Room chart with a link to every room", async () => {
+  const response = await request("/map");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Chart of the Labyrinth/);
+  assert.match(html, /href="\/"/);
+  assert.match(html, /href="\/urf"/);
+  assert.match(html, /href="\/brain-room"/);
+  assert.match(html, /href="\/bongo"/);
+  assert.match(html, /href="\/anubis"/);
+});
+
+test("scene warp overlay is wired into the root layout and the landing page's room links", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const warp = await readFile(new URL("../app/components/SceneWarp.tsx", import.meta.url), "utf8");
+  const lib = await readFile(new URL("../app/lib/sceneWarp.ts", import.meta.url), "utf8");
+
+  assert.match(layout, /<SceneWarp \/>/);
+  assert.match(warp, /SCENE_WARP_EVENT/);
+  assert.match(lib, /export function triggerSceneWarp/);
+  assert.match(landing, /import \{ triggerSceneWarp \} from "\.\/lib\/sceneWarp"/);
+  assert.match(landing, /warpTo\(event, "\/brain-room"\)/);
+  assert.match(landing, /warpTo\(event, "\/anubis"\)/);
+  assert.match(landing, /warpTo\(event, "\/map"\)/);
+});
+
+test("the world globe keeps its flat psychedelic ocean and gains a 3D land layer", async () => {
+  const globe = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+  const world = await readFile(new URL("../app/urf/globe3d.ts", import.meta.url), "utf8");
+
+  // The 2D ocean painting is untouched and still drives the drifting texture.
+  assert.match(globe, /psychedelic-earth-texture-v1\.png/);
+  assert.match(globe, /createPattern\(texture, "repeat"\)/);
+  // The flat land fill is only skipped while the 3D layer is actually live, so
+  // a browser without WebGL still renders exactly the globe it always did.
+  assert.match(globe, /if \(!world3d\) \{\s*\n\s*drawLand\(false\);\s*\n\s*drawLand\(true\);/);
+  assert.match(globe, /className="globe-webgl"/);
+
+  // The 3D layer draws land, never ocean.
+  assert.match(world, /buildLandGeometry/);
+  assert.match(world, /colorWrite: false/);
+  assert.doesNotMatch(world, /oceanMesh|drawOcean/);
+  // And it shares the 2D projection so markers stay lined up.
+  assert.match(world, /0\.5 \/ \(0\.43 \* zoom\)/);
+});
+
+test("the alien archer replaces the dart throw as the territory selector", async () => {
+  const globe = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
+  const world = await readFile(new URL("../app/urf/globe3d.ts", import.meta.url), "utf8");
+
+  // A real character with movement, a bow and arrow physics.
+  assert.match(world, /function buildAlien/);
+  assert.match(world, /KeyW|ArrowUp/);
+  assert.match(world, /setMove:/);
+  assert.match(world, /GRAVITY \* step/);
+  assert.match(world, /AIR_DRAG \* step/);
+  assert.match(world, /PHYSICS_STEP/);
+
+  // Hits are read back as a territory, and Antarctica still opens Penguin Town.
+  assert.match(world, /territoryAt/);
+  assert.match(globe, /result\.territory === "Antarctica"/);
+  assert.match(globe, /onEnterRef\.current\(\)/);
+  assert.match(globe, /className="archer-fire"/);
+  assert.match(globe, /className="archer-stick"/);
+});
