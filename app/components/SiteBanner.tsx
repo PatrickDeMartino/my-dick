@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Can3D } from "./Can3D";
+import { OilGauge } from "./OilGauge";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
 const BANANA_STORAGE_KEY = "trip.bananas.v1";
@@ -130,7 +132,7 @@ export default function SiteBanner() {
         <div className="trip-banner__wallet">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
-            <img src="/media/rat-meat-can-v2.png" alt="" />
+            <Can3D size={44} />
           </span>
           <strong>Rat Meat</strong>
           <span className="trip-banner__amount" aria-live="polite" aria-atomic="true">
@@ -140,8 +142,9 @@ export default function SiteBanner() {
         <div className="trip-banner__stat trip-banner__bananas" aria-label={`${bananas} bananas`}>
           <span aria-hidden="true">🍌</span><strong>Bananas</strong><b>{bananas}</b>
         </div>
-        <div className="trip-banner__stat trip-banner__oil" aria-label="An unquenchable thirst for oil">
-          <span aria-hidden="true">🛢️</span><strong>Oil thirst</strong><b>∞</b>
+        <div className="trip-banner__stat trip-banner__oil" aria-label="Thirst for Oil: perpetually redlining">
+          <OilGauge />
+          <strong>Thirst for Oil</strong>
         </div>
         </div>
 

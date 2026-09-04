@@ -125,6 +125,26 @@ html.trip-embedded .trip-banner { display: none; }
   mix-blend-mode: screen;
 }
 
+.trip-can-3d { width: 100%; height: 100%; display: block; }
+.trip-can-3d canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* Thirst for Oil: an analog dial that's always redlining, driven by
+   OilGauge.tsx via refs/rAF so it can flutter every frame without
+   re-rendering the banner. */
+.trip-oil-gauge { position: relative; width: 46px; }
+.trip-oil-gauge-face { display: block; width: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+.trip-oil-gauge-readout { margin-top: -6px; display: grid; justify-items: center; gap: 1px; }
+.trip-oil-gauge-readout > span {
+  min-width: 40px; padding: 3px 6px; border: 1px solid rgba(255,245,185,.5); border-radius: 999px;
+  background: rgba(27,0,48,.55); color: #fff4a4; font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 11px; font-weight: 900; text-align: center; letter-spacing: .02em;
+}
+.trip-oil-gauge-peg {
+  height: 0; overflow: visible; color: #ff8f7a; font-size: 7px; font-weight: 900; letter-spacing: .16em;
+  opacity: 0; transform: translateY(-1px) scale(.8); transition: opacity .12s, transform .12s;
+}
+.trip-oil-gauge-peg.is-flashing { opacity: 1; transform: translateY(1px) scale(1.08); text-shadow: 0 0 8px #ff4a35; }
+
 .trip-banner__currency strong {
   overflow: hidden;
   font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
@@ -369,7 +389,8 @@ html.trip-embedded .trip-banner { display: none; }
   .trip-banner__stat > span { font-size: 18px; }
   .trip-banner__stat strong { display: none; }
   .trip-banner__stat b { min-width: 25px; padding: 4px 6px; font-size: 12px; }
-  .trip-banner__oil > span { display: none; }
+  .trip-oil-gauge { width: 34px; }
+  .trip-oil-gauge-readout > span { min-width: 30px; padding: 2px 4px; font-size: 9px; }
   .trip-banner__links a { width: 31px; height: 31px; }
 }
 

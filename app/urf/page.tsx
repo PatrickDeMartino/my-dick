@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import PenguinTownScene3D from "./PenguinTownScene3D";
 import { JellyButtons } from "./JellyButtons";
+import { BuildingPopup } from "./BuildingPopup";
 import {
   BUILDING_STORIES,
   CIRCUS_STOCK,
@@ -517,8 +518,12 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     } catch { setEditorMessage("RAT FARM OFFLINE"); }
   };
 
+  const popupOpen = Boolean(activeBuilding && !townLayout[activeBuilding.id]?.stored);
+
   return (
     <main className="town-screen">
+      <div className="town-frame">
+        <div className="town-side-art town-side-art-left" aria-hidden="true" />
       <section
         className={`town-map${placingBuildingId ? " is-placing" : ""}`}
         aria-label="Penguin Town base editor"
@@ -529,6 +534,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           activeBuildingId={activeBuildingId}
           placingBuildingId={placingBuildingId}
           placementRotation={placementPreview?.rotation ?? 0}
+          popupOpen={popupOpen}
           onSelectBuilding={handleSelectBuilding}
           onPlacementPreview={handlePlacementPreview}
           onCommitPlacement={handleCommitPlacement}
@@ -537,19 +543,22 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         <div className="town-vignette" aria-hidden="true" />
         <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
-          <div><small>FULL 3D ISLAND · ORBIT WITH DRAG</small><h1>PENGUIN TOWN</h1></div>
+          <div><small>ANTARCTIC COASTAL DISTRICT · DRAG TO LEAN THE CAMERA</small><h1>PENGUIN TOWN <em>V2</em></h1></div>
         </header>
 
+        <aside className="town-district-status" aria-label="Town status" onPointerDown={(event) => event.stopPropagation()}>
+          <span><i /> 7 SHADY LANDMARKS</span>
+          <span>RAT-MEAT ECONOMY</span>
+          <span>NO LAW · NO REFUNDS</span>
+        </aside>
+
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
-          <aside className="town-selection-card" aria-live="polite" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
-            <div className="town-selection-character"><img src={BUILDING_STORIES[activeBuilding.id].character} alt="" /></div>
-            <div className="town-selection-copy">
-              <div className="town-selection-kicker"><small>{BUILDING_STORIES[activeBuilding.id].role}</small><span>SELECTED · {displayBuildingLabel(activeBuilding)}</span></div>
-              <b>{BUILDING_STORIES[activeBuilding.id].name}</b>
-              <p>{BUILDING_STORIES[activeBuilding.id].description}</p>
-            </div>
-            <JellyButtons
-              minHeight={104}
+          <div onPointerDown={(event) => event.stopPropagation()}>
+            <BuildingPopup
+              character={BUILDING_STORIES[activeBuilding.id].character}
+              role={BUILDING_STORIES[activeBuilding.id].role}
+              name={displayBuildingLabel(activeBuilding)}
+              onClose={() => setActiveBuildingId(null)}
               buttons={[
                 ...(activeBuilding.id === "telescope" && !telescopeUpgraded
                   ? [{ key: "upgrade", label: "UPGRADE · 69", tone: "gold" as const, onClick: upgradeTelescope }]
@@ -569,7 +578,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 },
               ]}
             />
-          </aside>
+          </div>
         )}
 
         {(placingBuildingId || editorMessage) && (
@@ -615,6 +624,8 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           </div>
         </nav>
       </section>
+        <div className="town-side-art town-side-art-right" aria-hidden="true" />
+      </div>
 
       {selectedBuilding && (
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
@@ -640,8 +651,8 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               </div>
               {isSweatshop ? (
                 <>
-                  <h2 id="dialog-title">Shift briefing.</h2>
-                  <p>&ldquo;a starving worker is a slow worker&rdquo;</p>
+                  <h2 id="dialog-title">Shift briefing from hell.</h2>
+                  <p>&ldquo;a starving worker is a slow worker. give the bastards one can and get the line moving.&rdquo;</p>
                   <div className="worker-ration">
                     <div className={`rat-meat-can${workersFed ? " rat-meat-can-fed" : ""}`} aria-label="A can of Rat Meat">
                       <small>GENUINE</small>
@@ -673,20 +684,20 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               ) : isTelescope ? (
                 <>
                   <h2 id="dialog-title">Deep-space field report.</h2>
-                  <p>&ldquo;aliens... for sure&rdquo;</p>
+                  <p>&ldquo;aliens... for sure. nasty little fuckers, too.&rdquo;</p>
                   {!telescopeUpgraded && <JellyButtons buttons={[{ key: "upgrade", label: "UPGRADE · 69", tone: "gold", onClick: upgradeTelescope }]} minHeight={100} />}
                 </>
               ) : isIgloo ? (
                 <>
-                  <h2 id="dialog-title">Dr. Bongo&apos;s drone depot.</h2>
-                  <p>&ldquo;Three cans and the sky belongs to the apes.&rdquo;</p>
+                  <h2 id="dialog-title">Dr. Bongo&apos;s igloo war room.</h2>
+                  <p>&ldquo;Three cans and the sky belongs to the apes. Try not to stand under the armed ones.&rdquo;</p>
                   <div className="mini-bongo-ragdoll" aria-hidden="true"><img src="/media/dr-bongo-model-icon-v1.png" alt="" /></div>
                   <JellyButtons buttons={[{ key: "drone", label: purchases.includes("Drone Swarm") ? "OWNED" : "BUY · 3", tone: "gold", disabled: purchases.includes("Drone Swarm"), onClick: () => spendRatMeat("Drone Swarm", 3) }]} minHeight={100} />
                 </>
               ) : isCircus ? (
                 <>
                   <h2 id="dialog-title">Exotic inventory.</h2>
-                  <p className="store-intro">Animals, drones, and one fully autonomous bad idea.</p>
+                  <p className="store-intro">Animals, drones, dangerous bullshit, and one fully autonomous war crime.</p>
                   <div className="circus-store">
                     {CIRCUS_STOCK.map(([item, cost]) => <button type="button" key={item} disabled={purchases.includes(item)} onClick={() => spendRatMeat(item, cost)}><span>{item}</span><b>{purchases.includes(item) ? "OWNED" : `${cost} RM`}</b></button>)}
                   </div>
@@ -694,7 +705,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               ) : isDocks ? (
                 <>
                   <h2 id="dialog-title">Mobile offshore rat farm.</h2>
-                  <p>&ldquo;The sea provides. Mostly rats.&rdquo;</p>
+                  <p>&ldquo;The sea provides. Mostly rats, diesel fumes, and bodies nobody asks about.&rdquo;</p>
                   <div className="rat-farm-card"><img src="/media/lab-rat-v1.png" alt="Laboratory rat" /><span>+3 RAT MEAT</span></div>
                   <JellyButtons buttons={[{ key: "farm", label: farmCooldown ? `${farmCooldown}s` : "FARM +3", tone: "primary", disabled: farmCooldown > 0, onClick: farmRats }]} minHeight={100} />
                 </>

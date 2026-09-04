@@ -143,8 +143,8 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
 
   assert.match(town, /const nextBalance = balance - 1/);
-  assert.match(town, /onClick=\{feedWorkers\}/);
-  assert.match(town, /trip-rat-meat-balance-changed/);
+  assert.match(town, /onClick:\s*feedWorkers/);
+  assert.match(town, /RAT_MEAT_BALANCE_EVENT/);
   assert.match(town, /NOT ENOUGH RAT MEAT/);
   assert.match(banner, /trip-rat-meat-balance-changed/);
 });

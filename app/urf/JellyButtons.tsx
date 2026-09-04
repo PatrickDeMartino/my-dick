@@ -17,8 +17,12 @@ type ButtonState = { x: number; y: number; vx: number; vy: number; r: number; sq
  * the field's walls and off each other, and squishes on impact like a soft
  * blob of jelly. Falls back to a plain static row when the visitor prefers
  * reduced motion, or while the buttons haven't measured themselves yet.
+ *
+ * `shape="circle"` swaps the rectangular wall test for a circular one (the
+ * field's inscribed circle), for use inside the round building-interaction
+ * popup — buttons bounce off a round wall instead of visiting the corners.
  */
-export function JellyButtons({ buttons, minHeight = 132 }: { buttons: JellyButtonSpec[]; minHeight?: number }) {
+export function JellyButtons({ buttons, minHeight = 132, shape = "rect" }: { buttons: JellyButtonSpec[]; minHeight?: number; shape?: "rect" | "circle" }) {
   const fieldRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const statesRef = useRef<Map<string, ButtonState>>(new Map());
@@ -39,9 +43,19 @@ export function JellyButtons({ buttons, minHeight = 132 }: { buttons: JellyButto
       if (states.has(spec.key)) continue;
       const node = buttonRefs.current.get(spec.key);
       const r = Math.max(30, (node?.offsetWidth ?? 64) / 2);
+      let x: number, y: number;
+      if (shape === "circle") {
+        const fieldRadius = Math.min(width, height) / 2;
+        const seedRadius = Math.random() * Math.max(1, fieldRadius - r);
+        const seedAngle = Math.random() * Math.PI * 2;
+        x = width / 2 + Math.cos(seedAngle) * seedRadius;
+        y = height / 2 + Math.sin(seedAngle) * seedRadius;
+      } else {
+        x = Math.random() * Math.max(1, width - r * 2) + r;
+        y = Math.random() * Math.max(1, height - r * 2) + r;
+      }
       states.set(spec.key, {
-        x: Math.random() * Math.max(1, width - r * 2) + r,
-        y: Math.random() * Math.max(1, height - r * 2) + r,
+        x, y,
         vx: (Math.random() - 0.5) * 0.045,
         vy: (Math.random() - 0.5) * 0.045,
         r,
@@ -65,13 +79,36 @@ export function JellyButtons({ buttons, minHeight = 132 }: { buttons: JellyButto
       const h = field!.clientHeight || height;
       const entries = [...states.entries()];
 
-      for (const [, state] of entries) {
-        state.x += state.vx * dt;
-        state.y += state.vy * dt;
-        if (state.x - state.r < 0) { state.x = state.r; state.vx = Math.abs(state.vx); state.squish = 1; }
-        if (state.x + state.r > w) { state.x = w - state.r; state.vx = -Math.abs(state.vx); state.squish = 1; }
-        if (state.y - state.r < 0) { state.y = state.r; state.vy = Math.abs(state.vy); state.squish = 1; }
-        if (state.y + state.r > h) { state.y = h - state.r; state.vy = -Math.abs(state.vy); state.squish = 1; }
+      if (shape === "circle") {
+        const cx = w / 2, cy = h / 2;
+        const fieldRadius = Math.min(w, h) / 2;
+        for (const [, state] of entries) {
+          state.x += state.vx * dt;
+          state.y += state.vy * dt;
+          const dx = state.x - cx, dy = state.y - cy;
+          const dist = Math.hypot(dx, dy) || 0.001;
+          const limit = fieldRadius - state.r;
+          if (dist > limit) {
+            const nx = dx / dist, ny = dy / dist;
+            state.x = cx + nx * limit;
+            state.y = cy + ny * limit;
+            // Reflect velocity around the wall normal — a real bounce off the
+            // round wall, not just a clamp.
+            const along = state.vx * nx + state.vy * ny;
+            state.vx -= 2 * along * nx;
+            state.vy -= 2 * along * ny;
+            state.squish = 1;
+          }
+        }
+      } else {
+        for (const [, state] of entries) {
+          state.x += state.vx * dt;
+          state.y += state.vy * dt;
+          if (state.x - state.r < 0) { state.x = state.r; state.vx = Math.abs(state.vx); state.squish = 1; }
+          if (state.x + state.r > w) { state.x = w - state.r; state.vx = -Math.abs(state.vx); state.squish = 1; }
+          if (state.y - state.r < 0) { state.y = state.r; state.vy = Math.abs(state.vy); state.squish = 1; }
+          if (state.y + state.r > h) { state.y = h - state.r; state.vy = -Math.abs(state.vy); state.squish = 1; }
+        }
       }
 
       for (let i = 0; i < entries.length; i += 1) {
@@ -111,12 +148,12 @@ export function JellyButtons({ buttons, minHeight = 132 }: { buttons: JellyButto
     }
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [buttons, minHeight]);
+  }, [buttons, minHeight, shape]);
 
   const reduceMotionStatic = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   return (
-    <div className="jelly-field" ref={fieldRef} style={{ minHeight }}>
+    <div className={`jelly-field${shape === "circle" ? " jelly-field-circle" : ""}`} ref={fieldRef} style={{ minHeight }}>
       {buttons.map((spec) => (
         <button
           key={spec.key}

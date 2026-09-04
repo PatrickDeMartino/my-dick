@@ -105,6 +105,7 @@
 .town-header > div { padding: 7px 12px; border-left: 2px solid #72e6f0; background: linear-gradient(90deg, rgba(3,16,43,.92), rgba(3,16,43,.62)); }
 .town-header small { display: block; color: #82dce5; font-size: 7px; letter-spacing: .18em; }
 .town-header h1 { margin: 2px 0 0; font-size: clamp(17px, 2.4svh, 26px); letter-spacing: -.02em; }
+.town-header h1 em { display: inline-block; margin-left: 7px; padding: 2px 5px; transform: rotate(-2deg); border: 1px solid #ffdf57; border-radius: 3px; color: #ffdf57; font-size: .43em; font-style: normal; letter-spacing: .12em; vertical-align: middle; box-shadow: 0 0 14px rgba(255,223,87,.2); }
 .building-layer { position: absolute; z-index: 5; inset: 0; }
 .building-hotspot { position: absolute; display: grid; place-items: end center; padding: 8px; border: 0; outline: 1px dashed transparent; background: transparent; cursor: pointer; border-radius: 48%; transition: background .18s, outline-color .18s; }
 .building-hotspot:hover, .building-hotspot:focus-visible { outline-color: rgba(139,247,255,.8); background: rgba(73,216,231,.12); }
@@ -134,6 +135,10 @@
   backdrop-filter: blur(10px);
 }
 .town-header button { border-radius: 9px; backdrop-filter: blur(10px); }
+.town-district-status { position: absolute; z-index: 18; top: calc(var(--trip-banner-height, 0px) + 14px); right: 2.5%; display: flex; align-items: center; gap: 7px; pointer-events: auto; }
+.town-district-status span { padding: 7px 9px; border: 1px solid rgba(166,233,242,.24); border-radius: 5px; background: rgba(3,16,34,.78); color: #9cbac7; font-size: clamp(5px,.62vw,8px); font-weight: 800; letter-spacing: .1em; box-shadow: 0 7px 22px rgba(0,0,0,.22); backdrop-filter: blur(9px); }
+.town-district-status span:last-child { border-color: rgba(255,103,94,.34); color: #ffafa8; }
+.town-district-status i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #6ef3e8; box-shadow: 0 0 9px #6ef3e8; }
 .town-grid {
   position: absolute; z-index: 4; inset: 0;
   pointer-events: none; opacity: 0; transition: opacity .18s ease-out;
@@ -187,34 +192,117 @@
   position: absolute; left: 50%; bottom: -1px; z-index: 3; opacity: 0; transform: translate(-50%, 6px);
   border-color: rgba(187, 236, 255, .45); border-radius: 7px; background: rgba(2, 15, 37, .88); backdrop-filter: blur(7px);
 }
+
+@media (max-width: 760px) {
+  .town-district-status { top: calc(var(--trip-banner-height, 0px) + 62px); right: 10px; flex-direction: column; align-items: flex-end; }
+  .town-district-status span:nth-child(2) { display: none; }
+  .town-header small { max-width: 64vw; line-height: 1.35; }
+}
 .building-hotspot:hover .building-label, .building-hotspot:focus-visible .building-label, .building-hotspot.is-selected .building-label { opacity: 1; transform: translate(-50%, 0); }
-.town-selection-card {
-  position: absolute; z-index: 30; left: 50%; bottom: 94px; width: calc(100% - 28px); min-height: 84px;
-  display: grid; grid-template-columns: 66px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 8px 9px;
-  transform: translateX(-50%); border: 2px solid #56e7df; border-radius: 18px;
-  background: linear-gradient(115deg,rgba(18,7,49,.96),rgba(39,21,95,.94) 45%,rgba(0,90,108,.94));
-  box-shadow: 0 15px 35px rgba(0,0,0,.5),0 0 0 3px rgba(246,85,221,.18),inset 0 0 24px rgba(104,238,230,.12);
-  backdrop-filter: blur(14px);
+
+/* ---------------------------------------------------------------------
+   Desktop phone-frame: the playable 3D world stays a centered, vertical
+   phone-shaped panel (matching the mobile game 1:1) with slowly-flowing
+   psychedelic art filling the extra width on either side. On narrower/
+   taller viewports (phones) the frame is a no-op and the map fills the
+   screen exactly as before.
+   --------------------------------------------------------------------- */
+.town-frame { position: relative; height: 100dvh; width: 100dvw; display: contents; }
+.town-side-art { display: none; }
+
+@media (min-width: 860px) and (min-aspect-ratio: 0.85) {
+  .town-frame {
+    display: flex; align-items: stretch; justify-content: center; height: 100dvh; width: 100dvw; overflow: hidden;
+    background: #030814;
+  }
+  .town-map { width: min(100vw, 56dvh); flex: 0 0 auto; box-shadow: 0 0 90px rgba(0,0,0,.65); }
+  .town-side-art {
+    display: block; flex: 1 1 auto; min-width: 40px; position: relative; overflow: hidden;
+    background: radial-gradient(circle at 30% 20%, rgba(255, 120, 200, .25), transparent 55%),
+      radial-gradient(circle at 75% 70%, rgba(120, 90, 255, .28), transparent 60%),
+      linear-gradient(160deg, #150a2e 0%, #06101f 55%, #030712 100%);
+  }
+  .town-side-art::before {
+    content: ""; position: absolute; inset: -20%; opacity: .5; mix-blend-mode: screen;
+    background: url("/media/psychedelic-earth-texture-v1.png"); background-size: 340px 340px;
+    animation: side-art-drift 46s linear infinite, side-art-hue 22s ease-in-out infinite;
+  }
+  .town-side-art::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.02) 0 2px, transparent 2px 22px);
+    animation: side-art-pulse 8s ease-in-out infinite;
+  }
+  .town-side-art-left::before { animation-direction: reverse; }
 }
-.town-selection-card::before { content:""; position:absolute; inset:3px; z-index:-1; border:1px dashed rgba(255,232,106,.35); border-radius:13px; pointer-events:none; }
-.town-selection-character { width:62px; height:62px; display:grid; place-items:center; overflow:hidden; border:2px solid #ffe35d; border-radius:50%; background:radial-gradient(circle,#803cc0,#241143 68%); box-shadow:0 0 14px rgba(255,75,226,.62); }
-.town-selection-character img { width:58px; height:58px; object-fit:contain; filter:drop-shadow(0 4px 5px rgba(0,0,0,.45)); }
-.town-selection-copy { min-width:0; display:grid; gap:2px; }
-.town-selection-kicker { min-width:0; display:flex; align-items:center; gap:7px; }
-.town-selection-kicker small { color:#7ff6ee; font-size:6px; letter-spacing:.14em; }
-.town-selection-kicker span { overflow:hidden; color:#ffe66f; font-size:6px; font-weight:900; letter-spacing:.1em; text-overflow:ellipsis; white-space:nowrap; }
-.town-selection-copy > b { color:white; font-size:12px; letter-spacing:.07em; text-shadow:0 0 10px rgba(252,82,225,.7); }
-.town-selection-copy p { margin:2px 0 0; color:#d7e8ef; font-size:8px; line-height:1.3; }
-.town-selection-actions { display:grid; grid-template-columns:repeat(2,auto); gap:5px; }
-.town-selection-card button {
-  height: 34px; padding: 0 12px; border: 1px solid rgba(128, 224, 232, .45); border-radius: 7px;
-  color: #dffbfc; background: rgba(36, 132, 144, .36); font-size: 7px; font-weight: 900; letter-spacing: .12em; cursor: pointer;
+
+@keyframes side-art-drift { to { background-position: 680px 340px; } }
+@keyframes side-art-hue { 0%, 100% { filter: hue-rotate(0deg) saturate(1.1); } 50% { filter: hue-rotate(70deg) saturate(1.4); } }
+@keyframes side-art-pulse { 0%, 100% { opacity: .4; } 50% { opacity: .75; } }
+
+/* ---------------------------------------------------------------------
+   Building-interaction popup: a round window with a slowly flowing
+   painted-sunset background, the resident's portrait, and circular jelly
+   buttons bouncing off the round wall. Bottom-right over the map on
+   mobile; docked in the right trippy panel (no camera move) on desktop.
+   --------------------------------------------------------------------- */
+.building-popup {
+  position: fixed; z-index: 30; right: clamp(10px, 3.4vw, 26px); bottom: clamp(10px, 3.4vw, 26px);
+  width: min(62vmin, 300px); aspect-ratio: 1;
 }
-.town-selection-card button:hover { background: #62dfe7; color: #041419; }
-.town-selection-card .remove-building { border-color: rgba(255, 145, 139, .38); color: #ffc8c2; background: rgba(130, 43, 42, .3); }
-.town-selection-card .remove-building:hover { color: white; background: #b4413d; }
-.town-selection-card .upgrade-building { grid-column:1/-1; border-color: rgba(255, 209, 99, .54); color: #ffe6a1; background: rgba(145, 94, 23, .38); }
-.town-selection-card .upgrade-building:hover { color: #251500; background: #f8c84f; }
+.building-popup-close {
+  position: absolute; z-index: 3; top: -6%; right: -4%; width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid #ffe35d; background: #0d0620; color: #ffe9c2; font-size: 19px; line-height: 1; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0,0,0,.5), 0 0 14px rgba(255, 227, 93, .35); display: grid; place-items: center;
+}
+.building-popup-close:hover { background: #ffe35d; color: #2a1600; transform: scale(1.08); }
+.building-popup-circle {
+  position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; isolation: isolate;
+  border: 3px solid rgba(255, 210, 140, .55);
+  box-shadow: 0 18px 44px rgba(0,0,0,.55), 0 0 0 6px rgba(120, 60, 200, .18), inset 0 0 34px rgba(0,0,0,.35);
+  animation: popup-in .32s cubic-bezier(.2,.9,.2,1);
+}
+@keyframes popup-in { from { opacity: 0; transform: scale(.75); } }
+.building-popup-sunset { position: absolute; inset: 0; z-index: 0; background: #1a0f2e; }
+.building-popup-sunset-sun {
+  position: absolute; left: 50%; top: 58%; width: 78%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #ffe08a 0%, #ff9a56 32%, #ff5f8a 58%, #7c2e9e 78%, transparent 82%);
+  filter: blur(1px); animation: popup-sun-pulse 6s ease-in-out infinite;
+}
+@keyframes popup-sun-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); filter: blur(1px) hue-rotate(0deg); }
+  50% { transform: translate(-48%, -53%) scale(1.12); filter: blur(1.5px) hue-rotate(28deg); }
+}
+.building-popup-sunset-swirl {
+  position: absolute; inset: -30%; opacity: .55; mix-blend-mode: screen;
+  background: url("/media/psychedelic-earth-texture-v1.png"); background-size: 220px 220px;
+  animation: popup-swirl-drift 14s linear infinite, popup-swirl-hue 9s ease-in-out infinite;
+}
+.building-popup-sunset-swirl-2 { opacity: .35; background-size: 160px 160px; animation-duration: 21s, 13s; animation-direction: reverse, normal; }
+@keyframes popup-swirl-drift { to { background-position: 220px 130px; } }
+@keyframes popup-swirl-hue { 0%, 100% { filter: hue-rotate(-20deg) saturate(1.5); } 50% { filter: hue-rotate(50deg) saturate(1.9); } }
+.building-popup-portrait {
+  position: absolute; z-index: 1; left: 50%; bottom: 6%; width: 56%; aspect-ratio: .85; transform: translateX(-50%);
+  border-radius: 46% 46% 50% 50% / 54% 54% 46% 46%; overflow: hidden; border: 3px solid rgba(255,255,255,.35);
+  box-shadow: 0 10px 20px rgba(0,0,0,.4);
+}
+.building-popup-portrait img { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.08) saturate(1.15); }
+.building-popup-tag {
+  position: absolute; z-index: 2; left: 50%; top: 9%; transform: translateX(-50%); text-align: center;
+  padding: 4px 10px; border-radius: 999px; background: rgba(6, 2, 16, .55); backdrop-filter: blur(3px);
+  max-width: 78%;
+}
+.building-popup-tag small { display: block; color: #ffd4f0; font-size: 6px; letter-spacing: .16em; }
+.building-popup-tag b { display: block; color: white; font-size: 9px; letter-spacing: .05em; text-shadow: 0 0 8px rgba(0,0,0,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.building-popup-circle .jelly-field { position: absolute; inset: 0; z-index: 2; margin: 0; }
+.building-popup-circle .jelly-btn { width: 25%; height: 25%; }
+
+@media (min-width: 860px) and (min-aspect-ratio: 0.85) {
+  .building-popup { right: clamp(16px, 3vw, 48px); bottom: auto; top: 50%; transform: translateY(-50%); width: min(19vw, 300px); }
+}
+
+@media (max-width: 460px) {
+  .building-popup { width: min(68vmin, 260px); }
+}
 .placement-hint {
   position: absolute; z-index: 31; left: 2.5%; bottom: 101px; transform: none; padding: 8px 12px;
   border: 1px solid rgba(112, 236, 243, .55); border-radius: 999px; background: rgba(3, 17, 40, .92); color: #d9fbfc;
@@ -399,18 +487,8 @@
   .status-pill { font-size: 7px; padding: 9px; }
   .lock-marker small { display: none; }
   .town-side { display: none; }
-  .town-header { top: 8px; }
+  .town-header { top: calc(var(--trip-banner-height, 0px) + 8px); }
   .town-header > div { padding-right: 7px; }
-  .town-selection-card { grid-template-columns: 52px minmax(0,1fr) 76px; gap: 7px; min-height: 82px; padding: 7px; border-radius: 15px; }
-  .town-selection-character { width:50px; height:50px; }
-  .town-selection-character img { width:47px; height:47px; }
-  .town-selection-copy > b { font-size:10px; }
-  .town-selection-copy p { display:-webkit-box; overflow:hidden; font-size:7px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-  .town-selection-kicker { display:grid; gap:2px; }
-  .town-selection-kicker span { font-size:5px; }
-  .town-selection-actions { grid-template-columns:1fr; gap:3px; }
-  .town-selection-card button { width:76px; height:25px; padding:0 4px; font-size:6px; }
-  .town-selection-card .upgrade-building { grid-column:auto; }
   .placement-hint.with-editor { bottom:184px; }
   .dialog-backdrop { padding: 12px; align-items: end; }
   .penguin-dialog { width: 100%; min-height: auto; max-height: 92svh; grid-template-columns: 1fr 1fr; }
