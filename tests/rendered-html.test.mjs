@@ -203,12 +203,22 @@ test("landing page's Planet Urf portal opens the 3D world in a modal iframe", as
   assert.match(landing, /<HomeGlobe onActivate=/);
 });
 
-test("renders the Penguin Town hex board shell", async () => {
+test("renders the 3D Penguin Town (Antarctica's real destination)", async () => {
   const response = await request("/penguin-town");
   assert.equal(response.status, 200);
 
   const html = await response.text();
   assert.match(html, /<title>Penguin Town<\/title>/i);
+  assert.match(html, /PENGUIN TOWN/);
+  assert.match(html, /ANTARCTIC COASTAL DISTRICT/);
+});
+
+test("renders the Penguin Town hex board shell (the experimental second version)", async () => {
+  const response = await request("/penguin-town-hex");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>Penguin Town · Hex Colony<\/title>/i);
   assert.match(html, /RETURN TO THE SPLIT/);
   // ProfileGate is client-only (it reads localStorage in an effect), so its
   // "Who's building?" sign-in copy only exists post-hydration, not in the
@@ -274,7 +284,7 @@ test("ship's chart links to every real room", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  for (const href of ["/urf-3d", "/urf", "/penguin-town", "/bb-yoohoo-room", "/brain-room", "/bongo", "/anubis"]) {
+  for (const href of ["/urf-3d", "/urf", "/penguin-town", "/penguin-town-hex", "/bb-yoohoo-room", "/brain-room", "/bongo", "/anubis"]) {
     assert.match(html, new RegExp(`href="${href.replace(/\//g, "\/")}"`));
   }
 });

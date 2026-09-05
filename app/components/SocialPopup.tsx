@@ -1,33 +1,13 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useState } from "react";
-
-export type Profile = {
-  id: string;
-  platform: "instagram" | "x";
-  handle: string;
-  displayName: string | null;
-};
-
-const STORAGE_KEY = "urf.profile";
+import { FormEvent, useState } from "react";
+import type { Profile } from "../lib/useProfile";
 
 // Matches the server's validation in app/api/profile/route.ts. Stripped live
 // as you type (not just rejected on submit) so nothing that could ever read
 // as a link — no periods, no slashes, no "@" mid-string — is typeable here.
 const sanitizeHandle = (raw: string) => raw.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30);
 const sanitizeDisplayName = (raw: string) => raw.replace(/[^a-zA-Z0-9_ '!?-]/g, "").slice(0, 40);
-
-function readStoredProfile(): Profile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Profile;
-    return parsed?.id && parsed?.handle ? parsed : null;
-  } catch {
-    return null;
-  }
-}
 
 function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -36,41 +16,27 @@ function newId() {
 }
 
 /**
- * Site-wide pseudo sign-in. No password, nothing verified against the real
- * platform — a visitor just claims the Instagram or X handle they go by so
- * their builds (starting with Penguin Town) can be attributed to them.
+ * A dismissible corner popup, not a gate — closing it (the × or clicking
+ * past it) never blocks anything. It only ever asks; it never requires.
  */
-export default function ProfileGate({
+export default function SocialPopup({
   title,
   tagline,
-  children,
+  onClose,
+  onSaved,
 }: {
   title: string;
   tagline: string;
-  children: (profile: Profile, signOut: () => void) => ReactNode;
+  onClose: () => void;
+  onSaved: (profile: Profile) => void;
 }) {
-  const [profile, setProfile] = useState<Profile | null | "loading">("loading");
   const [platform, setPlatform] = useState<"instagram" | "x">("instagram");
   const [handle, setHandle] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    // Reads localStorage, which doesn't exist during SSR — this can only run
-    // client-side, after mount, so the "loading" sentinel above is what
-    // renders (nothing) on the server and on the client's first paint,
-    // avoiding a hydration mismatch between "no profile yet" and "signed in".
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProfile(readStoredProfile());
-  }, []);
-
-  function signOut() {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setProfile(null);
-  }
-
-  async function claim(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
     setError(null);
@@ -84,10 +50,8 @@ export default function ProfileGate({
         body: JSON.stringify({ id, platform, handle, displayName }),
       });
       const data = (await response.json()) as { profile?: Profile; error?: string };
-      if (!response.ok || !data.profile) throw new Error(data.error ?? "Could not save profile");
-
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data.profile));
-      setProfile(data.profile);
+      if (!response.ok || !data.profile) throw new Error(data.error ?? "Could not save");
+      onSaved(data.profile);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -95,13 +59,10 @@ export default function ProfileGate({
     }
   }
 
-  if (profile === "loading") return null;
-
-  if (profile) return <>{children(profile, signOut)}</>;
-
   return (
-    <div className="profile-gate">
-      <form className="profile-gate-card" onSubmit={claim}>
+    <div className="social-popup" role="dialog" aria-label={title}>
+      <button type="button" className="social-popup__close" aria-label="Close, no thanks" onClick={onClose}>×</button>
+      <form className="social-popup__form" onSubmit={submit}>
         <h2>{title}</h2>
         <p className="profile-gate-tagline">{tagline}</p>
 
@@ -141,7 +102,7 @@ export default function ProfileGate({
           <input
             value={displayName}
             onChange={(event) => setDisplayName(sanitizeDisplayName(event.target.value))}
-            placeholder="What Penguin Town calls you"
+            placeholder="What to call you"
             maxLength={40}
             autoComplete="off"
           />
@@ -149,12 +110,15 @@ export default function ProfileGate({
 
         {error && <p className="profile-gate-error">{error}</p>}
 
-        <button type="submit" disabled={submitting || !handle.trim()}>
-          {submitting ? "Claiming…" : "Claim your spot"}
-        </button>
+        <div className="social-popup__actions">
+          <button type="submit" disabled={submitting || !handle.trim()}>
+            {submitting ? "Sending…" : "Send"}
+          </button>
+          <button type="button" className="social-popup__skip" onClick={onClose}>Skip</button>
+        </div>
         <p className="profile-gate-note">
-          Letters, numbers and underscores only — no periods, no links, no uploads. Self-reported, not verified
-          against {platform === "instagram" ? "Instagram" : "X"}. No password, ever.
+          Letters, numbers and underscores only — no periods, no links, no uploads. Self-reported, not verified,
+          no password, ever — and totally optional.
         </p>
       </form>
     </div>

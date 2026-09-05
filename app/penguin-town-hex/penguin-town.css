@@ -1,6 +1,7 @@
 .penguin-town {
   position: relative;
   min-height: 100svh;
+  padding-top: calc(var(--trip-banner-height, 0px) + 40px);
   background: radial-gradient(120% 90% at 50% -10%, #0c231f 0%, #020605 60%);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;

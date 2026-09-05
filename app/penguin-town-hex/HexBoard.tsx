@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, type CSSProperties, useEffect, useMemo, useState } from "react";
-import type { Profile } from "../components/ProfileGate";
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
+import { useProfile, type Profile } from "../lib/useProfile";
+import SocialPopup from "../components/SocialPopup";
 import {
   BOARD_RADIUS,
   BUILDING_TYPES,
@@ -30,7 +31,11 @@ type Claim = {
 const BOARD_ID = "penguin-town";
 const HEXES = boardHexes(BOARD_RADIUS);
 
-export default function HexBoard({ profile, signOut }: { profile: Profile; signOut: () => void }) {
+// The board is always viewable and navigable with no profile at all — the
+// popup only ever shows up when someone tries to actually claim a plot, and
+// it's just as skippable there as everywhere else.
+export default function HexBoard() {
+  const { profile, save: saveProfile, signOut } = useProfile();
   const [claims, setClaims] = useState<Record<string, Claim>>({});
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<{ q: number; r: number } | null>(null);
@@ -39,6 +44,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSocialPopup, setShowSocialPopup] = useState(false);
 
   useEffect(() => {
     if (!selected) return;
@@ -79,7 +85,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
 
   const selectedClaim = selected ? claims[hexKey(selected.q, selected.r)] : undefined;
   const isTownHall = selected?.q === 0 && selected?.r === 0;
-  const isMine = selectedClaim?.ownerId === profile.id;
+  const isMine = Boolean(profile) && selectedClaim?.ownerId === profile?.id;
   const isEmpty = selected && !selectedClaim && !isTownHall;
 
   function openHex(q: number, r: number) {
@@ -91,8 +97,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
     setError(null);
   }
 
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitClaim(activeProfile: Profile) {
     if (!selected || saving) return;
     setSaving(true);
     setError(null);
@@ -104,7 +109,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
           boardId: BOARD_ID,
           q: selected.q,
           r: selected.r,
-          ownerId: profile.id,
+          ownerId: activeProfile.id,
           buildingType,
           colorway,
           label,
@@ -121,8 +126,19 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
     }
   }
 
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!profile) {
+      // No identity yet — ask, but this is the only thing gated on it, and
+      // it's a skippable popup, not a wall in front of the board.
+      setShowSocialPopup(true);
+      return;
+    }
+    void submitClaim(profile);
+  }
+
   async function release() {
-    if (!selected || saving) return;
+    if (!selected || saving || !profile) return;
     setSaving(true);
     setError(null);
     try {
@@ -154,12 +170,20 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
           <p>A civ-style hex board. Claim a plot, build on it — this is the first patch of a site that&apos;s slowly going 3D.</p>
         </div>
         <div className="penguin-board-identity">
-          <span className="penguin-board-handle">
-            @{profile.handle} <i>{profile.platform === "instagram" ? "IG" : "X"}</i>
-          </span>
-          <button type="button" onClick={signOut}>
-            switch profile
-          </button>
+          {profile ? (
+            <>
+              <span className="penguin-board-handle">
+                @{profile.handle} <i>{profile.platform === "instagram" ? "IG" : "X"}</i>
+              </span>
+              <button type="button" onClick={signOut}>
+                switch profile
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={() => setShowSocialPopup(true)}>
+              sign in (optional)
+            </button>
+          )}
         </div>
       </header>
 
@@ -187,7 +211,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
                 onClick={() => !townHall && openHex(q, r)}
                 disabled={townHall}
                 aria-label={
-                  townHall ? "Town Hall" : claim ? `${claim.label || building?.label} by @${claim.ownerId === profile.id ? "you" : ""}` : `Empty plot ${q},${r}`
+                  townHall ? "Town Hall" : claim ? `${claim.label || building?.label} by @${claim.ownerId === profile?.id ? "you" : ""}` : `Empty plot ${q},${r}`
                 }
               >
                 <span className="hex-face">
@@ -215,7 +239,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
               up through the panel — it adds no interaction of its own, so
               there's no keyboard equivalent to provide. */}
           {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
-          <form className="hex-panel" onClick={(event) => event.stopPropagation()} onSubmit={save}>
+          <form className="hex-panel" onClick={(event) => event.stopPropagation()} onSubmit={onSubmit}>
             <h2>
               {isEmpty ? "Build here" : isMine ? "Edit your plot" : "Taken"} <small>({selected.q}, {selected.r})</small>
             </h2>
@@ -260,7 +284,7 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
 
                 <div className="hex-panel-actions">
                   <button type="submit" disabled={saving}>
-                    {saving ? "Saving…" : isMine ? "Save changes" : "Claim plot"}
+                    {saving ? "Saving…" : isMine ? "Save changes" : profile ? "Claim plot" : "Send handle to claim"}
                   </button>
                   {isMine && (
                     <button type="button" className="hex-panel-release" onClick={release} disabled={saving}>
@@ -272,6 +296,19 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
             )}
           </form>
         </div>
+      )}
+
+      {showSocialPopup && (
+        <SocialPopup
+          title="Who's building?"
+          tagline="Optional — attaches your Instagram or X handle to what you build here. Skip it and the board still works."
+          onClose={() => setShowSocialPopup(false)}
+          onSaved={(newProfile) => {
+            saveProfile(newProfile);
+            setShowSocialPopup(false);
+            if (selected) void submitClaim(newProfile);
+          }}
+        />
       )}
     </div>
   );

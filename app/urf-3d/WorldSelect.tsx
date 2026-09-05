@@ -5,7 +5,8 @@ import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
 import type { Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
 import { LAND_COLOR_PRESETS, PIN_MARKERS, TERRITORIES } from "../lib/territories";
-import ProfileGate from "../components/ProfileGate";
+import SocialPopup from "../components/SocialPopup";
+import { useProfile } from "../lib/useProfile";
 
 // Special-cased territories: hitting one of these short-circuits the normal
 // locked/unlocked entry card with something else entirely.
@@ -62,6 +63,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [terrainOpen, setTerrainOpen] = useState(false);
   const [usaFlagMode, setUsaFlagMode] = useState(false);
   const [loginGateTerritory, setLoginGateTerritory] = useState<string | null>(null);
+  const { profile, save: saveProfile } = useProfile();
   const router = useRouter();
 
   const territories = useMemo<Territory[]>(() => TERRITORIES, []);
@@ -151,8 +153,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             }
 
             if (LOGIN_GATE_TERRITORIES.has(result.territory)) {
+              // A skippable popup alongside the normal entry card below —
+              // never a replacement for it. Exploring never requires this.
               setLoginGateTerritory(result.territory);
-              return;
             }
 
             setSelector({
@@ -528,39 +531,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           </div>
         </div>
       )}
-      {loginGateTerritory && (
-        <div
-          className="hex-panel-backdrop"
-          role="button"
-          tabIndex={0}
-          aria-label="Close"
-          onClick={() => setLoginGateTerritory(null)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") setLoginGateTerritory(null);
+      {loginGateTerritory && !profile && (
+        <SocialPopup
+          title="sup dood, i'm pat"
+          tagline={`The arrow landed on ${loginGateTerritory}. Copy pending — placeholder until the real greeting lands. Totally skippable.`}
+          onClose={() => setLoginGateTerritory(null)}
+          onSaved={(newProfile) => {
+            saveProfile(newProfile);
+            setLoginGateTerritory(null);
           }}
-        >
-          {/* onClick here only stops the backdrop's close-click from bubbling
-              up through the panel — it adds no interaction of its own, so
-              there's no keyboard equivalent to provide. */}
-          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
-          <div className="hex-panel" onClick={(event) => event.stopPropagation()}>
-            <ProfileGate
-              title="sup dood, i'm pat"
-              tagline={`The arrow landed on ${loginGateTerritory}. Copy pending — this is a placeholder greeting until the real one lands.`}
-            >
-              {(profile, signOut) => (
-                <div className="profile-gate">
-                  <div className="profile-gate-card">
-                    <h2>Hey @{profile.handle}</h2>
-                    <p className="profile-gate-tagline">You&apos;re signed in. Not sure what happens next here yet.</p>
-                    <button type="button" onClick={() => setLoginGateTerritory(null)}>Close</button>
-                    <button type="button" onClick={signOut}>Sign out</button>
-                  </div>
-                </div>
-              )}
-            </ProfileGate>
-          </div>
-        </div>
+        />
       )}
       {world3d && (
         <div className={`globe-toolbar${terrainOpen ? " is-open" : ""}`} onPointerDown={(event) => event.stopPropagation()}>
