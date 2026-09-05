@@ -5,6 +5,13 @@ import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
 import type { Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
 import { LAND_COLOR_PRESETS, PIN_MARKERS, TERRITORIES } from "../lib/territories";
+import ProfileGate from "../components/ProfileGate";
+
+// Special-cased territories: hitting one of these short-circuits the normal
+// locked/unlocked entry card with something else entirely.
+const MIDDLE_EAST_TERRITORIES = new Set(["Middle East", "Israel"]);
+const USA_TERRITORY = "America";
+const LOGIN_GATE_TERRITORIES = new Set(["China", "South America", "Africa", "Europe"]);
 
 type Point = [number, number];
 
@@ -53,6 +60,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [landPreset, setLandPreset] = useState("original");
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
+  const [usaFlagMode, setUsaFlagMode] = useState(false);
+  const [loginGateTerritory, setLoginGateTerritory] = useState<string | null>(null);
+  const router = useRouter();
 
   const territories = useMemo<Territory[]>(() => TERRITORIES, []);
 
@@ -128,6 +138,23 @@ function Globe({ onEnter }: { onEnter: () => void }) {
               setFlash({ text: "SPLASH · OPEN WATER", tone: "water" });
               return;
             }
+
+            if (MIDDLE_EAST_TERRITORIES.has(result.territory)) {
+              router.push("/bb-yoohoo-room");
+              return;
+            }
+
+            if (result.territory === USA_TERRITORY) {
+              setUsaFlagMode(true);
+              setFlash({ text: "🇺🇸 OLD GLORY MODE", tone: "open" });
+              return;
+            }
+
+            if (LOGIN_GATE_TERRITORIES.has(result.territory)) {
+              setLoginGateTerritory(result.territory);
+              return;
+            }
+
             setSelector({
               name: result.territory,
               unlocked: result.unlocked,
@@ -157,7 +184,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       worldRef.current = null;
       setWorld3d(false);
     };
-  }, [landFeatures, territories]);
+  }, [landFeatures, territories, router]);
 
   useEffect(() => {
     worldRef.current?.setView(rotation, zoom);
@@ -175,6 +202,13 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   useEffect(() => {
     worldRef.current?.setSatelliteLoadout(satelliteParts);
   }, [satelliteParts, world3d]);
+
+  useEffect(() => {
+    worldRef.current?.setLandFlagMode(usaFlagMode);
+    // The flag colours are baked true-to-hue; a LAND preset tint would wash
+    // them out, so America forces the neutral (white) multiplier while active.
+    if (usaFlagMode) worldRef.current?.setLandColor(0xffffff);
+  }, [usaFlagMode, world3d]);
 
   const toggleSatellitePart = (id: SatellitePartId) => {
     setSatelliteParts((current) => (current.includes(id) ? current.filter((part) => part !== id) : [...current, id]));
@@ -491,6 +525,40 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                 <button type="button" className="territory-selector__enter is-locked" disabled>🔒 LOCKED</button>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {loginGateTerritory && (
+        <div
+          className="hex-panel-backdrop"
+          role="button"
+          tabIndex={0}
+          aria-label="Close"
+          onClick={() => setLoginGateTerritory(null)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") setLoginGateTerritory(null);
+          }}
+        >
+          {/* onClick here only stops the backdrop's close-click from bubbling
+              up through the panel — it adds no interaction of its own, so
+              there's no keyboard equivalent to provide. */}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+          <div className="hex-panel" onClick={(event) => event.stopPropagation()}>
+            <ProfileGate
+              title="sup dood, i'm pat"
+              tagline={`The arrow landed on ${loginGateTerritory}. Copy pending — this is a placeholder greeting until the real one lands.`}
+            >
+              {(profile, signOut) => (
+                <div className="profile-gate">
+                  <div className="profile-gate-card">
+                    <h2>Hey @{profile.handle}</h2>
+                    <p className="profile-gate-tagline">You&apos;re signed in. Not sure what happens next here yet.</p>
+                    <button type="button" onClick={() => setLoginGateTerritory(null)}>Close</button>
+                    <button type="button" onClick={signOut}>Sign out</button>
+                  </div>
+                </div>
+              )}
+            </ProfileGate>
           </div>
         </div>
       )}
