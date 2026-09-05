@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // A pseudo-account: no password, self-reported. Visitors claim a handle on
 // Instagram or X to identify themselves before they can build in Penguin
@@ -14,14 +14,18 @@ export const profiles = sqliteTable("profiles", {
 
 // One claimed hex on a board (Penguin Town is the first board; the id is
 // namespaced so future boards/territories can share this table).
-export const hexClaims = sqliteTable("hex_claims", {
-  id: text("id").primaryKey(), // `${boardId}:${q}:${r}`
-  boardId: text("board_id").notNull(),
-  q: integer("q").notNull(),
-  r: integer("r").notNull(),
-  ownerId: text("owner_id").notNull(),
-  buildingType: text("building_type").notNull().default("igloo"),
-  colorway: text("colorway").notNull().default("ice"),
-  label: text("label").notNull().default(""),
-  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+export const hexClaims = sqliteTable(
+  "hex_claims",
+  {
+    id: text("id").primaryKey(), // `${boardId}:${q}:${r}`
+    boardId: text("board_id").notNull(),
+    q: integer("q").notNull(),
+    r: integer("r").notNull(),
+    ownerId: text("owner_id").notNull(),
+    buildingType: text("building_type").notNull().default("igloo"),
+    colorway: text("colorway").notNull().default("ice"),
+    label: text("label").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [index("idx_hex_claims_board_id").on(table.boardId)],
+);
