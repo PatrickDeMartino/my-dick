@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import HomeGlobe from "./components/HomeGlobe";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
 
@@ -38,7 +39,9 @@ export default function LandingPage() {
           aria-haspopup="dialog"
           onClick={() => setShowUrf(true)}
         >
-          <span className="choice-object-visual" aria-hidden="true" />
+          <span className="choice-object-visual choice-object-visual--globe" aria-hidden="true">
+            <HomeGlobe onActivate={() => setShowUrf(true)} />
+          </span>
           <span className="choice-smoke" aria-hidden="true">
             {smokePuffs.map((puff) => <i key={puff} />)}
           </span>
@@ -76,7 +79,7 @@ export default function LandingPage() {
 
       {showUrf && (
         <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
-          <iframe className="urf-modal-frame" src="/urf" title="Planet Urf territory selector" />
+          <iframe className="urf-modal-frame" src="/urf-3d" title="Planet Urf territory selector" />
         </section>
       )}
     </main>
