@@ -11,6 +11,12 @@ export type Profile = {
 
 const STORAGE_KEY = "urf.profile";
 
+// Matches the server's validation in app/api/profile/route.ts. Stripped live
+// as you type (not just rejected on submit) so nothing that could ever read
+// as a link — no periods, no slashes, no "@" mid-string — is typeable here.
+const sanitizeHandle = (raw: string) => raw.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30);
+const sanitizeDisplayName = (raw: string) => raw.replace(/[^a-zA-Z0-9_ '!?-]/g, "").slice(0, 40);
+
 function readStoredProfile(): Profile | null {
   if (typeof window === "undefined") return null;
   try {
@@ -122,8 +128,8 @@ export default function ProfileGate({
           <span>@ username</span>
           <input
             value={handle}
-            onChange={(event) => setHandle(event.target.value)}
-            placeholder={platform === "instagram" ? "your.igname" : "yourxhandle"}
+            onChange={(event) => setHandle(sanitizeHandle(event.target.value))}
+            placeholder={platform === "instagram" ? "yourigname" : "yourxhandle"}
             maxLength={30}
             required
             autoComplete="off"
@@ -134,7 +140,7 @@ export default function ProfileGate({
           <span>Display name (optional)</span>
           <input
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
+            onChange={(event) => setDisplayName(sanitizeDisplayName(event.target.value))}
             placeholder="What Penguin Town calls you"
             maxLength={40}
             autoComplete="off"
@@ -147,7 +153,8 @@ export default function ProfileGate({
           {submitting ? "Claiming…" : "Claim your spot"}
         </button>
         <p className="profile-gate-note">
-          Self-reported, not verified against {platform === "instagram" ? "Instagram" : "X"}. No password, ever.
+          Letters, numbers and underscores only — no periods, no links, no uploads. Self-reported, not verified
+          against {platform === "instagram" ? "Instagram" : "X"}. No password, ever.
         </p>
       </form>
     </div>

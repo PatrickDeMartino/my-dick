@@ -232,14 +232,62 @@ test("profile creation degrades gracefully without a D1 binding", async () => {
   const response = await request("/api/profile", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ id: "test-id", platform: "instagram", handle: "test.user" }),
+    body: JSON.stringify({ id: "test-id", platform: "instagram", handle: "test_user" }),
   });
   const payload = await response.json();
 
   if (response.status === 201) {
-    assert.equal(payload.profile.handle, "test.user");
+    assert.equal(payload.profile.handle, "test_user");
   } else {
     assert.equal(response.status, 500);
     assert.match(payload.error, /D1 binding `DB` is unavailable|profiles table is unavailable/);
   }
+});
+
+test("profile signup rejects periods and link-shaped text in both fields", async () => {
+  const response = await request("/api/profile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: "test-id-2", platform: "instagram", handle: "evil.com" }),
+  });
+  assert.equal(response.status, 400);
+  const payload = await response.json();
+  assert.match(payload.error, /no periods/);
+
+  const displayNameResponse = await request("/api/profile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      id: "test-id-3",
+      platform: "instagram",
+      handle: "clean_handle",
+      displayName: "click http://evil.com now",
+    }),
+  });
+  assert.equal(displayNameResponse.status, 400);
+  const displayNamePayload = await displayNameResponse.json();
+  assert.match(displayNamePayload.error, /no periods/);
+});
+
+test("ship's chart links to every real room", async () => {
+  const response = await request("/map");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  for (const href of ["/urf-3d", "/urf", "/penguin-town", "/bb-yoohoo-room", "/brain-room", "/bongo", "/anubis"]) {
+    assert.match(html, new RegExp(`href="${href.replace(/\//g, "\/")}"`));
+  }
+});
+
+test("landing page links to the ship's chart", async () => {
+  const response = await request("/");
+  const html = await response.text();
+  assert.match(html, /href="\/map"/);
+});
+
+test("admin logins page refuses access without the right key", async () => {
+  const response = await request("/admin/logins");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Wrong or missing key|ADMIN_KEY isn.t set/);
 });

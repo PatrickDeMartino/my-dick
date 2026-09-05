@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import HomeGlobe from "./components/HomeGlobe";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
@@ -76,6 +77,15 @@ export default function LandingPage() {
       >
         <span>I&apos;m genuinely skitzofrenic</span>
       </a>
+
+      <Link
+        className="guide-orb"
+        href="/map"
+        aria-label="Open the ship's chart of the whole labyrinth, guided by a friendly alien"
+      >
+        <span className="guide-orb__face" aria-hidden="true">👽</span>
+        <span className="guide-orb__label">ship&apos;s chart</span>
+      </Link>
 
       {showUrf && (
         <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
