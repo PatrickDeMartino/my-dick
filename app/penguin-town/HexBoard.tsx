@@ -41,6 +41,15 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!selected) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selected]);
+
+  useEffect(() => {
     let cancelled = false;
     fetch(`/api/hex?board=${BOARD_ID}`)
       .then((response) => response.json())
@@ -192,7 +201,20 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
       </div>
 
       {selected && (
-        <div className="hex-panel-backdrop" onClick={() => setSelected(null)}>
+        <div
+          className="hex-panel-backdrop"
+          role="button"
+          tabIndex={0}
+          aria-label="Close"
+          onClick={() => setSelected(null)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") setSelected(null);
+          }}
+        >
+          {/* onClick here only stops the backdrop's close-click from bubbling
+              up through the panel — it adds no interaction of its own, so
+              there's no keyboard equivalent to provide. */}
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
           <form className="hex-panel" onClick={(event) => event.stopPropagation()} onSubmit={save}>
             <h2>
               {isEmpty ? "Build here" : isMine ? "Edit your plot" : "Taken"} <small>({selected.q}, {selected.r})</small>

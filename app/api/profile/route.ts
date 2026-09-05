@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   try {
-    const db = getDb();
+    const db = await getDb();
     const [profile] = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
     return Response.json({ profile: profile ?? null });
   } catch (error) {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = getDb();
+    const db = await getDb();
     await db
       .insert(profiles)
       .values({ id, platform, handle, displayName })

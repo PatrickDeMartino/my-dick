@@ -54,8 +54,11 @@ test("renders the Penguin Town hex board shell", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Penguin Town<\/title>/i);
-  assert.match(html, /Who(?:&#x27;|')s building\?/);
-  assert.match(html, /Instagram/);
+  assert.match(html, /RETURN TO THE SPLIT/);
+  // ProfileGate is client-only (it reads localStorage in an effect), so its
+  // "Who's building?" sign-in copy only exists post-hydration, not in the
+  // server-rendered shell — asserting on it here would just test React's
+  // loading-state placeholder, not this page.
 });
 
 test("hex claims degrade gracefully without a D1 binding", async () => {
@@ -66,7 +69,7 @@ test("hex claims degrade gracefully without a D1 binding", async () => {
     assert.ok(Array.isArray(payload.claims));
   } else {
     assert.equal(response.status, 500);
-    assert.match(payload.error, /hex_claims table is unavailable/);
+    assert.match(payload.error, /D1 binding `DB` is unavailable|hex_claims table is unavailable/);
   }
 });
 
@@ -82,7 +85,7 @@ test("profile creation degrades gracefully without a D1 binding", async () => {
     assert.equal(payload.profile.handle, "test.user");
   } else {
     assert.equal(response.status, 500);
-    assert.match(payload.error, /profiles table is unavailable/);
+    assert.match(payload.error, /D1 binding `DB` is unavailable|profiles table is unavailable/);
   }
 });
 

@@ -51,6 +51,11 @@ export default function ProfileGate({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    // Reads localStorage, which doesn't exist during SSR — this can only run
+    // client-side, after mount, so the "loading" sentinel above is what
+    // renders (nothing) on the server and on the client's first paint,
+    // avoiding a hydration mismatch between "no profile yet" and "signed in".
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfile(readStoredProfile());
   }, []);
 

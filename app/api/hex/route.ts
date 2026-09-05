@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const boardId = new URL(request.url).searchParams.get("board") ?? "penguin-town";
 
   try {
-    const db = getDb();
+    const db = await getDb();
     const claims = await db.select().from(hexClaims).where(eq(hexClaims.boardId, boardId));
     return Response.json({ boardId, radius: BOARD_RADIUS, claims });
   } catch (error) {
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "the town hall hex can't be claimed" }, { status: 400 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const [owner] = await db.select().from(profiles).where(eq(profiles.id, ownerId)).limit(1);
     if (!owner) return Response.json({ error: "sign in before claiming a hex" }, { status: 401 });
 
@@ -105,7 +105,7 @@ export async function DELETE(request: Request) {
     const ownerId = payload.ownerId?.trim() ?? "";
     const id = `${boardId}:${q}:${r}`;
 
-    const db = getDb();
+    const db = await getDb();
     const [existing] = await db.select().from(hexClaims).where(eq(hexClaims.id, id)).limit(1);
     if (!existing) return Response.json({ ok: true });
     if (existing.ownerId !== ownerId) {
