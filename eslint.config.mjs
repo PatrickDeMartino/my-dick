@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prebuilt/minified bundle shipped as a static game asset, not project
+    // source (public/dog-fighting/rat-meat-bridge.js is hand-written and
+    // stays linted).
+    "public/dog-fighting/assets/**",
   ]),
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Can3D } from "./Can3D";
+import { OilGauge } from "./OilGauge";
+import Prop3D from "./Prop3D";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
 const BANANA_STORAGE_KEY = "trip.bananas.v1";
+const YOOHOO_STORAGE_KEY = "trip.yoohoo.v1";
 const WALLET_SEED_KEY = "trip.wallet.seed.v2";
 const REWARD_EVENT = "trip-rat-meat-earned";
 const BALANCE_EVENT = "trip-rat-meat-balance-changed";
@@ -19,11 +23,21 @@ function readRatMeat() {
   }
 }
 
+function readYoohoo() {
+  try {
+    const value = Number.parseInt(window.localStorage.getItem(YOOHOO_STORAGE_KEY) ?? "69", 10);
+    return Number.isFinite(value) ? Math.max(0, value) : 69;
+  } catch {
+    return 69;
+  }
+}
+
 export default function SiteBanner() {
   const pathname = usePathname();
   const isBongo = pathname.startsWith("/bongo");
   const [amount, setAmount] = useState(69);
   const [bananas, setBananas] = useState(69);
+  const [yoohoo, setYoohoo] = useState(69);
   const [visible, setVisible] = useState(true);
   const [earned, setEarned] = useState(false);
   const [bongoMenuOpen, setBongoMenuOpen] = useState(false);
@@ -46,6 +60,7 @@ export default function SiteBanner() {
       if (!window.localStorage.getItem(WALLET_SEED_KEY)) {
         window.localStorage.setItem(STORAGE_KEY, "69");
         window.localStorage.setItem(BANANA_STORAGE_KEY, "69");
+        window.localStorage.setItem(YOOHOO_STORAGE_KEY, "69");
         window.localStorage.setItem(WALLET_SEED_KEY, "seeded");
       }
     } catch {
@@ -55,6 +70,7 @@ export default function SiteBanner() {
       setAmount(readRatMeat());
       const storedBananas = Number.parseInt(window.localStorage.getItem(BANANA_STORAGE_KEY) ?? "69", 10);
       setBananas(Number.isFinite(storedBananas) ? Math.max(0, storedBananas) : 69);
+      setYoohoo(readYoohoo());
     });
 
     const onReward = (event: MessageEvent) => {
@@ -130,7 +146,7 @@ export default function SiteBanner() {
         <div className="trip-banner__wallet">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
-            <img src="/media/rat-meat-can-v2.png" alt="" />
+            <Can3D kind={earned ? "rat-meat-gold" : "rat-meat"} size={44} />
           </span>
           <strong>Rat Meat</strong>
           <span className="trip-banner__amount" aria-live="polite" aria-atomic="true">
@@ -138,10 +154,18 @@ export default function SiteBanner() {
           </span>
         </div>
         <div className="trip-banner__stat trip-banner__bananas" aria-label={`${bananas} bananas`}>
-          <span aria-hidden="true">🍌</span><strong>Bananas</strong><b>{bananas}</b>
+          <Prop3D prop="banana"><span aria-hidden="true">🍌</span></Prop3D><strong>Bananas</strong><b>{bananas}</b>
+        </div>
+        <div className="trip-banner__stat trip-banner__yoohoo" aria-label={`${yoohoo} Yoo-hoo`}>
+          <span className="trip-banner__can trip-banner__can--yoohoo" aria-hidden="true">
+            <Can3D kind="yoohoo" size={36} />
+          </span>
+          <strong>Yoo-hoo</strong>
+          <b>{yoohoo}</b>
         </div>
         <div className="trip-banner__stat trip-banner__oil" aria-label="An unquenchable thirst for oil">
-          <span aria-hidden="true">🛢️</span><strong>Oil thirst</strong><b>∞</b>
+          <OilGauge />
+          <strong>Oil thirst</strong>
         </div>
         </div>
 

@@ -183,3 +183,63 @@ test("world globe clips coastlines cleanly and supports full rotation", async ()
   assert.match(town, /roll: wrapAngle/);
   assert.doesNotMatch(town, /Math\.max\(-55, Math\.min\(55/);
 });
+
+test("renders the 3D world-select room (Planet Urf archer)", async () => {
+  const response = await request("/urf-3d");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>Planet Urf \| Triptotropic<\/title>/i);
+  assert.match(html, /GO ANYWHERE/i);
+  assert.match(html, /ANTARCTICA/);
+  // The terrain toolbar and the archer HUD only mount once the WebGL 3D
+  // layer boots client-side (world3d state), so they're absent from the
+  // server-rendered shell — not something to assert on here.
+});
+
+test("landing page's Planet Urf portal opens the 3D world in a modal iframe", async () => {
+  const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(landing, /iframe className="urf-modal-frame" src="\/urf-3d"/);
+  assert.match(landing, /<HomeGlobe onActivate=/);
+});
+
+test("renders the Penguin Town hex board shell", async () => {
+  const response = await request("/penguin-town");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>Penguin Town<\/title>/i);
+  assert.match(html, /RETURN TO THE SPLIT/);
+  // ProfileGate is client-only (it reads localStorage in an effect), so its
+  // "Who's building?" sign-in copy only exists post-hydration, not in the
+  // server-rendered shell — asserting on it here would just test React's
+  // loading-state placeholder, not this page.
+});
+
+test("hex claims degrade gracefully without a D1 binding", async () => {
+  const response = await request("/api/hex?board=penguin-town");
+  const payload = await response.json();
+
+  if (response.status === 200) {
+    assert.ok(Array.isArray(payload.claims));
+  } else {
+    assert.equal(response.status, 500);
+    assert.match(payload.error, /D1 binding `DB` is unavailable|hex_claims table is unavailable/);
+  }
+});
+
+test("profile creation degrades gracefully without a D1 binding", async () => {
+  const response = await request("/api/profile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: "test-id", platform: "instagram", handle: "test.user" }),
+  });
+  const payload = await response.json();
+
+  if (response.status === 201) {
+    assert.equal(payload.profile.handle, "test.user");
+  } else {
+    assert.equal(response.status, 500);
+    assert.match(payload.error, /D1 binding `DB` is unavailable|profiles table is unavailable/);
+  }
+});
