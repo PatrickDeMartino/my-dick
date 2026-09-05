@@ -1568,3 +1568,21 @@ button, input { font: inherit; }
   background-color: transparent;
   overflow: visible;
 }
+
+/* BB's Yoo-hoo Room: a silly one-off reached only by hitting Middle East. */
+.bb-room {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% -10%, #241a06 0%, #05030a 60%);
+  color: var(--text, #eaffee);
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  padding: 24px;
+}
+.bb-room__stage { display: grid; gap: 10px; justify-items: center; max-width: 420px; }
+.bb-room__can { width: 160px; height: 210px; display: block; }
+.bb-room h1 { margin: 4px 0 0; font-size: clamp(24px, 4vw, 34px); }
+.bb-room__sub { margin: 0; color: #c9b98a; font-size: 14px; }
+.bb-room__lines { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; color: #d8cba0; font-size: 13px; }
+.bb-room__lines li { padding: 8px 12px; border: 1px solid rgba(255, 214, 120, .25); border-radius: 8px; background: rgba(30, 20, 5, .5); }

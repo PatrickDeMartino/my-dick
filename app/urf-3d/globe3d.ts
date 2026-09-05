@@ -76,6 +76,9 @@ export type Globe3DHandle = {
   cancelDraw: () => void;
   /** Multiply the extruded land vertex colours (0xffffff = original palette). */
   setLandColor: (hex: number) => void;
+  /** Swaps every land vertex to a red/white/blue "Old Glory" banding (baked
+   * at build time, so this is a cheap attribute swap, not a rebuild). */
+  setLandFlagMode: (enabled: boolean) => void;
   /** Replaces every bolt-on satellite upgrade with this set (empty = stock satellite). */
   setSatelliteLoadout: (parts: SatellitePartId[]) => void;
   dispose: () => void;
@@ -122,6 +125,21 @@ const LAND_STOPS: { at: number; rgb: [number, number, number] }[] = [
   { at: 1, rgb: [0xf1, 0xc8, 0x6e] },
 ];
 const ICE_RGB: [number, number, number] = [0xc8, 0xee, 0xf1];
+
+// "Old Glory" recolour, triggered when an arrow lands on America. Not a
+// geographically accurate flag — every landmass on the planet gets banded
+// red/white with a blue canton in its upper-left, purely decorative.
+const FLAG_STRIPES = 13;
+const FLAG_RED: [number, number, number] = [0xb2, 0x22, 0x34];
+const FLAG_WHITE: [number, number, number] = [0xf2, 0xf2, 0xf0];
+const FLAG_BLUE: [number, number, number] = [0x0a, 0x3a, 0x6e];
+
+const flagTint = (lat: number, lon: number): [number, number, number] => {
+  const stripeBand = Math.floor(((90 - lat) / 180) * FLAG_STRIPES);
+  const inCanton = lat > 15 && ((lon + 180) % 360) < 140;
+  if (inCanton) return FLAG_BLUE;
+  return stripeBand % 2 === 0 ? FLAG_RED : FLAG_WHITE;
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -230,30 +248,39 @@ function buildLandMask(landFeatures: LandFeature[]): LandMask | null {
  * Builds the landmasses as real geometry: a raised plate per land cell plus a
  * cliff wall wherever land meets water, so coastlines have visible thickness.
  */
-function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.BufferGeometry {
+function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): { geometry: THREE_NS.BufferGeometry; flagColors: Float32Array } {
   const positions: number[] = [];
   const colors: number[] = [];
+  const flagColors: number[] = [];
   const deltaLon = 360 / LON_CELLS;
   const deltaLat = 180 / LAT_CELLS;
 
-  const pushVertex = (lon: number, lat: number, radius: number, rgb: [number, number, number]) => {
+  const pushVertex = (
+    lon: number,
+    lat: number,
+    radius: number,
+    rgb: [number, number, number],
+    flagRgb: [number, number, number],
+  ) => {
     const [x, y, z] = directionFor(lon, lat);
     positions.push(x * radius, y * radius, z * radius);
     colors.push(srgbToLinear(rgb[0]), srgbToLinear(rgb[1]), srgbToLinear(rgb[2]));
+    flagColors.push(srgbToLinear(flagRgb[0]), srgbToLinear(flagRgb[1]), srgbToLinear(flagRgb[2]));
   };
 
   const pushQuad = (
     corners: [number, number][],
     radii: [number, number, number, number],
     rgb: [number, number, number],
+    flagRgb: [number, number, number],
   ) => {
     const [a, b, c, d] = corners;
-    pushVertex(a[0], a[1], radii[0], rgb);
-    pushVertex(b[0], b[1], radii[1], rgb);
-    pushVertex(c[0], c[1], radii[2], rgb);
-    pushVertex(a[0], a[1], radii[0], rgb);
-    pushVertex(c[0], c[1], radii[2], rgb);
-    pushVertex(d[0], d[1], radii[3], rgb);
+    pushVertex(a[0], a[1], radii[0], rgb, flagRgb);
+    pushVertex(b[0], b[1], radii[1], rgb, flagRgb);
+    pushVertex(c[0], c[1], radii[2], rgb, flagRgb);
+    pushVertex(a[0], a[1], radii[0], rgb, flagRgb);
+    pushVertex(c[0], c[1], radii[2], rgb, flagRgb);
+    pushVertex(d[0], d[1], radii[3], rgb, flagRgb);
   };
 
   for (let row = 0; row < LAT_CELLS; row += 1) {
@@ -275,6 +302,7 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.Buf
       const rgb: [number, number, number] = ice
         ? [ICE_RGB[0] - jitter * 14, ICE_RGB[1] - jitter * 10, ICE_RGB[2] - jitter * 6]
         : landTint(latCenter, jitter);
+      const flagRgb = flagTint(latCenter, lonCenter);
 
       // Plate top.
       pushQuad(
@@ -286,10 +314,12 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.Buf
         ],
         [top, top, top, top],
         rgb,
+        flagRgb,
       );
 
       // Cliff walls wherever this cell touches water.
       const cliff: [number, number, number] = [rgb[0] * 0.62, rgb[1] * 0.62, rgb[2] * 0.66];
+      const flagCliff: [number, number, number] = [flagRgb[0] * 0.62, flagRgb[1] * 0.62, flagRgb[2] * 0.66];
       const neighbours: { lon: number; lat: number; edge: [number, number][] }[] = [
         { lon: lonCenter, lat: latCenter + deltaLat, edge: [[lonLeft, latTop], [lonRight, latTop]] },
         { lon: lonCenter, lat: latCenter - deltaLat, edge: [[lonRight, latBottom], [lonLeft, latBottom]] },
@@ -305,6 +335,7 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.Buf
           [start, end, end, start],
           [top, top, GLOBE_RADIUS, GLOBE_RADIUS],
           cliff,
+          flagCliff,
         );
       });
     }
@@ -314,7 +345,7 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): THREE_NS.Buf
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
-  return geometry;
+  return { geometry, flagColors: new Float32Array(flagColors) };
 }
 
 type AlienRig = {
@@ -862,7 +893,8 @@ export async function createGlobe3D(
   occluder.renderOrder = -1;
   planet.add(occluder);
 
-  const landGeometry = buildLandGeometry(THREE, mask);
+  const { geometry: landGeometry, flagColors } = buildLandGeometry(THREE, mask);
+  const landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
   const landMesh = new THREE.Mesh(
     landGeometry,
     new THREE.MeshStandardMaterial({
@@ -1567,6 +1599,11 @@ export async function createGlobe3D(
     setLandColor: (hex) => {
       const material = landMesh.material as THREE_NS.MeshStandardMaterial;
       material.color.setHex(hex);
+    },
+    setLandFlagMode: (enabled) => {
+      const colorAttr = landGeometry.getAttribute("color") as THREE_NS.BufferAttribute;
+      (colorAttr.array as Float32Array).set(enabled ? flagColors : landBaseColors);
+      colorAttr.needsUpdate = true;
     },
     setSatelliteLoadout: (parts) => {
       while (satelliteUpgrades.children.length > 0) {
