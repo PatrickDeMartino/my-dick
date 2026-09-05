@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { triggerSceneWarp } from "../lib/sceneWarp";
 
 type ChartNode = {
@@ -35,9 +36,9 @@ export default function MapRoomPage() {
 
   return (
     <main className="chart-room">
-      <a className="chart-room__back" href="/" onClick={(event) => goTo(event, "/")}>
+      <Link className="chart-room__back" href="/" onClick={(event) => goTo(event, "/")}>
         ← THE LANDING
-      </a>
+      </Link>
 
       <header className="chart-room__title">
         <small>SHIP&apos;S CHART</small>

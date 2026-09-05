@@ -44,7 +44,8 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
     let cancelled = false;
     fetch(`/api/hex?board=${BOARD_ID}`)
       .then((response) => response.json())
-      .then((data: { claims?: Claim[] }) => {
+      .then((raw) => {
+        const data = raw as { claims?: Claim[] };
         if (cancelled) return;
         const byKey: Record<string, Claim> = {};
         for (const claim of data.claims ?? []) byKey[hexKey(claim.q, claim.r)] = claim;
@@ -192,8 +193,14 @@ export default function HexBoard({ profile, signOut }: { profile: Profile; signO
       </div>
 
       {selected && (
-        <div className="hex-panel-backdrop" onClick={() => setSelected(null)}>
-          <form className="hex-panel" onClick={(event) => event.stopPropagation()} onSubmit={save}>
+        <div className="hex-panel-backdrop">
+          <button
+            type="button"
+            className="hex-panel-dismiss"
+            aria-label="Close plot editor"
+            onClick={() => setSelected(null)}
+          />
+          <form className="hex-panel" onSubmit={save}>
             <h2>
               {isEmpty ? "Build here" : isMine ? "Edit your plot" : "Taken"} <small>({selected.q}, {selected.r})</small>
             </h2>

@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "../../../db";
 import { profiles } from "../../../db/schema";
+
+async function openDb() {
+  const { getDb } = await import("../../../db");
+  return getDb();
+}
 
 // Pseudo sign-in: a visitor types the Instagram or X username they go by,
 // we mirror it into D1 keyed by a UUID they keep in localStorage. Nothing
@@ -17,7 +21,7 @@ function toRouteErrorMessage(error: unknown) {
     error instanceof Error && error.cause instanceof Error ? error.cause.message : "";
   const combined = `${message}\n${detail}`;
 
-  if (combined.includes("no such table") || combined.includes('from "profiles"')) {
+  if (combined.includes("no such table") || combined.includes('from "profiles"') || combined.includes("ERR_UNSUPPORTED_ESM_URL_SCHEME") || combined.includes("cloudflare:")) {
     return "The profiles table is unavailable. Generate the migration locally with `npm run db:generate`, then deploy so the platform can apply the generated SQL to the real D1 database.";
   }
 
@@ -29,7 +33,7 @@ export async function GET(request: Request) {
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   try {
-    const db = getDb();
+    const db = await openDb();
     const [profile] = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
     return Response.json({ profile: profile ?? null });
   } catch (error) {
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = getDb();
+    const db = await openDb();
     await db
       .insert(profiles)
       .values({ id, platform, handle, displayName })

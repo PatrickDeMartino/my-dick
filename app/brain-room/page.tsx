@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import OrangutanWidget from "../bongo/OrangutanWidget";
 import LabRatWidget from "./LabRatWidget";
 
@@ -60,14 +61,14 @@ export default function BrainRoom() {
   return <main className={`brain-room${pov ? " is-pov" : ""}${subject ? ` has-${subject}` : ""}`} ref={roomRef}>
     <div className="brain-room__backdrop" style={{ transform: cameraTransform }} data-mobile-background="/brain-room/brain-room-mobile.jpg" role="img" aria-label="A warm surreal sitting room built inside a living brain" />
     <div className="brain-room__shade" aria-hidden="true" />
-    <a className="brain-room__back" href="/">← HOME</a>
+    <Link className="brain-room__back" href="/">← HOME</Link>
     <header className="brain-room__title"><small>NEURAL PLAYROOM</small><h1>{pov ? "Walk the cortex" : "Choose a test subject"}</h1></header>
 
     {!pov && <nav className="brain-room__controls" aria-label="Brain room experiments">
       <button type="button" aria-pressed={subject === "bongo"} onClick={() => chooseSubject("bongo")}><img src="/media/dr-bongo-model-icon-v1.png" alt="" /><span><b>DR. BONGO</b><small>{subject === "bongo" ? "Return Bongo to containment" : "Activate full-room physics ragdoll"}</small></span></button>
       <button type="button" aria-pressed={subject === "rat"} onClick={() => chooseSubject("rat")}><img src="/media/lab-rat-ragdoll-v2.png" alt="" /><span><b>LAB RAT</b><small>{subject === "rat" ? "Return rat to cage" : "Activate articulated physics rat"}</small></span></button>
     </nav>}
-    {!pov && <a className="brain-room__full-lab" href="/bongo">OPEN STANDALONE BONGO LAB ↗</a>}
+    {!pov && <Link className="brain-room__full-lab" href="/bongo">OPEN STANDALONE BONGO LAB ↗</Link>}
 
     {subject && <button className="brain-room__pov" type="button" onClick={() => setPov((value) => !value)}>{pov ? "EXIT POV" : "SWITCH TO POV"}</button>}
     {subject === "bongo" && !pov && <div className="brain-room__bongo"><OrangutanWidget /></div>}

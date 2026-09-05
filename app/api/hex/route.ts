@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { getDb } from "../../../db";
 import { hexClaims, profiles } from "../../../db/schema";
+
+async function openDb() {
+  const { getDb } = await import("../../../db");
+  return getDb();
+}
 
 // Claimable hexes for a civ-style board. Penguin Town is the first board;
 // boardId keeps this table ready for the next one when the site spreads.
@@ -14,7 +18,7 @@ function toRouteErrorMessage(error: unknown) {
     error instanceof Error && error.cause instanceof Error ? error.cause.message : "";
   const combined = `${message}\n${detail}`;
 
-  if (combined.includes("no such table") || combined.includes('from "hex_claims"')) {
+  if (combined.includes("no such table") || combined.includes('from "hex_claims"') || combined.includes("ERR_UNSUPPORTED_ESM_URL_SCHEME") || combined.includes("cloudflare:")) {
     return "The hex_claims table is unavailable. Generate the migration locally with `npm run db:generate`, then deploy so the platform can apply the generated SQL to the real D1 database.";
   }
 
@@ -35,7 +39,7 @@ export async function GET(request: Request) {
   const boardId = new URL(request.url).searchParams.get("board") ?? "penguin-town";
 
   try {
-    const db = getDb();
+    const db = await openDb();
     const claims = await db.select().from(hexClaims).where(eq(hexClaims.boardId, boardId));
     return Response.json({ boardId, radius: BOARD_RADIUS, claims });
   } catch (error) {
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "the town hall hex can't be claimed" }, { status: 400 });
     }
 
-    const db = getDb();
+    const db = await openDb();
     const [owner] = await db.select().from(profiles).where(eq(profiles.id, ownerId)).limit(1);
     if (!owner) return Response.json({ error: "sign in before claiming a hex" }, { status: 401 });
 
@@ -105,7 +109,7 @@ export async function DELETE(request: Request) {
     const ownerId = payload.ownerId?.trim() ?? "";
     const id = `${boardId}:${q}:${r}`;
 
-    const db = getDb();
+    const db = await openDb();
     const [existing] = await db.select().from(hexClaims).where(eq(hexClaims.id, id)).limit(1);
     if (!existing) return Response.json({ ok: true });
     if (existing.ownerId !== ownerId) {

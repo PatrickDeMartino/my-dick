@@ -51,7 +51,8 @@ export default function ProfileGate({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setProfile(readStoredProfile());
+    const timer = window.setTimeout(() => setProfile(readStoredProfile()), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function signOut() {

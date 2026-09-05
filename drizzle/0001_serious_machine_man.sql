@@ -1,0 +1,1 @@
+CREATE INDEX `idx_hex_claims_board_id` ON `hex_claims` (`board_id`);

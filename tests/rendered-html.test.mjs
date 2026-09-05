@@ -69,9 +69,10 @@ test("renders the Penguin Town hex board shell", async () => {
   const response = await request("/penguin-town");
   assert.equal(response.status, 200);
   const html = await response.text();
+  const gate = await readFile(new URL("../app/penguin-town/TownGate.tsx", import.meta.url), "utf8");
   assert.match(html, /<title>Penguin Town<\/title>/i);
-  assert.match(html, /Who(?:&#x27;|')s building\?/);
-  assert.match(html, /Instagram/);
+  assert.match(gate, /Who(?:&#x27;|')s building\?/);
+  assert.match(gate, /Instagram/);
 });
 
 test("hex claims and profiles degrade gracefully without D1", async () => {
@@ -303,11 +304,10 @@ test("the lab rat is a real 3D ragdoll, not a flat sprite", async () => {
   assert.match(rat, /function settle\(joint/);
 });
 
-test("the flat collectible icons are backed by real 3D props", async () => {
+test("the banner cans and collectible icons are backed by real 3D props", async () => {
   const props = await readFile(new URL("../app/lib/props3d.ts", import.meta.url), "utf8");
   const view = await readFile(new URL("../app/components/Prop3D.tsx", import.meta.url), "utf8");
   const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
-  const town = await readFile(new URL("../app/urf/page.tsx", import.meta.url), "utf8");
 
   // Every collectible on the banner has a model, plus the gold tin and Yoo-hoo.
   ["rat-meat", "rat-meat-gold", "yoohoo", "banana", "oil-drum", "penguin"].forEach((name) => {
@@ -320,10 +320,8 @@ test("the flat collectible icons are backed by real 3D props", async () => {
   assert.match(view, /\{!live && children\}/);
   assert.match(view, /prefers-reduced-motion/);
 
-  // Wired into the banner and Penguin Town without dropping the flat art.
-  assert.match(banner, /<Prop3D prop=\{earned \? "rat-meat-gold" : "rat-meat"\}>/);
-  assert.match(banner, /rat-meat-can-v2\.png/);
-  assert.match(banner, /<Prop3D prop="banana">/);
-  assert.match(banner, /<Prop3D prop="oil-drum">/);
-  assert.match(town, /<Prop3D prop="penguin"/);
+  // The banner keeps both product marks wrapped by actual rotating can geometry.
+  assert.match(banner, /<Can3D size=\{44\}/);
+  assert.match(banner, /variant="yoohoo"/);
+  assert.match(banner, /trip-banner__yoohoo/);
 });

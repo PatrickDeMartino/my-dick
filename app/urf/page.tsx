@@ -3,7 +3,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import type { Globe3DHandle, Territory } from "./globe3d";
-import Prop3D from "../components/Prop3D";
+import PenguinTownScene3D from "./PenguinTownScene3D";
+import { JellyButtons } from "./JellyButtons";
+import { BuildingPopup } from "./BuildingPopup";
+import {
+  BUILDING_STORIES,
+  CIRCUS_STOCK,
+  RAT_MEAT_BALANCE_EVENT,
+  RAT_MEAT_STORAGE_KEY,
+  TELESCOPE_UPGRADE_STORAGE_KEY,
+  buildings,
+  createDefaultTownLayout,
+  flipperFlappington,
+  isValidSavedTownLayout,
+  nextRotation,
+  placementIssue,
+  terrainInventoryInstruction,
+  type GridPosition,
+  type PlacementPreview,
+  type Rotation,
+  type TownBuilding,
+  type TownDialogSubject,
+  type TownLayout,
+} from "./townData";
 
 type Point = [number, number];
 
@@ -85,7 +107,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const controller = new AbortController();
     fetch("/ne-110m-land.geojson", { signal: controller.signal })
       .then((response) => response.json())
-      .then((data: { features: { geometry: PolygonGeometry }[] }) => {
+      .then((raw) => {
+        const data = raw as { features: { geometry: PolygonGeometry }[] };
         const features = data.features.map(({ geometry }) => {
           const outerRing = geometry.coordinates[0] ?? [];
           const averageLatitude = outerRing.reduce((sum, [, lat]) => sum + lat, 0) / Math.max(outerRing.length, 1);
@@ -493,294 +516,6 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   );
 }
 
-type TownBuilding = {
-  id: string;
-  label: string;
-  hint: string;
-  terrain: PlaceableTerrain;
-  footprint: { width: number; height: number };
-  sheet: { column: number; row: number };
-  image?: string;
-  upgradeImage?: string;
-  start: { column: number; row: number };
-  visualScale: number;
-};
-
-const GRID_COLUMN_MIN = -12;
-const GRID_COLUMN_MAX = 47;
-const GRID_ROW_MIN = -12;
-const GRID_ROW_MAX = 47;
-const GRID_COLUMNS = GRID_COLUMN_MAX - GRID_COLUMN_MIN;
-const GRID_ROWS = GRID_ROW_MAX - GRID_ROW_MIN;
-const ISO_ORIGIN_X = 50;
-const ISO_ORIGIN_Y = 28.5;
-const ISO_CELL_X = 2.65;
-// This 2.94:1 percentage ratio renders as a roughly 2:1 isometric diamond
-// inside the map's 2:3 portrait frame, matching the painted cliff edges.
-const ISO_CELL_Y = 0.9;
-
-type TerrainType = "land" | "ocean" | "cliff" | "blocked";
-type PlaceableTerrain = Exclude<TerrainType, "blocked">;
-type TerrainPoint = readonly [x: number, y: number];
-
-type TerrainRegion = Readonly<{
-  surface: readonly TerrainPoint[];
-  bounds: readonly TerrainPoint[];
-}>;
-
-const BACKGROUND_OCEAN_EDGE: readonly TerrainPoint[] = [
-  [0, 32], [15, 31.5], [30, 29.5], [45, 28], [60, 26.5], [75, 26], [90, 29], [100, 32],
-];
-// The editor controls occupy the foreground below this line on both desktop
-// and the shorter mobile map, so those covered tiles are intentionally blocked.
-const FOREGROUND_BUILD_LIMIT_Y = 84.5;
-
-const TERRAIN_REGIONS = {
-  upperPlateau: {
-    surface: [[58.5, 33.5], [61, 30.5], [66, 28], [72, 29], [76, 32.5], [78, 36.5], [76, 39.5], [70, 39], [64, 36.5], [59, 36]],
-    bounds: [[57, 34], [60, 29.5], [66, 27.5], [72.5, 28.5], [77.5, 32.5], [80, 39], [79, 44], [75, 46], [69, 42], [63, 39], [58, 38.5]],
-  },
-  lowerIsland: {
-    surface: [[43, 36], [56, 34.5], [63, 36.5], [70, 38.5], [76, 40], [78, 43], [80, 50], [79, 56], [83, 61], [89, 65.5], [94, 69], [94, 73], [88, 75.5], [80, 79], [72, 86], [64, 86], [57, 83], [51, 79], [44, 78], [41, 75], [45, 70], [45, 67], [37, 68], [31, 66], [28, 63], [26, 59], [24, 54], [22, 51], [20, 47], [20, 43], [28, 40], [37, 38.5]],
-    bounds: [[42, 36], [56, 33.5], [64, 36], [71, 38], [77, 39], [80, 42], [82, 50], [81, 57], [85, 62], [92, 66], [96, 70], [96, 74], [90, 78], [82, 81], [73, 88], [64, 89], [56, 85], [50, 82], [43, 81], [39, 78], [40, 73], [43, 69], [36, 71], [30, 69], [26, 66], [24, 62], [22, 57], [20, 53], [18, 49], [17, 45], [20, 41], [28, 39], [36, 37.5]],
-  },
-} as const satisfies Record<string, TerrainRegion>;
-
-const buildings: TownBuilding[] = [
-  { id: "plane", label: "PLANE", hint: "Flight deck · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 0 }, image: "/buildings/plane.png", start: { column: 3, row: 12 }, visualScale: 2.05 },
-  { id: "telescope", label: "TELESCOPE", hint: "Observatory · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 0 }, image: "/buildings/telescope-wood.png", upgradeImage: "/buildings/telescope-metal.png", start: { column: 3, row: -4 }, visualScale: 2.18 },
-  { id: "magic", label: "CIRCUS", hint: "Questionable entertainment · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 1 }, image: "/buildings/circus.png", start: { column: 15, row: 6 }, visualScale: 1.9 },
-  { id: "igloo", label: "IGLOO", hint: "Housing · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 1, row: 1 }, image: "/buildings/igloo.png", start: { column: 28, row: 16 }, visualScale: 1.9 },
-  { id: "sweatshop", label: "SWEATSHOP", hint: "Production · 2×2", terrain: "land", footprint: { width: 2, height: 2 }, sheet: { column: 0, row: 2 }, image: "/buildings/sweatshop.png", start: { column: 14, row: 19 }, visualScale: 2.15 },
-  { id: "docks", label: "DOCKS & CARGO", hint: "Ocean route · 3×2", terrain: "ocean", footprint: { width: 3, height: 2 }, sheet: { column: 1, row: 2 }, image: "/buildings/cargo-ship-v2.png", start: { column: 10, row: -6 }, visualScale: 2.3 },
-  { id: "arena", label: "DOG-FIGHT ARENA", hint: "Fight club · 3×2", terrain: "land", footprint: { width: 3, height: 2 }, sheet: { column: 0, row: 3 }, image: "/buildings/dogfight-arena.png", start: { column: 31, row: 27 }, visualScale: 2.2 },
-];
-
-type TownDialogSubject = Pick<TownBuilding, "id" | "label">;
-const flipperFlappington: TownDialogSubject = { id: "flipper", label: "FLIPPER FLAPPINGTON" };
-
-const BUILDING_STORIES: Record<string, { character: string; name: string; role: string; description: string }> = {
-  plane: { character: "/evil-penguin.jpg", name: "CAPTAIN FLAPS", role: "BUSH PILOT", description: "A ski-plane with more optimism than fuel." },
-  telescope: { character: "/media/alien-astronomer-v1.png", name: "ZORB", role: "VISITING ASTRONOMER", description: "aliens... for sure" },
-  magic: { character: "/evil-penguin.jpg", name: "RINGMASTER WADDLES", role: "EXOTIC ANIMAL DEALER", description: "Questionable creatures. Surprisingly reasonable prices." },
-  igloo: { character: "/media/dr-bongo-model-icon-v1.png", name: "DR. BONGO", role: "DRONE SALESMAN", description: "A warm igloo, a cold lab, and one deeply ambitious ape." },
-  sweatshop: { character: "/penguinaroo.png", name: "PENGUINAROO", role: "SWEATSHOP OWNER", description: "Production never sleeps. The workers would like to." },
-  docks: { character: "/media/lab-rat-v1.png", name: "CAPTAIN SQUEAK", role: "RAT FARMER", description: "The cargo route is moving. The rats are multiplying." },
-  arena: { character: "/vicheal-nic.jpg", name: "VICHEAL NIC", role: "DOG-FIGHTER", description: "A frozen arena for extremely questionable athletics." },
-};
-
-const CIRCUS_STOCK = [
-  ["Lion", 7], ["Elephant", 13], ["Fighter Dog", 9], ["Meat Dog", 5], ["Rats", 3], ["Birds", 3],
-  ["Pigeons", 3], ["Seagulls", 4], ["Parrots", 6], ["Quad-copter Drones", 10], ["Drone Swarms", 12], ["Fully Autonomous Robot Army", 13],
-] as const;
-
-type GridPosition = { column: number; row: number };
-type TownLayout = Record<string, GridPosition & { stored: boolean }>;
-type PlacementPreview = GridPosition & { id: string; valid: boolean };
-
-const createDefaultTownLayout = (): TownLayout => Object.fromEntries(
-  buildings.map((building) => [building.id, { ...building.start, stored: false }]),
-);
-
-const pointInPolygon = ([x, y]: TerrainPoint, polygon: readonly TerrainPoint[]): boolean => {
-  let inside = false;
-  for (let current = 0, previous = polygon.length - 1; current < polygon.length; previous = current, current += 1) {
-    const [currentX, currentY] = polygon[current];
-    const [previousX, previousY] = polygon[previous];
-    const crossesRay = (currentY > y) !== (previousY > y)
-      && x < ((previousX - currentX) * (y - currentY)) / (previousY - currentY) + currentX;
-    if (crossesRay) inside = !inside;
-  }
-  return inside;
-};
-
-const backgroundOceanEdgeAt = (screenX: number): number => {
-  const clampedX = Math.max(0, Math.min(100, screenX));
-  for (let index = 1; index < BACKGROUND_OCEAN_EDGE.length; index += 1) {
-    const [leftX, leftY] = BACKGROUND_OCEAN_EDGE[index - 1];
-    const [rightX, rightY] = BACKGROUND_OCEAN_EDGE[index];
-    if (clampedX <= rightX) {
-      const progress = (clampedX - leftX) / (rightX - leftX);
-      return leftY + (rightY - leftY) * progress;
-    }
-  }
-  return BACKGROUND_OCEAN_EDGE[BACKGROUND_OCEAN_EDGE.length - 1][1];
-};
-
-const terrainAt = (column: number, row: number): TerrainType => {
-  const screenX = ISO_ORIGIN_X + (column - row) * ISO_CELL_X;
-  const screenY = ISO_ORIGIN_Y + (column + row + 1) * ISO_CELL_Y;
-  const point: TerrainPoint = [screenX, screenY];
-
-  if (pointInPolygon(point, TERRAIN_REGIONS.upperPlateau.surface)) return "land";
-  if (pointInPolygon(point, TERRAIN_REGIONS.upperPlateau.bounds)) return "cliff";
-  if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.surface)) return "land";
-  if (pointInPolygon(point, TERRAIN_REGIONS.lowerIsland.bounds)) return "cliff";
-  if (screenX < 0 || screenX > 100 || screenY < backgroundOceanEdgeAt(screenX) || screenY > FOREGROUND_BUILD_LIMIT_Y) return "blocked";
-  return "ocean";
-};
-
-const terrainPlacementIssue = (terrain: PlaceableTerrain): string => {
-  if (terrain === "ocean") return "THE CARGO BOAT NEEDS OPEN OCEAN";
-  if (terrain === "cliff") return "THIS STRUCTURE NEEDS AN OPEN CLIFF TILE";
-  return "LAND BUILDINGS NEED SOLID SNOW";
-};
-
-const terrainMoveInstruction = (terrain: PlaceableTerrain): string => {
-  if (terrain === "ocean") return "MOVE OVER OPEN OCEAN · TAP TO PLACE";
-  if (terrain === "cliff") return "MOVE OVER AN OPEN CLIFF TILE · TAP TO PLACE";
-  return "MOVE OVER OPEN SNOW · TAP TO PLACE";
-};
-
-const terrainInventoryInstruction = (terrain: PlaceableTerrain): string => {
-  if (terrain === "ocean") return "THE CARGO BOAT CAN ONLY USE OCEAN CELLS";
-  if (terrain === "cliff") return "THIS STRUCTURE CAN ONLY USE CLIFF CELLS";
-  return "LAND BUILDINGS REQUIRE OPEN SNOW CELLS";
-};
-
-const placementIssue = (building: TownBuilding, position: GridPosition, layout: TownLayout): string | null => {
-  const cells: string[] = [];
-  for (let row = position.row; row < position.row + building.footprint.height; row += 1) {
-    for (let column = position.column; column < position.column + building.footprint.width; column += 1) {
-      if (column < GRID_COLUMN_MIN || row < GRID_ROW_MIN || column >= GRID_COLUMN_MAX || row >= GRID_ROW_MAX) return "OUTSIDE THE BUILD GRID";
-      if (terrainAt(column, row) !== building.terrain) {
-        return terrainPlacementIssue(building.terrain);
-      }
-      cells.push(`${column}:${row}`);
-    }
-  }
-
-  const occupied = new Set<string>();
-  for (const other of buildings) {
-    if (other.id === building.id || layout[other.id]?.stored) continue;
-    const placed = layout[other.id];
-    if (!placed) continue;
-    for (let row = placed.row; row < placed.row + other.footprint.height; row += 1) {
-      for (let column = placed.column; column < placed.column + other.footprint.width; column += 1) {
-        occupied.add(`${column}:${row}`);
-      }
-    }
-  }
-  return cells.some((cell) => occupied.has(cell)) ? "THAT SPACE IS OCCUPIED" : null;
-};
-
-const isCellAvailable = (building: TownBuilding, column: number, row: number, layout: TownLayout): boolean => {
-  if (terrainAt(column, row) !== building.terrain) return false;
-  return !buildings.some((other) => {
-    if (other.id === building.id || layout[other.id]?.stored) return false;
-    const placed = layout[other.id];
-    if (!placed) return false;
-    return column >= placed.column
-      && column < placed.column + other.footprint.width
-      && row >= placed.row
-      && row < placed.row + other.footprint.height;
-  });
-};
-
-const gridPositionFromPointer = (building: TownBuilding, clientX: number, clientY: number, map: DOMRect): GridPosition => {
-  const screenX = ((clientX - map.left) / map.width) * 100;
-  const screenY = ((clientY - map.top) / map.height) * 100;
-  const deltaX = (screenX - ISO_ORIGIN_X) / ISO_CELL_X;
-  const deltaY = (screenY - ISO_ORIGIN_Y) / ISO_CELL_Y;
-  const centerColumn = (deltaY + deltaX) / 2;
-  const centerRow = (deltaY - deltaX) / 2;
-  return {
-    column: Math.max(GRID_COLUMN_MIN, Math.min(GRID_COLUMN_MAX - building.footprint.width, Math.round(centerColumn - building.footprint.width / 2))),
-    row: Math.max(GRID_ROW_MIN, Math.min(GRID_ROW_MAX - building.footprint.height, Math.round(centerRow - building.footprint.height / 2))),
-  };
-};
-
-const buildingScreenPosition = (building: TownBuilding, position: GridPosition) => {
-  const centerColumn = position.column + building.footprint.width / 2;
-  const centerRow = position.row + building.footprint.height / 2;
-  return {
-    left: ISO_ORIGIN_X + (centerColumn - centerRow) * ISO_CELL_X,
-    top: ISO_ORIGIN_Y + (centerColumn + centerRow) * ISO_CELL_Y,
-    width: (building.footprint.width + building.footprint.height) * ISO_CELL_X,
-    height: (building.footprint.width + building.footprint.height) * ISO_CELL_Y,
-    depth: Math.round((centerColumn + centerRow) * 10),
-  };
-};
-
-const isValidSavedTownLayout = (layout: TownLayout): boolean => buildings.every((building) => {
-  const position = layout[building.id];
-  if (!position || !Number.isInteger(position.column) || !Number.isInteger(position.row) || typeof position.stored !== "boolean") return false;
-  return position.stored || placementIssue(building, position, layout) === null;
-});
-
-function BuildingSprite({ building, telescopeUpgraded = false }: { building: TownBuilding; telescopeUpgraded?: boolean }) {
-  const { sheet } = building;
-  const directImage = telescopeUpgraded && building.upgradeImage ? building.upgradeImage : building.image;
-  if (directImage) {
-    return (
-      <span className="building-sprite is-direct" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
-        <img src={directImage} alt="" draggable={false} />
-      </span>
-    );
-  }
-  if (building.id === "docks") {
-    return (
-      <span className="building-sprite ship-sprite" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
-        <TransparentShipSprite />
-      </span>
-    );
-  }
-  return (
-    <span className="building-sprite" style={{ width: `${building.visualScale * 100}%` }} aria-hidden="true">
-      <img
-        src="/penguin-building-sprites-alpha-v2.png"
-        alt=""
-        draggable={false}
-        style={{
-          width: "200%",
-          height: "400%",
-          left: `${-100 * sheet.column}%`,
-          top: `${-100 * sheet.row}%`,
-        }}
-      />
-    </span>
-  );
-}
-
-function TransparentShipSprite() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const image = new Image();
-    image.src = "/penguin-building-sprites-alpha-v2.png";
-    image.onload = () => {
-      const sourceX = image.naturalWidth / 2;
-      const sourceY = image.naturalHeight / 2;
-      const sourceWidth = image.naturalWidth / 2;
-      const sourceHeight = image.naturalHeight / 4;
-      canvas.width = Math.round(sourceWidth);
-      canvas.height = Math.round(sourceHeight);
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      if (!context) return;
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-      for (let index = 0; index < pixels.data.length; index += 4) {
-        const red = pixels.data[index];
-        const green = pixels.data[index + 1];
-        const blue = pixels.data[index + 2];
-        const brightest = Math.max(red, green, blue);
-        const darkest = Math.min(red, green, blue);
-        if (darkest >= 235 && brightest - darkest <= 7) pixels.data[index + 3] = 0;
-      }
-      context.putImageData(pixels, 0, 0);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="ship-sprite-canvas" />;
-}
-
-const RAT_MEAT_STORAGE_KEY = "trip.rat-meat.v1";
-const RAT_MEAT_BALANCE_EVENT = "trip-rat-meat-balance-changed";
-const TELESCOPE_UPGRADE_STORAGE_KEY = "trip.telescope-upgrade.v1";
-
 function PenguinTown({ onBack }: { onBack: () => void }) {
   const [selectedBuilding, setSelectedBuilding] = useState<TownDialogSubject | null>(null);
   const [activeBuildingId, setActiveBuildingId] = useState<string | null>(null);
@@ -794,7 +529,6 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const [showDogFightGame, setShowDogFightGame] = useState(false);
   const [purchases, setPurchases] = useState<string[]>([]);
   const [farmCooldown, setFarmCooldown] = useState(0);
-  const dragRef = useRef<{ id: string; pointerId: number; map: DOMRect; preview: PlacementPreview } | null>(null);
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
   const isFlipper = selectedBuilding?.id === "flipper";
@@ -803,28 +537,45 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   const isIgloo = selectedBuilding?.id === "igloo";
   const isDocks = selectedBuilding?.id === "docks";
   const activeBuilding = buildings.find((building) => building.id === activeBuildingId) ?? null;
-  const placingBuilding = buildings.find((building) => building.id === placingBuildingId) ?? null;
-  const movingBuilding = placementPreview ? buildings.find((building) => building.id === placementPreview.id) ?? null : null;
   const storedBuildings = buildings.filter((building) => townLayout[building.id]?.stored);
   const displayBuildingLabel = (building: TownBuilding) => building.id === "telescope" && telescopeUpgraded ? "METAL TELESCOPE" : building.label;
 
+  // Each resident gets their own painted backdrop behind the dialog portrait —
+  // an "oil painting" vibe unique to their story, not just a shared studio flat.
+  const DIALOG_THEME: Record<string, string> = {
+    plane: "theme-jungle-strip",
+    telescope: "theme-cosmic",
+    magic: "theme-tropical-tent",
+    igloo: "theme-jungle-lab",
+    sweatshop: "theme-factory",
+    docks: "theme-harbor",
+    arena: "theme-back-alley",
+    flipper: "theme-beach",
+  };
+
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("trip.penguin-town-layout.v10");
-      if (!saved) return;
-      const parsed = JSON.parse(saved) as TownLayout;
-      if (isValidSavedTownLayout(parsed)) setTownLayout(parsed);
-    } catch {
-      // Keep the safe default layout if an old local save is malformed.
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem("trip.penguin-town-layout.v10");
+        if (!saved) return;
+        const parsed = JSON.parse(saved) as TownLayout;
+        if (isValidSavedTownLayout(parsed)) setTownLayout(parsed);
+      } catch {
+        // Keep the safe default layout if an old local save is malformed.
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    try {
-      setTelescopeUpgraded(window.localStorage.getItem(TELESCOPE_UPGRADE_STORAGE_KEY) === "metal");
-    } catch {
-      // Keep the wooden telescope when storage is unavailable.
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        setTelescopeUpgraded(window.localStorage.getItem(TELESCOPE_UPGRADE_STORAGE_KEY) === "metal");
+      } catch {
+        // Keep the wooden telescope when storage is unavailable.
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -836,7 +587,10 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
   }, [townLayout]);
 
   useEffect(() => {
-    try { setPurchases(JSON.parse(window.localStorage.getItem("trip.town-purchases.v1") ?? "[]") as string[]); } catch { /* start empty */ }
+    const timer = window.setTimeout(() => {
+      try { setPurchases(JSON.parse(window.localStorage.getItem("trip.town-purchases.v1") ?? "[]") as string[]); } catch { /* start empty */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -849,7 +603,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     const boat = buildings.find((building) => building.id === "docks");
     if (!boat) return;
     const timer = window.setInterval(() => {
-      if (dragRef.current?.id === "docks" || activeBuildingId === "docks" || selectedBuilding?.id === "docks") return;
+      if (placingBuildingId === "docks" || activeBuildingId === "docks" || selectedBuilding?.id === "docks") return;
       setTownLayout((current) => {
         const position = current.docks;
         if (!position || position.stored) return current;
@@ -858,13 +612,13 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         for (let offset = 0; offset < directions.length; offset += 1) {
           const direction = directions[(start + offset) % directions.length];
           const next = { column: position.column + direction.column, row: position.row + direction.row };
-          if (!placementIssue(boat, next, current)) return { ...current, docks: { ...next, stored: false } };
+          if (!placementIssue(boat, next, current, position.rotation)) return { ...current, docks: { ...next, stored: false, rotation: position.rotation } };
         }
         return current;
       });
     }, 10000);
     return () => window.clearInterval(timer);
-  }, [activeBuildingId, selectedBuilding]);
+  }, [activeBuildingId, selectedBuilding, placingBuildingId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -884,74 +638,47 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [placingBuildingId, selectedBuilding, showDogFightGame]);
 
-  const beginBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>, id: string) => {
-    if (placingBuildingId) return;
-    event.stopPropagation();
-    const map = event.currentTarget.closest(".town-map")?.getBoundingClientRect();
+  // Building placement in the 3D scene works in two steps: arm it (from the
+  // inventory list, or the "MOVE" button on an already-placed building),
+  // then PenguinTownScene3D drives the live preview via these callbacks as
+  // the player orbits/taps around the island and reports what happened.
+  const startPlacing = (id: string) => {
     const building = buildings.find((candidate) => candidate.id === id);
-    const current = townLayout[id];
-    if (!map || !building || !current) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const preview = { id, column: current.column, row: current.row, valid: true };
-    dragRef.current = { id, pointerId: event.pointerId, map, preview };
-    setPlacementPreview(preview);
-    setEditorMessage(null);
+    const position = townLayout[id] ?? (building ? { ...building.start, stored: false, rotation: 0 as Rotation } : undefined);
+    setPlacingBuildingId(id);
+    setActiveBuildingId(null);
+    if (building && position) {
+      const rotation = position.rotation ?? 0;
+      setPlacementPreview({ id, column: position.column, row: position.row, rotation, valid: !placementIssue(building, position, townLayout, rotation) });
+      setEditorMessage(terrainInventoryInstruction(building.terrain));
+    }
+  };
+
+  const handleSelectBuilding = (id: string) => {
+    if (placingBuildingId) return;
     setActiveBuildingId(id);
   };
 
-  const continueBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const building = buildings.find((candidate) => candidate.id === drag.id);
-    if (!building) return;
-    const position = gridPositionFromPointer(building, event.clientX, event.clientY, drag.map);
-    const issue = placementIssue(building, position, townLayout);
-    const preview = { id: drag.id, ...position, valid: !issue };
-    drag.preview = preview;
+  const handlePlacementPreview = (preview: PlacementPreview | null) => {
     setPlacementPreview(preview);
-    setEditorMessage(issue);
   };
 
-  const finishBuildingDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (drag.preview.valid) {
-      setTownLayout((current) => ({
-        ...current,
-        [drag.id]: { column: drag.preview.column, row: drag.preview.row, stored: false },
-      }));
-      setEditorMessage("PLACED ON GRID");
-    }
-    dragRef.current = null;
-    setPlacementPreview(null);
+  const handlePlacementMessage = (message: string | null) => {
+    setEditorMessage(message);
   };
 
-  const previewInventoryPlacement = (event: React.PointerEvent<HTMLElement>) => {
+  const handleRotatePlacement = () => {
     if (!placingBuildingId) return;
     const building = buildings.find((candidate) => candidate.id === placingBuildingId);
-    if (!building) return;
-    const position = gridPositionFromPointer(building, event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
-    const issue = placementIssue(building, position, townLayout);
-    setPlacementPreview({ id: building.id, ...position, valid: !issue });
-    setEditorMessage(issue);
+    if (!building || !placementPreview) return;
+    const rotation = nextRotation(placementPreview.rotation);
+    const position = { column: placementPreview.column, row: placementPreview.row };
+    setPlacementPreview({ id: placingBuildingId, column: position.column, row: position.row, rotation, valid: !placementIssue(building, position, townLayout, rotation) });
   };
 
-  const placeFromInventory = (event: React.PointerEvent<HTMLElement>) => {
-    if (!placingBuildingId) {
-      if (event.target === event.currentTarget) setActiveBuildingId(null);
-      return;
-    }
-    const building = buildings.find((candidate) => candidate.id === placingBuildingId);
-    if (!building) return;
-    const position = gridPositionFromPointer(building, event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
-    const issue = placementIssue(building, position, townLayout);
-    if (issue) {
-      setEditorMessage(issue);
-      setPlacementPreview({ id: building.id, ...position, valid: false });
-      return;
-    }
-    setTownLayout((current) => ({ ...current, [placingBuildingId]: { ...position, stored: false } }));
-    setActiveBuildingId(placingBuildingId);
+  const handleCommitPlacement = (id: string, position: GridPosition, rotation: Rotation) => {
+    setTownLayout((current) => ({ ...current, [id]: { ...position, stored: false, rotation } }));
+    setActiveBuildingId(id);
     setPlacingBuildingId(null);
     setPlacementPreview(null);
     setEditorMessage("PLACED ON GRID");
@@ -964,28 +691,6 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
       setWorkersFed(false);
       setRationError(false);
     }
-  };
-
-  const moveBuildingWithKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>, building: TownBuilding) => {
-    const direction = {
-      ArrowLeft: { column: -1, row: 0 },
-      ArrowRight: { column: 1, row: 0 },
-      ArrowUp: { column: 0, row: -1 },
-      ArrowDown: { column: 0, row: 1 },
-    }[event.key];
-    if (!direction) return;
-    event.preventDefault();
-    const current = townLayout[building.id];
-    if (!current) return;
-    const position = { column: current.column + direction.column, row: current.row + direction.row };
-    const issue = placementIssue(building, position, townLayout);
-    if (issue) {
-      setEditorMessage(issue);
-      return;
-    }
-    setTownLayout((layout) => ({ ...layout, [building.id]: { ...position, stored: false } }));
-    setActiveBuildingId(building.id);
-    setEditorMessage("MOVED ONE GRID CELL");
   };
 
   const feedWorkers = () => {
@@ -1060,126 +765,77 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
     } catch { setEditorMessage("RAT FARM OFFLINE"); }
   };
 
+  const popupOpen = Boolean(activeBuilding && !townLayout[activeBuilding.id]?.stored);
+
   return (
     <main className="town-screen">
+      <div className="town-frame">
+        <div className="town-side-art town-side-art-left" aria-hidden="true" />
       <section
         className={`town-map${placingBuildingId ? " is-placing" : ""}`}
         aria-label="Penguin Town base editor"
-        onPointerDown={placeFromInventory}
-        onPointerMove={previewInventoryPlacement}
       >
-        <img className="town-art" src="/penguin-town-ground-v4.png" alt="A snowy Antarctic island with a broad lower snowfield, an elevated plateau, exposed cliff walls, and open ocean" draggable={false} />
+        <PenguinTownScene3D
+          townLayout={townLayout}
+          telescopeUpgraded={telescopeUpgraded}
+          activeBuildingId={activeBuildingId}
+          placingBuildingId={placingBuildingId}
+          placementRotation={placementPreview?.rotation ?? 0}
+          popupOpen={popupOpen}
+          onSelectBuilding={handleSelectBuilding}
+          onPlacementPreview={handlePlacementPreview}
+          onCommitPlacement={handleCommitPlacement}
+          onPlacementMessage={handlePlacementMessage}
+        />
         <div className="town-vignette" aria-hidden="true" />
-        <div className="ocean-life" aria-hidden="true"><span className="ocean-wave wave-one" /><span className="ocean-wave wave-two" /><span className="ocean-dolphin">🐬</span><span className="ocean-squid">🦑</span></div>
         <header className="town-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
-          <Prop3D prop="penguin" className="town-header__penguin" /><div><small>FULL-TERRAIN ISOMETRIC GRID</small><h1>PENGUIN TOWN</h1></div>
+          <div><small>ANTARCTIC COASTAL DISTRICT · DRAG TO LEAN THE CAMERA</small><h1>PENGUIN TOWN <em>V2</em></h1></div>
         </header>
-        <div className={`town-grid${placementPreview ? " is-active" : ""}`} aria-hidden="true">
-          {Array.from({ length: GRID_COLUMNS * GRID_ROWS }, (_, index) => {
-            const column = GRID_COLUMN_MIN + (index % GRID_COLUMNS);
-            const row = GRID_ROW_MIN + Math.floor(index / GRID_COLUMNS);
-            const terrain = terrainAt(column, row);
-            if (terrain === "blocked") return null;
-            const isCandidate = Boolean(placementPreview
-              && column >= placementPreview.column
-              && column < placementPreview.column + (movingBuilding?.footprint.width ?? 0)
-              && row >= placementPreview.row
-              && row < placementPreview.row + (movingBuilding?.footprint.height ?? 0));
-            const cellState = movingBuilding ? (isCellAvailable(movingBuilding, column, row, townLayout) ? " is-placeable" : " is-blocked") : "";
-            const candidateState = isCandidate ? (placementPreview?.valid ? " is-candidate-valid" : " is-candidate-invalid") : "";
-            return (
-              <span
-                key={`${column}:${row}`}
-                className={`terrain-${terrain}${cellState}${candidateState}`}
-                data-terrain={terrain}
-                style={{
-                  left: `${ISO_ORIGIN_X + (column - row) * ISO_CELL_X - ISO_CELL_X}%`,
-                  top: `${ISO_ORIGIN_Y + (column + row) * ISO_CELL_Y}%`,
-                  width: `${ISO_CELL_X * 2}%`,
-                  height: `${ISO_CELL_Y * 2}%`,
-                }}
-              />
-            );
-          })}
-        </div>
-        <div className="building-layer">
-          {buildings.filter((building) => !townLayout[building.id]?.stored).map((building) => {
-            const savedPosition = townLayout[building.id] ?? { ...building.start, stored: false };
-            const position = placementPreview?.id === building.id ? placementPreview : savedPosition;
-            const screen = buildingScreenPosition(building, position);
-            const isInvalid = placementPreview?.id === building.id && !placementPreview.valid;
-            return (
-            <button
-              type="button"
-              key={building.id}
-              className={`building-hotspot${activeBuildingId === building.id ? " is-selected" : ""}${placementPreview?.id === building.id ? " is-moving" : ""}${isInvalid ? " is-invalid" : ""}`}
-              data-building={building.id}
-              style={{
-                left: `${screen.left}%`,
-                top: `${screen.top}%`,
-                width: `${screen.width}%`,
-                height: `${screen.height}%`,
-                zIndex: placementPreview?.id === building.id ? 900 : screen.depth,
-              }}
-              onPointerDown={(event) => beginBuildingDrag(event, building.id)}
-              onPointerMove={continueBuildingDrag}
-              onPointerUp={finishBuildingDrag}
-              onPointerCancel={finishBuildingDrag}
-              onKeyDown={(event) => moveBuildingWithKeyboard(event, building)}
-              aria-label={`Select and move ${building.label}`}
-              aria-pressed={activeBuildingId === building.id}
-            >
-              <BuildingSprite building={building} telescopeUpgraded={telescopeUpgraded} />
-              <span className="building-label"><b>{displayBuildingLabel(building)}</b><small>{building.hint}</small></span>
-            </button>
-          );})}
-          {placingBuilding && placementPreview && townLayout[placingBuilding.id]?.stored && (
-            (() => {
-              const screen = buildingScreenPosition(placingBuilding, placementPreview);
-              return <div
-              className={`building-hotspot placement-ghost${placementPreview.valid ? " is-valid" : " is-invalid"}`}
-              data-building={placingBuilding.id}
-              style={{
-                left: `${screen.left}%`,
-                top: `${screen.top}%`,
-                width: `${screen.width}%`,
-                height: `${screen.height}%`,
-                zIndex: 900,
-              }}
-            >
-              <BuildingSprite building={placingBuilding} telescopeUpgraded={telescopeUpgraded} />
-            </div>;
-            })()
-          )}
-        </div>
+
+        <aside className="town-district-status" aria-label="Town status" onPointerDown={(event) => event.stopPropagation()}>
+          <span><i /> 7 SHADY LANDMARKS</span>
+          <span>RAT-MEAT ECONOMY</span>
+          <span>NO LAW · NO REFUNDS</span>
+        </aside>
 
         {activeBuilding && !townLayout[activeBuilding.id]?.stored && (
-          <aside className="town-selection-card" aria-live="polite" aria-label={`${activeBuilding.label} controls`} onPointerDown={(event) => event.stopPropagation()}>
-            <div className="town-selection-character"><img src={BUILDING_STORIES[activeBuilding.id].character} alt="" /></div>
-            <div className="town-selection-copy">
-              <div className="town-selection-kicker"><small>{BUILDING_STORIES[activeBuilding.id].role}</small><span>SELECTED · {displayBuildingLabel(activeBuilding)}</span></div>
-              <b>{BUILDING_STORIES[activeBuilding.id].name}</b>
-              <p>{BUILDING_STORIES[activeBuilding.id].description}</p>
-            </div>
-            <div className="town-selection-actions">
-              {activeBuilding.id === "telescope" && !telescopeUpgraded && (
-                <button type="button" className="upgrade-building" onClick={upgradeTelescope}>UPGRADE · 69</button>
-              )}
-              <button type="button" onClick={() => visitBuilding(activeBuilding)}>ENTER</button>
-              <button type="button" className="remove-building" onClick={() => {
-                setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
-                setActiveBuildingId(null);
-                setPlacementPreview(null);
-                setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
-              }}>REMOVE</button>
-            </div>
-          </aside>
+          <div onPointerDown={(event) => event.stopPropagation()}>
+            <BuildingPopup
+              character={BUILDING_STORIES[activeBuilding.id].character}
+              role={BUILDING_STORIES[activeBuilding.id].role}
+              name={displayBuildingLabel(activeBuilding)}
+              onClose={() => setActiveBuildingId(null)}
+              buttons={[
+                ...(activeBuilding.id === "telescope" && !telescopeUpgraded
+                  ? [{ key: "upgrade", label: "UPGRADE · 69", tone: "gold" as const, onClick: upgradeTelescope }]
+                  : []),
+                { key: "enter", label: "ENTER", tone: "primary" as const, onClick: () => visitBuilding(activeBuilding) },
+                { key: "move", label: "MOVE", onClick: () => startPlacing(activeBuilding.id) },
+                {
+                  key: "remove",
+                  label: "REMOVE",
+                  tone: "danger" as const,
+                  onClick: () => {
+                    setTownLayout((current) => ({ ...current, [activeBuilding.id]: { ...current[activeBuilding.id], stored: true } }));
+                    setActiveBuildingId(null);
+                    setPlacementPreview(null);
+                    setEditorMessage(`${activeBuilding.label} MOVED TO INVENTORY`);
+                  },
+                },
+              ]}
+            />
+          </div>
         )}
 
         {(placingBuildingId || editorMessage) && (
           <div className={`placement-hint${activeBuilding ? " with-editor" : ""}${placementPreview && !placementPreview.valid ? " is-error" : ""}`} aria-live="polite">
-            {editorMessage ?? (placingBuilding ? terrainMoveInstruction(placingBuilding.terrain) : "SELECT A BUILDING TO MOVE")}
+            {editorMessage ?? "SELECT A BUILDING TO MOVE"}
+            {placingBuildingId && (
+              <button type="button" className="rotate-placement" onClick={handleRotatePlacement} aria-label="Rotate building 90 degrees" onPointerDown={(event) => event.stopPropagation()}>
+                ⟳ ROTATE
+              </button>
+            )}
           </div>
         )}
 
@@ -1204,16 +860,10 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 type="button"
                 key={building.id}
                 className={placingBuildingId === building.id ? "is-active" : ""}
-                onClick={() => {
-                  setPlacingBuildingId(building.id);
-                  setActiveBuildingId(null);
-                  const position = townLayout[building.id] ?? building.start;
-                  setPlacementPreview({ id: building.id, column: position.column, row: position.row, valid: !placementIssue(building, position, townLayout) });
-                  setEditorMessage(terrainInventoryInstruction(building.terrain));
-                }}
+                onClick={() => startPlacing(building.id)}
                 aria-label={`Place ${building.label}`}
               >
-                <BuildingSprite building={building} telescopeUpgraded={telescopeUpgraded} />
+                <img className="inventory-thumb" src={telescopeUpgraded && building.upgradeImage ? building.upgradeImage : building.image} alt="" />
                 <span>{displayBuildingLabel(building)}</span>
               </button>
             ))}
@@ -1221,6 +871,8 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
           </div>
         </nav>
       </section>
+        <div className="town-side-art town-side-art-right" aria-hidden="true" />
+      </div>
 
       {selectedBuilding && (
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
@@ -1228,7 +880,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
         }}>
           <section className={`penguin-dialog${isSweatshop ? " sweatshop-dialog" : ""}${isDogFighter ? " dog-fighter-dialog" : ""}${isFlipper ? " flipper-dialog" : ""}${isTelescope ? " alien-dialog" : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
             <button className="dialog-close" type="button" onClick={() => setSelectedBuilding(null)} aria-label="Close dialogue">×</button>
-            <div className="dialog-character">
+            <div className={`dialog-character ${DIALOG_THEME[selectedBuilding.id] ?? "theme-studio"}`}>
               <span className="bad-tape" aria-hidden="true" />
               <img
                 src={selectedBuilding.id === "flipper" ? "/evil-penguin.jpg" : BUILDING_STORIES[selectedBuilding.id]?.character ?? "/evil-penguin.jpg"}
@@ -1246,17 +898,15 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               </div>
               {isSweatshop ? (
                 <>
-                  <h2 id="dialog-title">Shift briefing.</h2>
-                  <p>&ldquo;a starving worker is a slow worker&rdquo;</p>
+                  <h2 id="dialog-title">Shift briefing from hell.</h2>
+                  <p>&ldquo;a starving worker is a slow worker. give the bastards one can and get the line moving.&rdquo;</p>
                   <div className="worker-ration">
                     <div className={`rat-meat-can${workersFed ? " rat-meat-can-fed" : ""}`} aria-label="A can of Rat Meat">
                       <small>GENUINE</small>
                       <b>RAT<br />MEAT</b>
                       <span>WORKER RATION</span>
                     </div>
-                    <button type="button" onClick={feedWorkers} disabled={workersFed}>
-                      {workersFed ? "WORKERS FED" : "FEED THE WORKERS"} <span>→</span>
-                    </button>
+                    <JellyButtons buttons={[{ key: "feed", label: workersFed ? "FED" : "FEED", tone: "primary", disabled: workersFed, onClick: feedWorkers }]} minHeight={100} />
                   </div>
                   <div className="ration-status" role="status" aria-live="polite">
                     {workersFed
@@ -1270,34 +920,31 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
                 <>
                   <h2 id="dialog-title">Pre-fight wisdom.</h2>
                   <p>&ldquo;you can take the nigga out of the hood, but you can&apos;t take the hood out of the nigga&rdquo;</p>
-                  <button type="button" onClick={() => {
-                    setSelectedBuilding(null);
-                    setShowDogFightGame(true);
-                  }}>FIGHT ! <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "fight", label: "FIGHT!", tone: "danger", onClick: () => { setSelectedBuilding(null); setShowDogFightGame(true); } }]} minHeight={100} />
                 </>
               ) : isFlipper ? (
                 <>
                   <h2 id="dialog-title">Flipper Flappington.</h2>
                   <p>&ldquo;Suck my penguin cock&rdquo;</p>
-                  <button type="button" onClick={() => setSelectedBuilding(null)}>BACK TO TOWN <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "back", label: "BACK", tone: "primary", onClick: () => setSelectedBuilding(null) }]} minHeight={100} />
                 </>
               ) : isTelescope ? (
                 <>
                   <h2 id="dialog-title">Deep-space field report.</h2>
-                  <p>&ldquo;aliens... for sure&rdquo;</p>
-                  {!telescopeUpgraded && <button type="button" onClick={upgradeTelescope}>UPGRADE TO METAL · 69 <span>→</span></button>}
+                  <p>&ldquo;aliens... for sure. nasty little fuckers, too.&rdquo;</p>
+                  {!telescopeUpgraded && <JellyButtons buttons={[{ key: "upgrade", label: "UPGRADE · 69", tone: "gold", onClick: upgradeTelescope }]} minHeight={100} />}
                 </>
               ) : isIgloo ? (
                 <>
-                  <h2 id="dialog-title">Dr. Bongo&apos;s drone depot.</h2>
-                  <p>&ldquo;Three cans and the sky belongs to the apes.&rdquo;</p>
+                  <h2 id="dialog-title">Dr. Bongo&apos;s igloo war room.</h2>
+                  <p>&ldquo;Three cans and the sky belongs to the apes. Try not to stand under the armed ones.&rdquo;</p>
                   <div className="mini-bongo-ragdoll" aria-hidden="true"><img src="/media/dr-bongo-model-icon-v1.png" alt="" /></div>
-                  <button type="button" disabled={purchases.includes("Drone Swarm")} onClick={() => spendRatMeat("Drone Swarm", 3)}>{purchases.includes("Drone Swarm") ? "DRONE SWARM OWNED" : "BUY DRONE SWARM · 3"} <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "drone", label: purchases.includes("Drone Swarm") ? "OWNED" : "BUY · 3", tone: "gold", disabled: purchases.includes("Drone Swarm"), onClick: () => spendRatMeat("Drone Swarm", 3) }]} minHeight={100} />
                 </>
               ) : isCircus ? (
                 <>
                   <h2 id="dialog-title">Exotic inventory.</h2>
-                  <p className="store-intro">Animals, drones, and one fully autonomous bad idea.</p>
+                  <p className="store-intro">Animals, drones, dangerous bullshit, and one fully autonomous war crime.</p>
                   <div className="circus-store">
                     {CIRCUS_STOCK.map(([item, cost]) => <button type="button" key={item} disabled={purchases.includes(item)} onClick={() => spendRatMeat(item, cost)}><span>{item}</span><b>{purchases.includes(item) ? "OWNED" : `${cost} RM`}</b></button>)}
                   </div>
@@ -1305,15 +952,15 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
               ) : isDocks ? (
                 <>
                   <h2 id="dialog-title">Mobile offshore rat farm.</h2>
-                  <p>&ldquo;The sea provides. Mostly rats.&rdquo;</p>
+                  <p>&ldquo;The sea provides. Mostly rats, diesel fumes, and bodies nobody asks about.&rdquo;</p>
                   <div className="rat-farm-card"><img src="/media/lab-rat-v1.png" alt="Laboratory rat" /><span>+3 RAT MEAT</span></div>
-                  <button type="button" disabled={farmCooldown > 0} onClick={farmRats}>{farmCooldown ? `FARM COOLDOWN · ${farmCooldown}s` : "FARM RATS · +3"} <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "farm", label: farmCooldown ? `${farmCooldown}s` : "FARM +3", tone: "primary", disabled: farmCooldown > 0, onClick: farmRats }]} minHeight={100} />
                 </>
               ) : (
                 <>
                   <h2 id="dialog-title">Listen, pal.</h2>
                   <p>i haven&apos;t fucking got to this part yet, do you know how hard it is to try and convince ai to make a dog fighting video game</p>
-                  <button type="button" onClick={() => setSelectedBuilding(null)}>FAIR ENOUGH <span>→</span></button>
+                  <JellyButtons buttons={[{ key: "fair", label: "FAIR ENOUGH", onClick: () => setSelectedBuilding(null) }]} minHeight={100} />
                 </>
               )}
             </div>
@@ -1369,7 +1016,6 @@ export default function Home() {
       <footer className="world-footer">
         <div className="control-hint"><span>↔</span><p><b>DRAG</b><small>360° ROTATE · SHIFT TO ROLL</small></p></div>
         <div className="control-hint"><span>＋</span><p><b>SCROLL</b><small>ZOOM</small></p></div>
-        <div className="control-hint"><span>🏹</span><p><b>WASD</b><small>MOVE SCOUT · CLICK TO LOOSE</small></p></div>
         <div className="status-pill"><i /> 1 / 7 TERRITORIES UNLOCKED</div>
       </footer>
     </main>
