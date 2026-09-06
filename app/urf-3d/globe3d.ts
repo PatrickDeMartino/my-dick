@@ -2025,6 +2025,11 @@ export async function createGlobe3D(
     setLandColor: (hex) => {
       const material = landMesh.material as THREE_NS.MeshStandardMaterial;
       material.color.setHex(hex);
+      const isGold = hex === 0xf1c86e;
+      material.metalness = isGold ? 0.96 : 0.04;
+      material.roughness = isGold ? 0.1 : 0.88;
+      material.emissive.setHex(isGold ? 0x5b2f00 : 0x000000);
+      material.emissiveIntensity = isGold ? 0.28 : 0;
     },
     setLandFlagMode: (enabled) => {
       flagModeActive = enabled;

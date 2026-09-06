@@ -20,6 +20,7 @@ type PongoBody = {
 };
 
 const CAN_EVENT = "trip-spawn-can";
+const SPATIAL_EVENT = "trip-home-spatial";
 
 function canTexture(label: CanLabel) {
   const canvas = document.createElement("canvas");
@@ -65,18 +66,19 @@ function makeBrain() {
   const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .18, blending: THREE.AdditiveBlending });
   const wrinkles: THREE.Mesh[] = [];
   for (let hemisphere = -1; hemisphere <= 1; hemisphere += 2) {
-    for (let i = 0; i < 18; i += 1) {
+    for (let i = 0; i < 52; i += 1) {
       const points: THREE.Vector3[] = [];
-      const baseY = -1.25 + (i % 9) * .31;
-      const baseZ = -.68 + Math.floor(i / 9) * 1.18;
+      const baseY = -1.18 + (i % 13) * .205;
+      const baseZ = -.72 + Math.floor(i / 13) * .47;
       for (let s = 0; s <= 28; s += 1) {
         const t = s / 28;
-        const x = hemisphere * (.16 + Math.sin(t * Math.PI) * (1.16 + (i % 3) * .06));
-        const y = baseY + t * .24 + Math.sin(t * Math.PI * (3 + i % 4) + i) * .18;
-        const z = baseZ + Math.cos(t * Math.PI * (4 + i % 3) + i * .7) * .2;
+        const latitudeTaper = Math.max(.42,1-Math.pow(baseY/1.55,2)*.62);
+        const x = hemisphere * (.08 + Math.sin(t * Math.PI) * (1.2 * latitudeTaper + (i % 3) * .035));
+        const y = baseY + t * .15 + Math.sin(t * Math.PI * (3 + i % 5) + i) * .14;
+        const z = baseZ + Math.cos(t * Math.PI * (4 + i % 4) + i * .7) * .17;
         points.push(new THREE.Vector3(x, y, z));
       }
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 56, .12, 8, false), matter.clone());
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .105, 7, false), matter.clone());
       tube.userData.phase = i * .43 + hemisphere;
       tube.userData.baseScale = .92 + (i % 4) * .025;
       tube.castShadow = true;
@@ -84,7 +86,8 @@ function makeBrain() {
       root.add(tube);
     }
   }
-  const core = new THREE.Mesh(new THREE.SphereGeometry(1.28, 28, 22), matter);
+  const hitMaterial = new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
+  const core = new THREE.Mesh(new THREE.SphereGeometry(1.28, 28, 22), hitMaterial);
   core.scale.set(1.12, 1.04, .82);
   core.castShadow = true;
   root.add(core);
@@ -170,17 +173,38 @@ export default function HomeRoom3D() {
       room.add(crystal);
     }
 
+    const psychedelic = new THREE.Group();
+    const tripMaterials: THREE.MeshStandardMaterial[] = [];
+    for (let i=0;i<9;i+=1) {
+      const mat=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(i/9,.92,.55),emissive:new THREE.Color().setHSL((i/9+.08)%1,.95,.25),emissiveIntensity:1.25,roughness:.3,metalness:.18,transparent:true,opacity:.72});
+      tripMaterials.push(mat);
+      const swirl=new THREE.Mesh(new THREE.TorusKnotGeometry(.72+i*.28,.035+i*.005,96,7,2+i%3,3+i%2),mat);
+      swirl.position.set(-5.6+i*1.42,1.4+Math.sin(i)*1.7,-4.68);
+      swirl.scale.y=.72;
+      psychedelic.add(swirl);
+    }
+    for (let i=0;i<30;i+=1) {
+      const mat=tripMaterials[i%tripMaterials.length];
+      const drip=new THREE.Mesh(new THREE.CapsuleGeometry(.07+Math.random()*.08,.45+Math.random()*1.7,5,8),mat);
+      drip.position.set(-9+Math.random()*18,5.3+Math.random()*1.6,-4.55+Math.random()*.12);
+      drip.scale.y=.8+Math.random()*1.5;
+      drip.userData.phase=Math.random()*Math.PI*2;
+      psychedelic.add(drip);
+    }
+    room.add(psychedelic);
+
     const brain = makeBrain();
     brain.position.set(4.25, -.05, -.2);
     brain.scale.setScalar(1.34);
     room.add(brain);
+    let brainSpatial={x:0,y:0,z:0,scale:1};
 
     const canTextures = {
       YOOHOO: ["/media/can-labels/yoohoo-yellow.png", "/media/can-labels/yoohoo-bottle.png"].map((url) => {
         const texture = new THREE.TextureLoader().load(url); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.RepeatWrapping; return texture;
       }),
-      PEPSI: [canTexture("PEPSI")],
-      MONSTER: [canTexture("MONSTER")],
+      PEPSI: ["/media/can-labels/pepsi.png"].map((url)=>{const texture=new THREE.TextureLoader().load(url);texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=THREE.RepeatWrapping;return texture;}),
+      MONSTER: ["/media/can-labels/monster-energy.png"].map((url)=>{const texture=new THREE.TextureLoader().load(url);texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=THREE.RepeatWrapping;return texture;}),
       "RAT MEAT": ["/media/can-labels/rat-meat-classic.jpg", "/media/can-labels/rat-meat-silver.jpg", "/media/can-labels/rat-meat-gold.jpg"].map((url) => {
         const texture = new THREE.TextureLoader().load(url); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.RepeatWrapping; return texture;
       }),
@@ -188,6 +212,8 @@ export default function HomeRoom3D() {
     const cans: CanBody[] = [];
     const pongos: PongoBody[] = [];
     let selectedPongo: PongoBody | null = null;
+    let heldCan: CanBody | null = null;
+    let heldTime = 0;
     const keys = new Set<string>();
     const spawnCan = (label: CanLabel) => {
       let texture = canTextures[label][Math.floor(Math.random() * canTextures[label].length)];
@@ -217,20 +243,28 @@ export default function HomeRoom3D() {
     spawnCan("YOOHOO");
     spawnCan("PEPSI");
     spawnCan("MONSTER");
+    spawnPongo();
 
     let dragging = false;
     let lastX = 0;
     let lastY = 0;
     let yaw = 0;
     let pitch = 0;
-    const onDown = (event: PointerEvent) => { dragging = true; lastX = event.clientX; lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); };
+    let pointerTravel=0;
+    const raycaster=new THREE.Raycaster();
+    const pointer=new THREE.Vector2();
+    const onDown = (event: PointerEvent) => { dragging = true; pointerTravel=0; lastX = event.clientX; lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); };
     const onMove = (event: PointerEvent) => {
       if (!dragging) return;
+      pointerTravel+=Math.hypot(event.clientX-lastX,event.clientY-lastY);
       yaw += (event.clientX - lastX) * .0045;
       pitch = THREE.MathUtils.clamp(pitch + (event.clientY - lastY) * .003, -.24, .22);
       lastX = event.clientX; lastY = event.clientY;
     };
-    const onUp = () => { dragging = false; };
+    const onUp = (event:PointerEvent) => {
+      dragging = false;
+      if(pointerTravel<6){const rect=renderer.domElement.getBoundingClientRect();pointer.set(((event.clientX-rect.left)/rect.width)*2-1,-((event.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);if(raycaster.intersectObject(brain,true).length)window.location.assign("/brain-room");}
+    };
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointermove", onMove);
     renderer.domElement.addEventListener("pointerup", onUp);
@@ -240,6 +274,8 @@ export default function HomeRoom3D() {
       if (item === "PONGO") spawnPongo(); else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
+    const onSpatial=(event:Event)=>{const detail=(event as CustomEvent<{target:"brain";value:{x:number;y:number;z:number;scale:number}}>).detail;if(detail.target==="brain")brainSpatial={...detail.value};};
+    window.addEventListener(SPATIAL_EVENT,onSpatial);
     const onKeyDown = (event: KeyboardEvent) => {
       keys.add(event.code);
       if (selectedPongo && event.code === "Space" && selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
@@ -265,12 +301,18 @@ export default function HomeRoom3D() {
       frame = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), .033);
       const time = clock.elapsedTime;
-      camera.position.x += (Math.sin(yaw) * 3.2 - camera.position.x) * .06;
-      camera.position.y += (1.8 - pitch * 7 - camera.position.y) * .06;
-      camera.position.z += (11.4 - Math.abs(Math.sin(yaw)) * 1.1 - camera.position.z) * .06;
-      camera.lookAt(Math.sin(yaw) * 1.2, -.2, -1);
+      const focus=selectedPongo?.mesh.position??new THREE.Vector3(0,-1,-1);
+      const facing=selectedPongo?.mesh.rotation.y??0;
+      if(!dragging)yaw*=Math.max(0,1-dt*.38);
+      const orbit=facing+yaw;
+      const distance=6.4;
+      camera.position.x += (focus.x+Math.sin(orbit)*distance-camera.position.x) * .075;
+      camera.position.y += (focus.y+5.4-pitch*6-camera.position.y) * .075;
+      camera.position.z += (focus.z+Math.cos(orbit)*distance-camera.position.z) * .075;
+      camera.lookAt(focus.x,focus.y+1.15,focus.z);
       brain.rotation.y = -.28 + Math.sin(time * .38) * .18;
-      brain.position.y = -.05 + Math.sin(time * .72) * .12;
+      brain.position.set(4.25+brainSpatial.x*1.45,-.05+brainSpatial.y*1.15+Math.sin(time*.72)*.12,-.2+brainSpatial.z*1.2);
+      brain.scale.setScalar(1.34*brainSpatial.scale);
       const wrinkles = brain.userData.wrinkles as THREE.Mesh[];
       wrinkles.forEach((wrinkle, index) => {
         const pulse = wrinkle.userData.baseScale + Math.sin(time * 2.1 + wrinkle.userData.phase) * .055;
@@ -278,7 +320,9 @@ export default function HomeRoom3D() {
         (wrinkle.material as THREE.MeshPhysicalMaterial).emissiveIntensity = .55 + Math.sin(time * 2 + index) * .18;
       });
       (brain.userData.aura as THREE.Mesh).scale.setScalar(1 + Math.sin(time * 1.5) * .035);
+      psychedelic.children.forEach((child,index)=>{child.rotation.z+=dt*(index%2?.09:-.07);const mat=(child as THREE.Mesh).material as THREE.MeshStandardMaterial;if(mat?.color){const hue=(time*.025+index/psychedelic.children.length)%1;mat.color.setHSL(hue,.9,.52);mat.emissive.setHSL((hue+.08)%1,.96,.24);mat.emissiveIntensity=.9+Math.sin(time*1.3+index)*.48;}if(child.userData.phase!==undefined)child.scale.y=.9+Math.sin(time*1.7+child.userData.phase)*.28;});
       for (const can of cans) {
+        if(can===heldCan)continue;
         can.velocity.y -= 8.5 * dt;
         can.mesh.position.addScaledVector(can.velocity, dt);
         can.mesh.rotation.x += can.spin.x * dt;
@@ -315,6 +359,10 @@ export default function HomeRoom3D() {
           pongo.mesh.userData.walk += dt * 8;
           (pongo.mesh.userData.limbs as THREE.Group[]).forEach((limb, index) => { limb.rotation.x = Math.sin(pongo.mesh.userData.walk + index * Math.PI / 2) * .52; });
         }
+        if(pongo===selectedPongo){
+          if(!heldCan){heldCan=cans.find(can=>can.mesh.position.distanceTo(pongo.mesh.position)<1.35)??null;heldTime=0;}
+          if(heldCan){heldTime+=dt;const forward=new THREE.Vector3(Math.sin(pongo.mesh.rotation.y),0,Math.cos(pongo.mesh.rotation.y));const handTarget=pongo.mesh.position.clone().add(forward.clone().multiplyScalar(.55)).add(new THREE.Vector3(0,1.55,0));heldCan.mesh.position.lerp(handTarget,.3);heldCan.mesh.rotation.z+=dt*8;if(heldTime>.72){heldCan.velocity.copy(forward.multiplyScalar(9)).add(new THREE.Vector3(0,5.4,0));heldCan.spin.set(8,5,9);heldCan=null;heldTime=0;}}
+        }
       }
       renderer.render(scene, camera);
     };
@@ -324,6 +372,7 @@ export default function HomeRoom3D() {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener(CAN_EVENT, onSpawn);
+      window.removeEventListener(SPATIAL_EVENT,onSpatial);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       renderer.domElement.removeEventListener("pointerdown", onDown);
@@ -340,4 +389,8 @@ export default function HomeRoom3D() {
 
 export function spawnHomeCan(label: SpawnItem) {
   window.dispatchEvent(new CustomEvent(CAN_EVENT, { detail: label }));
+}
+
+export function setHomeSpatial(target:"brain",value:{x:number;y:number;z:number;scale:number}){
+  window.dispatchEvent(new CustomEvent(SPATIAL_EVENT,{detail:{target,value}}));
 }

@@ -836,12 +836,6 @@ function Globe({ onEnter }: { onEnter: () => void }) {
               </div>
               {editTarget === "platform" && (
                 <div className="platform-sling-controls">
-                  <div className="alien-select" aria-label="Choose the platform character">
-                    <span>PLATFORM CHARACTER</span>
-                    <div>
-                      {(["original","doop","zorp"] as AlienType[]).map((type) => <button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{type === "original" ? "ARCHER" : type.toUpperCase()}</button>)}
-                    </div>
-                  </div>
                   <label>
                     <span>SLING ROTATION</span>
                     <input
@@ -918,6 +912,17 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             </>
           )}
         </div>
+      )}
+      {world3d && (
+        <aside className="alien-toolbar" aria-label="Alien and island controls" onPointerDown={(event)=>event.stopPropagation()}>
+          <header><b>👽 ALIEN</b><small>ISLAND</small></header>
+          <div className="alien-toolbar__characters">
+            {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{type==="original"?"ARCHER":type.toUpperCase()}</button>)}
+          </div>
+          <label><span>SIZE</span><input type="range" min={.55} max={2.25} step={.05} value={platformScale} onChange={event=>{const value=Number(event.target.value);setPlatformScale(value);worldRef.current?.setPlatformScale(value);}}/><b>{platformScale.toFixed(2)}×</b></label>
+          {(["x","y","z"] as const).map(axis=><label key={axis}><span>{axis.toUpperCase()}</span><input type="range" min={-2.5} max={2.5} step={.05} value={editOffsets.platform[axis]} onChange={event=>setOffsetAxis("platform",axis,Number(event.target.value))}/><b>{editOffsets.platform[axis].toFixed(1)}</b></label>)}
+          <button type="button" className="alien-toolbar__reset" onClick={()=>resetEditOffset("platform")}>RESET ISLAND</button>
+        </aside>
       )}
       <div className="globe-shadow" />
     </div>
