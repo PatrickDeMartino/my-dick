@@ -912,9 +912,21 @@ export async function createGlobe3D(
   const stuckLayer = new THREE.Group();
   planet.add(stuckLayer);
 
+  // Everything that should visibly swing together when the view is dragged —
+  // the satellite, moon, UFOs and meteors — lives in here alongside the
+  // planet. Before, only the tiny globe sphere spun in place while all of
+  // this sat dead still, which read as a spinning sticker rather than real
+  // 3D space: nothing else ever reacted, so there was no parallax to sell
+  // the depth. Now the drag rotation (applied in applyView) drives this
+  // whole group, and the flying island (the alien's platform) is the one
+  // thing deliberately left out of it, so it keeps floating independently
+  // instead of getting spun along with the rest of the world.
+  const worldSpin = new THREE.Group();
+  scene.add(worldSpin);
+
   const satellite = buildSatellite(THREE);
   satellite.group.scale.setScalar(1.5);
-  scene.add(satellite.group);
+  worldSpin.add(satellite.group);
 
   // Empty slot the customization tab fills with bolt-on parts. Kept as a
   // child of the satellite so upgrades ride its orbit and rotation for free.
@@ -922,10 +934,10 @@ export async function createGlobe3D(
   satellite.group.add(satelliteUpgrades);
 
   const moon = buildMoon(THREE);
-  scene.add(moon.group);
+  worldSpin.add(moon.group);
 
   const ufos = [buildUfo(THREE), buildUfo(THREE)];
-  ufos.forEach((ufo) => scene.add(ufo.group));
+  ufos.forEach((ufo) => worldSpin.add(ufo.group));
 
   const meteors: { group: THREE_NS.Group; velocity: THREE_NS.Vector3; age: number }[] = [];
   let meteorTimer = 2.5;
@@ -976,7 +988,18 @@ export async function createGlobe3D(
     islandRoot.rotation.y = flyHeading;
     islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08 - flyHeading * 0.12;
     islandRoot.rotation.x = Math.cos(elapsed * 0.53) * 0.05;
-    camera.position.set(islandRoot.position.x * 0.2, islandRoot.position.y * 0.14, 8);
+    // The camera tracks the platform's flight much more now — roughly
+    // doubled sideways parallax, plus a small dolly in/out that follows the
+    // Z/X depth axis — so flying the alien around genuinely reads as the
+    // camera moving with them through space, not a fixed viewpoint with a
+    // toy drifting in front of it. It still looks straight at the globe's
+    // center throughout: the aim math depends on that lookAt target and
+    // can't be repointed at the island without redoing the shot geometry.
+    camera.position.set(
+      islandRoot.position.x * 0.42,
+      islandRoot.position.y * 0.32,
+      8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
+    );
     camera.up.set(0, 1, 0);
     camera.lookAt(0, 0, 0);
   };
@@ -1110,6 +1133,11 @@ export async function createGlobe3D(
     const tilt = new THREE.Quaternion().setFromAxisAngle(axisX, (rotation.lat * Math.PI) / 180);
     const roll = new THREE.Quaternion().setFromAxisAngle(axisZ, (rotation.roll * Math.PI) / 180);
     planet.quaternion.copy(roll).multiply(tilt).multiply(yaw);
+    // The satellite/moon/UFOs/meteors are a separate sibling group (not a
+    // child of `planet`, to avoid double-applying this rotation) that gets
+    // the identical orientation, so dragging swings the whole sky along with
+    // the globe instead of just the little sphere spinning in isolation.
+    worldSpin.quaternion.copy(planet.quaternion);
   };
 
   const applySize = () => {
@@ -1575,7 +1603,7 @@ export async function createGlobe3D(
       const side = Math.random() < 0.5 ? -1 : 1;
       const meteorMesh = buildMeteorTrail(THREE);
       meteorMesh.position.set(side * 3.2, 1.6 + Math.random() * 0.8, -1.6 + Math.random() * 1.2);
-      scene.add(meteorMesh);
+      worldSpin.add(meteorMesh);
       meteors.push({ group: meteorMesh, velocity: new THREE.Vector3(-side * 1.4, -0.55, 0.15), age: 0 });
     }
     for (let index = meteors.length - 1; index >= 0; index -= 1) {
@@ -1584,7 +1612,7 @@ export async function createGlobe3D(
       meteor.group.position.addScaledVector(meteor.velocity, delta);
       meteor.group.lookAt(meteor.group.position.clone().add(meteor.velocity));
       if (meteor.age > 2.6) {
-        scene.remove(meteor.group);
+        worldSpin.remove(meteor.group);
         meteors.splice(index, 1);
       }
     }
