@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import AlienArcherShell from "./AlienArcherShell";
 
 export const metadata: Metadata = {
   title: "Alien Archer | Triptotropic",
@@ -7,15 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AlienArcherPage() {
-  return (
-    <main className="alien-archer-screen">
-      <Link className="alien-archer-back" href="/urf-3d">← PLANET URF</Link>
-      <iframe
-        className="alien-archer-frame"
-        src="/alien-archer-game/index.html"
-        title="Alien Archer game world"
-        allow="fullscreen; autoplay"
-      />
-    </main>
-  );
+  return <AlienArcherShell />;
 }

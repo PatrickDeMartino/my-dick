@@ -185,11 +185,18 @@ test("world globe clips coastlines cleanly and supports full rotation", async ()
 });
 
 test("renders the 3D world-select room (Planet Urf archer)", async () => {
-  const response = await request("/urf-3d");
+  const gate = await request("/urf-3d");
+  assert.equal(gate.status, 200);
+  const gateHtml = await gate.text();
+  assert.match(gateHtml, /CHOOSE A VOID/);
+  assert.match(gateHtml, /URF EDITOR/);
+  assert.match(gateHtml, /ALIEN SANDBOX/);
+
+  const response = await request("/urf-3d/editor");
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /<title>Planet Urf \| Triptotropic<\/title>/i);
+  assert.match(html, /<title>Urf World Editor \| Triptotropic<\/title>/i);
   assert.match(html, /GO ANYWHERE/i);
   assert.match(html, /ANTARCTICA/);
   // The terrain toolbar and the archer HUD only mount once the WebGL 3D
@@ -212,6 +219,12 @@ test("Planet Urf exposes the editable world layers, mapped levels, and alien gam
   assert.match(engine, /platform\.edgeMaterial\.opacity = platformSelected/);
   assert.match(engine, /walker\.ragdoll/);
   assert.match(game, /Raid neon mushroom isles/);
+  const shell = await readFile(new URL("../app/alien-archer/AlienArcherShell.tsx", import.meta.url), "utf8");
+  const sandbox = await readFile(new URL("../games/alien-archer/src/game/sandbox.ts", import.meta.url), "utf8");
+  assert.match(shell, /SPAWN SHIT/);
+  assert.match(shell, /PENGUIN BIPLANE/);
+  assert.match(shell, /BONGO RAGDOLL/);
+  assert.match(sandbox, /makeSandboxProp/);
 });
 
 test("landing page's Planet Urf portal opens the 3D world in a modal iframe", async () => {

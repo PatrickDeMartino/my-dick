@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
 import type { EditOffset, EditTargetId, Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
-import { LAND_COLOR_PRESETS, PIN_MARKERS, TERRITORIES } from "../lib/territories";
+import { LAND_COLOR_PRESETS, TERRITORIES } from "../lib/territories";
 import SocialPopup from "../components/SocialPopup";
 import { useProfile } from "../lib/useProfile";
 
@@ -416,7 +416,6 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
   }, [effectiveRotation, landFeatures, size, texture, textureDrift, world3d, zoom]);
 
-  const markers = useMemo(() => PIN_MARKERS.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
 
   const moveDrag = (x: number, y: number) => {
@@ -488,7 +487,6 @@ function Globe({ onEnter }: { onEnter: () => void }) {
 
   return (
     <div className="globe-frame" ref={frameRef}>
-      <div className="ocean-void" style={{ transform: oceanTransform }} aria-hidden="true" />
       <div className={`globe-satellite-orbit${world3d ? " is-upgraded" : ""}`} aria-hidden="true"><span>🛰️</span></div>
       <canvas
         ref={canvasRef}
@@ -559,17 +557,6 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         }}
       />
       <canvas ref={webglRef} className="globe-webgl" aria-hidden="true" />
-      {markers.map((marker) => (
-        <div
-          className="lock-marker"
-          key={marker.name}
-          style={{ left: `${marker.projected.x}px`, top: `${marker.projected.y}px`, opacity: marker.projected.visible ? "1" : "0" }}
-          aria-hidden="true"
-        >
-          <span>🔒</span>
-          <small>{marker.name}</small>
-        </div>
-      ))}
       <button
         type="button"
         className="antarctica-marker"
@@ -864,7 +851,7 @@ export default function WorldSelect() {
       window.parent.postMessage("trip-close-urf", window.location.origin);
       return;
     }
-    router.push("/");
+    router.push("/urf-3d");
   };
 
   return (

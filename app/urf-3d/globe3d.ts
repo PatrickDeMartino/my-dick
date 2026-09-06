@@ -138,8 +138,8 @@ const WALK_SPEED = 0.42;
  * orthographic camera. */
 const SLAB_RISE = 0.22;
 const SLAB_DEPTH = 0.5;
-const SLAB_RADIUS = 0.42;
-const WALK_LIMIT_X = 0.22;
+const SLAB_RADIUS = 0.68;
+const WALK_LIMIT_X = 0.48;
 
 const LAND_STOPS: { at: number; rgb: [number, number, number] }[] = [
   { at: 0, rgb: [0x18, 0x3f, 0x43] },
@@ -391,7 +391,6 @@ type AlienRig = {
   frontLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
   backLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
   bowArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
-  drawArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
   bow: THREE_NS.Group;
   stringUpper: THREE_NS.Mesh;
   stringLower: THREE_NS.Mesh;
@@ -589,21 +588,14 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
     wrist.position.y = -0.19;
     elbow.add(wrist);
 
-    const hand = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 0), skinShade);
-    hand.scale.set(0.9, 1.1, 0.7);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.046, 8, 6), skinShade);
+    hand.scale.set(0.88, 1.22, 0.82);
     hand.position.y = -0.24;
     elbow.add(hand);
-    [-1, 0, 1].forEach((finger) => {
-      const digit = new THREE.Mesh(new THREE.CylinderGeometry(.006, .008, .065, 5), skinShade);
-      digit.position.set(finger * .014, -.278, .01);
-      digit.rotation.x = -.35;
-      elbow.add(digit);
-    });
 
     return { shoulder, elbow };
   };
   const bowArm = buildArm(1);
-  const drawArm = buildArm(-1);
 
   // ----------------------------------------------------------- bow ----
   // A recurve profile swept along a curve, so the limbs actually curl back at
@@ -654,7 +646,7 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   bow.position.set(0, -0.26, 0.02);
   bowArm.elbow.add(bow);
 
-  return { group, body, torso, head, frontLeg, backLeg, bowArm, drawArm, bow, stringUpper, stringLower, nockedArrow, nock };
+  return { group, body, torso, head, frontLeg, backLeg, bowArm, bow, stringUpper, stringLower, nockedArrow, nock };
 }
 
 function buildSatellite(THREE: typeof THREE_NS) {
@@ -694,29 +686,24 @@ function buildSatellite(THREE: typeof THREE_NS) {
 /** The floating slab the archer stands on, plus a little alien flora. */
 function buildPlatform(THREE: typeof THREE_NS) {
   const group = new THREE.Group();
-  const rock = new THREE.MeshStandardMaterial({ color: 0x6c2f8f, flatShading: true, roughness: 0.9 });
   const rockTop = new THREE.MeshStandardMaterial({ color: 0xb0459d, flatShading: true, roughness: 0.82 });
   const crystal = new THREE.MeshStandardMaterial({ color: 0x39e6d4, flatShading: true, roughness: 0.25, metalness: 0.3, emissive: 0x0d5f5a, emissiveIntensity: 0.5 });
   const cap = new THREE.MeshStandardMaterial({ color: 0xff7ad4, flatShading: true, roughness: 0.6 });
   const stalk = new THREE.MeshStandardMaterial({ color: 0x8f4fd8, flatShading: true, roughness: 0.7 });
   const edgeMaterial = new THREE.MeshBasicMaterial({ color: 0x33dfff, transparent: true, opacity: 0.16 });
 
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.86, 0.07, 9), rockTop);
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.96, 0.055, 12), rockTop);
   group.add(deck);
 
-  const keel = new THREE.Mesh(new THREE.ConeGeometry(SLAB_RADIUS * 0.86, 0.72, 9), rock);
-  keel.position.y = -0.39;
-  group.add(keel);
-
   const edge = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.CylinderGeometry(SLAB_RADIUS * 1.02, SLAB_RADIUS * .88, .1, 9)),
+    new THREE.EdgesGeometry(new THREE.CylinderGeometry(SLAB_RADIUS * 1.02, SLAB_RADIUS * .96, .075, 12)),
     edgeMaterial,
   );
   edge.position.y = .015;
   group.add(edge);
 
   const underglow = new THREE.Mesh(
-    new THREE.TorusGeometry(SLAB_RADIUS * .72, .018, 5, 36),
+    new THREE.TorusGeometry(SLAB_RADIUS * .82, .018, 5, 42),
     new THREE.MeshBasicMaterial({ color: 0x20cfff, transparent: true, opacity: .08 }),
   );
   underglow.rotation.x = Math.PI / 2;
@@ -1635,12 +1622,6 @@ export async function createGlobe3D(
     alien.nockedArrow.visible = charge > 0.02;
     alien.nockedArrow.position.set(0, 0, nockPoint.z - 0.3);
     alien.nockedArrow.rotation.set(0, Math.PI, 0);
-
-    // Draw arm: solved so the hand actually holds the string where it is,
-    // instead of miming near it. Two bones, one hinge, closed form.
-    alien.nock.updateWorldMatrix(true, false);
-    alien.nock.getWorldPosition(ikTarget);
-    solveArm(alien.drawArm, ikTarget, 0.23, 0.24);
 
     if (moving) {
       // Walk cycle: hips swing, knees bend on the back stroke.

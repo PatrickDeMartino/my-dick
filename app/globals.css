@@ -1389,10 +1389,6 @@ button, input { font: inherit; }
 .quit-button:hover { color: white; border-color: #a9c2cf; transform: rotate(90deg); }
 .globe-stage { position: absolute; inset: 0; display: grid; place-items: stretch; padding: 0; }
 .globe-frame { width: 100vw; height: 100dvh; position: relative; overflow: hidden; }
-.ocean-void { position: absolute; z-index: 0; left: 50%; top: 50%; width: min(86vw,86vh); aspect-ratio: 1; margin: max(-43vw,-43vh) 0 0 max(-43vw,-43vh); border-radius: 50%; pointer-events: none; opacity: .44; background: repeating-radial-gradient(circle at 44% 38%, rgba(71,248,255,.32) 0 2px, rgba(94,21,164,.2) 3px 11px, rgba(0,8,32,.18) 13px 24px); filter: blur(.4px) saturate(1.6); animation: ocean-void-spin 24s linear infinite; transform-origin: center; }
-.ocean-void::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; background: conic-gradient(from 30deg, transparent, rgba(255,59,214,.22), transparent 28%, rgba(58,241,255,.28), transparent 62%); animation: ocean-void-counter 17s linear infinite; }
-@keyframes ocean-void-spin { to { rotate: 360deg; } }
-@keyframes ocean-void-counter { to { transform: rotate(-360deg) scale(.92); } }
 .globe-satellite-orbit { position: absolute; z-index: 8; inset: 8%; border-radius: 50%; pointer-events: none; animation: satellite-orbit 13s linear infinite; }
 .globe-satellite-orbit span { position: absolute; top: -7%; left: 48%; font-size: clamp(20px,3.6vw,44px); filter: drop-shadow(0 0 8px rgba(105,248,255,.8)); transform: rotate(22deg); }
 @keyframes satellite-orbit { to { transform: rotate(360deg); } }
@@ -1752,6 +1748,29 @@ button, input { font: inherit; }
 .alien-archer-screen { position: fixed; inset: 0; overflow: hidden; background: #02030b; }
 .alien-archer-frame { display: block; width: 100%; height: 100%; border: 0; }
 .alien-archer-back { position: fixed; z-index: 20; top: 12px; left: 12px; padding: 8px 12px; border: 1px solid rgba(78,248,255,.7); border-radius: 999px; background: rgba(2,8,20,.78); color: #dffeff; font: 800 9px/1 Arial,sans-serif; letter-spacing: .12em; text-decoration: none; backdrop-filter: blur(8px); }
+.spawn-shit-toggle { position:fixed; z-index:22; top:12px; left:150px; padding:9px 14px; border:1px solid #e14bff; border-radius:999px; background:rgba(38,5,58,.88); color:#fff; font:900 10px/1 Arial,sans-serif; letter-spacing:.15em; cursor:pointer; box-shadow:0 0 18px rgba(225,75,255,.3); }
+.spawn-shit-menu { position:fixed; z-index:21; top:58px; left:12px; width:min(360px,calc(100vw - 24px)); max-height:calc(100dvh - 74px); overflow:auto; padding:14px; border:1px solid rgba(225,75,255,.58); border-radius:12px; background:rgba(10,2,18,.92); backdrop-filter:blur(12px); box-shadow:0 20px 50px rgba(0,0,0,.6); }
+.spawn-shit-menu>b { display:block; margin:5px 0 9px; color:#7cff3a; font:900 9px/1 Arial,sans-serif; letter-spacing:.18em; }
+.spawn-shit-menu>div { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:13px; }
+.spawn-shit-menu button { min-height:34px; border:1px solid #443052; border-radius:7px; background:#1a0b24; color:#e9dff0; font:800 8px/1.15 Arial,sans-serif; letter-spacing:.08em; cursor:pointer; }
+.spawn-shit-menu button:hover { border-color:#7cff3a; color:#fff; background:#243016; }
+
+.urf-gate { position: fixed; inset: 0; overflow: hidden; display: grid; place-items: center; color: #fff; background: #000; perspective: 900px; }
+.urf-gate__dust { position: absolute; inset: -20%; opacity: .42; background-image: radial-gradient(circle,#fff 0 1px,transparent 1.5px); background-size: 83px 83px; transform: rotateX(66deg) translateZ(-240px); animation: gate-drift 18s linear infinite; }
+.urf-gate__title { position: absolute; top: 8vh; margin: 0; color: rgba(214,243,255,.65); font: 800 10px/1 Arial,sans-serif; letter-spacing: .45em; }
+.urf-gate__orbits { position: relative; width: min(820px,88vw); height: min(520px,72vh); transform-style: preserve-3d; animation: gate-room-float 7s ease-in-out infinite; }
+.urf-gate__orb { position: absolute; display: grid; place-items: center; width: clamp(130px,19vw,220px); aspect-ratio: 1; border: 1px solid rgba(190,240,255,.54); border-radius: 50%; color: white; text-decoration: none; transform-style: preserve-3d; background: radial-gradient(circle at 30% 25%,rgba(255,255,255,.9),rgba(69,210,255,.22) 12%,rgba(31,32,92,.62) 48%,rgba(0,0,0,.92) 76%); box-shadow: inset -28px -30px 55px rgba(0,0,0,.82), inset 14px 12px 26px rgba(112,238,255,.24), 0 0 44px rgba(57,211,255,.18); transition: scale .2s, filter .2s; }
+.urf-gate__orb::before { content:""; position:absolute; inset:-13%; border:1px solid rgba(118,232,255,.25); border-radius:50%; transform:rotateX(70deg) rotateZ(18deg); }
+.urf-gate__orb:hover,.urf-gate__orb:focus-visible { scale:1.08; filter:brightness(1.35); outline:0; }
+.urf-gate__orb b { font: 900 clamp(52px,8vw,92px)/1 Arial,sans-serif; text-shadow:0 0 24px rgba(120,238,255,.75); transform:translateZ(34px); }
+.urf-gate__orb span { position:absolute; top:calc(100% + 22px); color:#a9eaf3; font:800 9px/1 Arial,sans-serif; letter-spacing:.22em; white-space:nowrap; }
+.urf-gate__orb--one { left:8%; top:24%; animation:gate-orb-one 8s ease-in-out infinite; }
+.urf-gate__orb--two { right:8%; bottom:17%; background:radial-gradient(circle at 30% 25%,#fff,rgba(255,103,220,.3) 12%,rgba(77,24,117,.66) 48%,#000 76%); border-color:rgba(255,139,227,.55); animation:gate-orb-two 9s ease-in-out infinite; }
+.urf-gate__close { position:absolute; top:18px; right:18px; width:44px; aspect-ratio:1; border:1px solid #38404a; border-radius:50%; background:#050505; color:#aeb7bf; font-size:28px; cursor:pointer; }
+@keyframes gate-room-float { 50% { transform:rotateY(4deg) rotateX(-2deg); } }
+@keyframes gate-orb-one { 50% { transform:translate3d(20px,-24px,80px) rotateY(22deg); } }
+@keyframes gate-orb-two { 50% { transform:translate3d(-28px,18px,110px) rotateY(-28deg); } }
+@keyframes gate-drift { to { transform:rotateX(66deg) translate3d(0,80px,-240px); } }
 
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */
