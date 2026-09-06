@@ -11,7 +11,7 @@ import { useProfile } from "../lib/useProfile";
 // Special-cased territories: hitting one of these short-circuits the normal
 // locked/unlocked entry card with something else entirely.
 const MIDDLE_EAST_TERRITORIES = new Set(["Middle East", "Israel"]);
-const USA_TERRITORY = "America";
+const USA_TERRITORY = "North America";
 const LOGIN_GATE_TERRITORIES = new Set(["China", "South America", "Africa", "Europe"]);
 
 type Point = [number, number];
@@ -31,6 +31,9 @@ const SATELLITE_PARTS: { id: SatellitePartId; label: string; swatch: string }[] 
 
 const EDIT_TARGETS: { id: EditTargetId; label: string; range: number }[] = [
   { id: "globe", label: "Globe", range: 1.5 },
+  { id: "land", label: "Land", range: 1.5 },
+  { id: "ocean", label: "Ocean", range: 1.5 },
+  { id: "platform", label: "Platform", range: 2.5 },
   { id: "alien", label: "Alien", range: 1 },
   { id: "satellite", label: "Satellite", range: 2 },
   { id: "ufo", label: "UFOs", range: 2 },
@@ -40,11 +43,16 @@ const EDIT_TARGETS: { id: EditTargetId; label: string; range: number }[] = [
 const EMPTY_OFFSET: EditOffset = { x: 0, y: 0, z: 0, locked: false };
 const makeEditOffsets = (): Record<EditTargetId, EditOffset> => ({
   globe: { ...EMPTY_OFFSET },
+  land: { ...EMPTY_OFFSET },
+  ocean: { ...EMPTY_OFFSET },
+  platform: { ...EMPTY_OFFSET },
   alien: { ...EMPTY_OFFSET },
   satellite: { ...EMPTY_OFFSET },
   ufo: { ...EMPTY_OFFSET },
   moon: { ...EMPTY_OFFSET },
 });
+
+const DESTINATIONS = ["North America", "South America", "Africa", "China", "Southeast Asia", "India", "Himalayas", "Australia"];
 
 const wrapAngle = (value: number) => ((value + 540) % 360) - 180;
 const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
@@ -69,6 +77,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [landFeatures, setLandFeatures] = useState<LandFeature[]>([]);
   const [texture, setTexture] = useState<HTMLImageElement | null>(null);
   const [textureDrift, setTextureDrift] = useState(0);
+  const [landSpin, setLandSpin] = useState(0);
   const [world3d, setWorld3d] = useState(false);
   const [charge, setCharge] = useState(0);
   const [quiver, setQuiver] = useState(12);
@@ -91,6 +100,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const router = useRouter();
 
   const territories = useMemo<Territory[]>(() => TERRITORIES, []);
+  const effectiveRotation = useMemo(() => ({ ...rotation, lon: wrapAngle(rotation.lon + landSpin) }), [rotation, landSpin]);
 
   useEffect(() => {
     onEnterRef.current = onEnter;
@@ -106,7 +116,10 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const image = new Image();
     image.src = "/media/psychedelic-earth-texture-v1.png";
     image.onload = () => setTexture(image);
-    const timer = window.setInterval(() => setTextureDrift((value) => (value + 1) % 360), 140);
+    const timer = window.setInterval(() => {
+      setTextureDrift((value) => (value + 1) % 360);
+      setLandSpin((value) => wrapAngle(value - .12));
+    }, 140);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -137,7 +150,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     if (!frameRef.current) return;
     const observer = new ResizeObserver(([entry]) => {
       const width = entry.contentRect.width;
-      setSize({ width, height: width });
+      const height = entry.contentRect.height;
+      setSize({ width, height });
     });
     observer.observe(frameRef.current);
     return () => observer.disconnect();
@@ -214,12 +228,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   }, [landFeatures, territories, router]);
 
   useEffect(() => {
-    worldRef.current?.setView(rotation, zoom);
-  }, [rotation, zoom, world3d]);
+    worldRef.current?.setView(effectiveRotation, zoom);
+  }, [effectiveRotation, zoom, world3d]);
 
   useEffect(() => {
-    worldRef.current?.setSize(size.width);
+    worldRef.current?.setSize(size.width, size.height);
   }, [size, world3d]);
+
+  useEffect(() => {
+    worldRef.current?.setSelectedTarget(editTarget);
+  }, [editTarget, world3d]);
 
   useEffect(() => {
     const preset = LAND_COLOR_PRESETS.find((entry) => entry.id === landPreset);
@@ -285,24 +303,24 @@ function Globe({ onEnter }: { onEnter: () => void }) {
 
   const project = useCallback((point: Point) => {
     const [lon, lat] = point;
-    const lambda = (lon - rotation.lon) * Math.PI / 180;
+    const lambda = (lon - effectiveRotation.lon) * Math.PI / 180;
     const phi = lat * Math.PI / 180;
-    const tilt = rotation.lat * Math.PI / 180;
+    const tilt = effectiveRotation.lat * Math.PI / 180;
     const x = Math.cos(phi) * Math.sin(lambda);
     const y = Math.sin(phi);
     const z = Math.cos(phi) * Math.cos(lambda);
     const cameraY = y * Math.cos(tilt) - z * Math.sin(tilt);
     const cameraZ = y * Math.sin(tilt) + z * Math.cos(tilt);
-    const roll = rotation.roll * Math.PI / 180;
+    const roll = effectiveRotation.roll * Math.PI / 180;
     const cameraX = x * Math.cos(roll) - cameraY * Math.sin(roll);
     const rolledY = x * Math.sin(roll) + cameraY * Math.cos(roll);
-    const radius = size.width * 0.43 * zoom;
+    const radius = Math.min(size.width, size.height) * 0.43 * zoom;
     return {
       x: Math.round((size.width / 2 + radius * cameraX) * 1000) / 1000,
       y: Math.round((size.height / 2 - radius * rolledY) * 1000) / 1000,
       visible: cameraZ > 0.03,
     };
-  }, [rotation, size, zoom]);
+  }, [effectiveRotation, size, zoom]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -316,7 +334,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
-    const radius = size.width * 0.43 * zoom;
+    const radius = Math.min(size.width, size.height) * 0.43 * zoom;
     const cx = size.width / 2;
     const cy = size.height / 2;
     ctx.clearRect(0, 0, size.width, size.height);
@@ -352,7 +370,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     const projection = geoOrthographic()
       .translate([cx, cy])
       .scale(radius)
-      .rotate([-rotation.lon, -rotation.lat, rotation.roll])
+      .rotate([-effectiveRotation.lon, -effectiveRotation.lat, effectiveRotation.roll])
       .clipAngle(90)
       .precision(.25);
     const path = geoPath(projection, ctx);
@@ -396,7 +414,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     rim.addColorStop(1, "rgba(92,202,255,0)");
     ctx.fillStyle = rim;
     ctx.fillRect(cx - radius * 1.1, cy - radius * 1.1, radius * 2.2, radius * 2.2);
-  }, [landFeatures, rotation, size, texture, textureDrift, world3d, zoom]);
+  }, [effectiveRotation, landFeatures, size, texture, textureDrift, world3d, zoom]);
 
   const markers = useMemo(() => PIN_MARKERS.map((continent) => ({ ...continent, projected: project(continent.center) })), [project]);
   const south = project([0, -78]);
@@ -466,12 +484,18 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     worldRef.current?.setMove(0, 0);
   };
 
+  const oceanTransform = `translate(${(editOffsets.globe.x + editOffsets.ocean.x) * 42}px, ${-(editOffsets.globe.y + editOffsets.ocean.y) * 42}px) scale(${Math.max(.35, 1 + (editOffsets.globe.z + editOffsets.ocean.z) * .12)})`;
+
   return (
     <div className="globe-frame" ref={frameRef}>
+      <div className="ocean-void" style={{ transform: oceanTransform }} aria-hidden="true" />
       <div className={`globe-satellite-orbit${world3d ? " is-upgraded" : ""}`} aria-hidden="true"><span>🛰️</span></div>
       <canvas
         ref={canvasRef}
         className="globe-canvas"
+        style={{
+          transform: oceanTransform,
+        }}
         aria-label={
           terrainBrush
             ? `Terrain brush armed: drag across land to ${terrainBrush} it.`
@@ -785,6 +809,27 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   Reset
                 </button>
               </div>
+              {(editTarget === "platform" || editTarget === "alien") && (
+                <div className="cube-toolbar__actions cube-toolbar__actions--launch">
+                  <button type="button" onClick={() => worldRef.current?.hopAlien()}>HOP</button>
+                  <button type="button" onClick={() => worldRef.current?.ragdollAlien()}>RAGDOLL</button>
+                  <button type="button" className="alien-launch" onClick={() => router.push("/alien-archer")}>LAUNCH ARCHER</button>
+                </div>
+              )}
+              {editTarget === "platform" && <small className="cube-toolbar__hint">Q/E orbit · R/F rise · Z/X depth · release to stop instantly · Lock freezes flight</small>}
+              <span>GEOGRAPHIC LEVELS</span>
+              <div className="cube-toolbar__destinations">
+                {DESTINATIONS.map((name) => {
+                  const territory = territories.find((entry) => entry.name === name);
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => territory && setRotation({ lon: territory.center[0], lat: territory.center[1], roll: 0 })}
+                    >{name}</button>
+                  );
+                })}
+              </div>
               <span>EARTH SHAPE</span>
               <div className="cube-toolbar__targets">
                 <button
@@ -835,7 +880,7 @@ export default function WorldSelect() {
       <footer className="world-footer world-footer--minimal">
         <div className="control-hint" title="Drag: 360° rotate · Shift-drag: roll"><span>↔</span></div>
         <div className="control-hint" title="Scroll to zoom"><span>＋</span></div>
-        <div className="control-hint" title="WASD walk · Q/E fly island · R/F tilt · Z/X zip closer/farther"><span>🏹</span></div>
+        <div className="control-hint" title="WASD walk · Q/E fly island · R/F rise · Z/X depth · C hop · G ragdoll"><span>🏹</span></div>
       </footer>
     </main>
   );

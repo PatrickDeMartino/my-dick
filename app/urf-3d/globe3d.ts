@@ -52,7 +52,7 @@ export type SatellitePartId = "thrusters" | "big-dish" | "extra-panels" | "beaco
 
 /** The objects the Cube panel's position editor can nudge along X/Y/Z and
  * lock in place. "ufo" moves both saucers' shared orbit centre together. */
-export type EditTargetId = "globe" | "alien" | "satellite" | "ufo" | "moon";
+export type EditTargetId = "globe" | "land" | "ocean" | "platform" | "alien" | "satellite" | "ufo" | "moon";
 export type EditOffset = { x: number; y: number; z: number; locked: boolean };
 
 export type ShotResult = {
@@ -71,7 +71,7 @@ export type Globe3DEvents = {
 
 export type Globe3DHandle = {
   setView: (rotation: { lon: number; lat: number; roll: number }, zoom: number) => void;
-  setSize: (size: number) => void;
+  setSize: (width: number, height: number) => void;
   setTerritories: (territories: Territory[]) => void;
   /** Screen-space aim point, normalised to -1..1 with +y up. */
   setAim: (x: number, y: number) => void;
@@ -95,6 +95,9 @@ export type Globe3DHandle = {
   setEditOffset: (target: EditTargetId, axis: "x" | "y" | "z", value: number) => void;
   setEditLock: (target: EditTargetId, locked: boolean) => void;
   getEditOffsets: () => Record<EditTargetId, EditOffset>;
+  setSelectedTarget: (target: EditTargetId) => void;
+  hopAlien: () => void;
+  ragdollAlien: () => void;
   /** Arms (or disarms, with null) a raise/lower terrain brush; painting
    * happens by aiming (setAim) and calling paintTerrain while armed. */
   setTerrainBrush: (mode: "raise" | "lower" | null) => void;
@@ -457,6 +460,12 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
     const foot = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.16), skinShade);
     foot.position.set(0, -0.27, 0.04);
     knee.add(foot);
+    [-1, 0, 1].forEach((toe) => {
+      const digit = new THREE.Mesh(new THREE.ConeGeometry(.012, .07, 5), skinShade);
+      digit.rotation.x = Math.PI / 2;
+      digit.position.set(toe * .025, -.27, .145);
+      knee.add(digit);
+    });
 
     return { hip, knee };
   };
@@ -505,6 +514,19 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   jaw.rotation.x = Math.PI;
   jaw.position.y = 0.02;
   head.add(jaw);
+
+  [-1, 1].forEach((side) => {
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(.006, .01, .16, 5), skinShade);
+    antenna.position.set(side * .055, .3, 0);
+    antenna.rotation.z = side * -.28;
+    head.add(antenna);
+    const antennaGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(.019, 7, 5),
+      new THREE.MeshStandardMaterial({ color: 0x8dff78, emissive: 0x39ff66, emissiveIntensity: 1.5 }),
+    );
+    antennaGlow.position.set(side * .077, .376, 0);
+    head.add(antennaGlow);
+  });
 
   [-1, 1].forEach((side) => {
     const almond = new THREE.Mesh(new THREE.IcosahedronGeometry(0.062, 1), eye);
@@ -571,6 +593,12 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
     hand.scale.set(0.9, 1.1, 0.7);
     hand.position.y = -0.24;
     elbow.add(hand);
+    [-1, 0, 1].forEach((finger) => {
+      const digit = new THREE.Mesh(new THREE.CylinderGeometry(.006, .008, .065, 5), skinShade);
+      digit.position.set(finger * .014, -.278, .01);
+      digit.rotation.x = -.35;
+      elbow.add(digit);
+    });
 
     return { shoulder, elbow };
   };
@@ -671,6 +699,7 @@ function buildPlatform(THREE: typeof THREE_NS) {
   const crystal = new THREE.MeshStandardMaterial({ color: 0x39e6d4, flatShading: true, roughness: 0.25, metalness: 0.3, emissive: 0x0d5f5a, emissiveIntensity: 0.5 });
   const cap = new THREE.MeshStandardMaterial({ color: 0xff7ad4, flatShading: true, roughness: 0.6 });
   const stalk = new THREE.MeshStandardMaterial({ color: 0x8f4fd8, flatShading: true, roughness: 0.7 });
+  const edgeMaterial = new THREE.MeshBasicMaterial({ color: 0x33dfff, transparent: true, opacity: 0.16 });
 
   const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.86, 0.07, 9), rockTop);
   group.add(deck);
@@ -678,6 +707,21 @@ function buildPlatform(THREE: typeof THREE_NS) {
   const keel = new THREE.Mesh(new THREE.ConeGeometry(SLAB_RADIUS * 0.86, 0.72, 9), rock);
   keel.position.y = -0.39;
   group.add(keel);
+
+  const edge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.CylinderGeometry(SLAB_RADIUS * 1.02, SLAB_RADIUS * .88, .1, 9)),
+    edgeMaterial,
+  );
+  edge.position.y = .015;
+  group.add(edge);
+
+  const underglow = new THREE.Mesh(
+    new THREE.TorusGeometry(SLAB_RADIUS * .72, .018, 5, 36),
+    new THREE.MeshBasicMaterial({ color: 0x20cfff, transparent: true, opacity: .08 }),
+  );
+  underglow.rotation.x = Math.PI / 2;
+  underglow.position.y = -.08;
+  group.add(underglow);
 
   const decorations: { x: number; z: number; scale: number; kind: "crystal" | "shroom" }[] = [
     { x: -0.44, z: 0.16, scale: 0.62, kind: "crystal" },
@@ -706,7 +750,7 @@ function buildPlatform(THREE: typeof THREE_NS) {
     }
   });
 
-  return group;
+  return { group, edgeMaterial, underglow: underglow.material as THREE_NS.MeshBasicMaterial };
 }
 
 /** A bolt-on satellite part. Added into a dedicated upgrade slot on the
@@ -1068,11 +1112,13 @@ export async function createGlobe3D(
   let flyHeading = 0;
   let prevIslandX = 0;
   let prevIslandY = 0;
+  let selectedTarget: EditTargetId = "globe";
 
   const placeIsland = (elapsed: number) => {
-    const wiggleAz = flyAzimuth + Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05;
-    const wiggleEl = flyElevation + Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04;
-    const wiggleZ = flyDepth + Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18;
+    const hover = selectedTarget === "platform" ? 0 : 1;
+    const wiggleAz = flyAzimuth + hover * (Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05);
+    const wiggleEl = flyElevation + hover * (Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04);
+    const wiggleZ = flyDepth + hover * (Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18);
     const nextX = Math.sin(wiggleAz) * FLY_ORBIT;
     const nextY = Math.cos(wiggleAz) * FLY_ORBIT * 0.48 + wiggleEl * 0.8 - 0.22;
     islandRoot.position.set(nextX, nextY, wiggleZ);
@@ -1115,9 +1161,9 @@ export async function createGlobe3D(
   scene.add(islandRoot);
 
   const platform = buildPlatform(THREE);
-  platform.rotation.x = Math.atan2(SLAB_RISE, SLAB_DEPTH);
-  platform.position.set(0, -0.05, 0);
-  islandRoot.add(platform);
+  platform.group.rotation.x = Math.atan2(SLAB_RISE, SLAB_DEPTH);
+  platform.group.position.set(0, -0.05, 0);
+  islandRoot.add(platform.group);
 
   const alien = buildAlien(THREE);
   alien.group.scale.setScalar(ALIEN_SCALE);
@@ -1136,7 +1182,7 @@ export async function createGlobe3D(
     }
     if (propsModel) {
       propsModel.scale.setScalar(0.5);
-      platform.add(propsModel);
+      platform.group.add(propsModel);
     }
   });
 
@@ -1181,7 +1227,8 @@ export async function createGlobe3D(
   // ---------------------------------------------------------------- state --
 
   let activeTerritories = territories;
-  let size = canvas.clientWidth || 640;
+  let width = canvas.clientWidth || 640;
+  let height = canvas.clientHeight || width;
   let zoom = 1;
   let disposed = false;
 
@@ -1193,7 +1240,7 @@ export async function createGlobe3D(
     orbitLeft: false, orbitRight: false, tiltUp: false, tiltDown: false,
     zipIn: false, zipOut: false,
   };
-  const walker = { x: 0, z: 0.3, facing: 0, stride: 0 };
+  const walker = { x: 0, z: 0.3, vx: 0, vz: 0, y: 0, vy: 0, facing: 0, stride: 0, ragdoll: 0, spin: 0 };
 
   // Cube edit mode: tumbles the entire enclosed universe (box included) as
   // one rigid whole, and lets each object be nudged along X/Y/Z within it
@@ -1205,6 +1252,9 @@ export async function createGlobe3D(
   const boxQuaternion = new THREE.Quaternion();
   const editOffsets: Record<EditTargetId, { x: number; y: number; z: number; locked: boolean }> = {
     globe: { x: 0, y: 0, z: 0, locked: false },
+    land: { x: 0, y: 0, z: 0, locked: false },
+    ocean: { x: 0, y: 0, z: 0, locked: false },
+    platform: { x: 0, y: 0, z: 0, locked: false },
     alien: { x: 0, y: 0, z: 0, locked: false },
     satellite: { x: 0, y: 0, z: 0, locked: false },
     ufo: { x: 0, y: 0, z: 0, locked: false },
@@ -1272,8 +1322,9 @@ export async function createGlobe3D(
 
   const applyView = () => {
     const half = 0.5 / (0.43 * zoom);
-    camera.left = -half;
-    camera.right = half;
+    const aspect = width / Math.max(height, 1);
+    camera.left = -half * aspect;
+    camera.right = half * aspect;
     camera.top = half;
     camera.bottom = -half;
     camera.updateProjectionMatrix();
@@ -1287,7 +1338,7 @@ export async function createGlobe3D(
   };
 
   const applySize = () => {
-    renderer.setSize(size, size, false);
+    renderer.setSize(width, height, false);
   };
 
   /**
@@ -1297,7 +1348,7 @@ export async function createGlobe3D(
    */
   const worldFromScreen = (nx: number, ny: number) => {
     const half = 0.5 / (0.43 * zoom);
-    const x = nx * half;
+    const x = nx * half * (width / Math.max(height, 1));
     const y = ny * half;
     const radial = x * x + y * y;
     if (radial >= 0.97) return aimTarget.set(x, y, 0.12);
@@ -1494,12 +1545,32 @@ export async function createGlobe3D(
   const stepAlien = (delta: number, elapsed: number) => {
     const inputX = clamp(move.x + (keys.right ? 1 : 0) - (keys.left ? 1 : 0), -1, 1);
     const inputZ = clamp(move.y + (keys.up ? 1 : 0) - (keys.down ? 1 : 0), -1, 1);
-    const moving = Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05;
+    const acceleration = walker.y > .001 ? 2.4 : 5.8;
+    walker.vx += (inputX * WALK_SPEED - walker.vx) * Math.min(1, delta * acceleration);
+    walker.vz += (inputZ * WALK_SPEED - walker.vz) * Math.min(1, delta * acceleration);
+    if (Math.abs(inputX) < .05) walker.vx *= Math.max(0, 1 - delta * 8.5);
+    if (Math.abs(inputZ) < .05) walker.vz *= Math.max(0, 1 - delta * 8.5);
+    walker.x = clamp(walker.x + walker.vx * delta, -WALK_LIMIT_X, WALK_LIMIT_X);
+    walker.z = clamp(walker.z + walker.vz * delta, 0, 1);
+    if (Math.abs(walker.x) >= WALK_LIMIT_X) walker.vx *= -.22;
+    if (walker.z <= 0 || walker.z >= 1) walker.vz *= -.22;
+    walker.vy -= 2.8 * delta;
+    walker.y += walker.vy * delta;
+    if (walker.y < 0) {
+      walker.y = 0;
+      walker.vy = Math.abs(walker.vy) > .55 ? -walker.vy * .18 : 0;
+    }
+    walker.ragdoll = Math.max(0, walker.ragdoll - delta);
+    walker.spin += walker.ragdoll > 0 ? delta * 8 : 0;
+    const moving = Math.hypot(walker.vx, walker.vz) > .035;
 
-    walker.x = clamp(walker.x + inputX * WALK_SPEED * delta, -WALK_LIMIT_X, WALK_LIMIT_X);
-    walker.z = clamp(walker.z + inputZ * WALK_SPEED * delta, 0, 1);
-
-    alien.group.position.set(walker.x, walker.z * SLAB_RISE, -walker.z * SLAB_DEPTH);
+    alien.group.position.set(
+      walker.x + editOffsets.alien.x,
+      walker.z * SLAB_RISE + walker.y + editOffsets.alien.y,
+      -walker.z * SLAB_DEPTH + editOffsets.alien.z,
+    );
+    alien.group.rotation.x = walker.ragdoll > 0 ? Math.sin(walker.spin * .8) * 1.1 : 0;
+    alien.group.rotation.z = walker.ragdoll > 0 ? walker.spin : 0;
 
     // Aim: from the archer toward wherever the player is pointing on the globe.
     const target = worldFromScreen(aim.x, aim.y);
@@ -1519,7 +1590,7 @@ export async function createGlobe3D(
     // sharply side-on when the shot itself is far off to one side.
     const mixed = facing * 0.35 + toCamera * 0.65;
     walker.facing += ((mixed - walker.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, delta * 9);
-    alien.group.rotation.y = walker.facing;
+    alien.group.rotation.y = walker.facing + (walker.ragdoll > 0 ? walker.spin * .35 : 0);
 
     const pitch = Math.asin(clamp(aimDirection.y, -1, 1));
 
@@ -1610,6 +1681,14 @@ export async function createGlobe3D(
     else if (code === "KeyF") keys.tiltDown = true;
     else if (code === "KeyZ") keys.zipIn = true;
     else if (code === "KeyX") keys.zipOut = true;
+    else if (code === "KeyC") {
+      if (walker.y <= .001) walker.vy = 1.18;
+    }
+    else if (code === "KeyG") {
+      walker.ragdoll = 1.15;
+      walker.vy = Math.max(walker.vy, .75);
+      walker.spin = 0;
+    }
     else if (code === "Space") {
       if (!drawing) beginDraw();
       event.preventDefault();
@@ -1692,7 +1771,11 @@ export async function createGlobe3D(
     // it's recomputed here rather than only when the view state changes.
     updateBoxQuaternion();
     syncPlanetQuaternion();
-    planet.position.set(editOffsets.globe.x, editOffsets.globe.y, editOffsets.globe.z).applyQuaternion(boxQuaternion);
+    planet.position.set(
+      editOffsets.globe.x + editOffsets.land.x,
+      editOffsets.globe.y + editOffsets.land.y,
+      editOffsets.globe.z + editOffsets.land.z,
+    ).applyQuaternion(boxQuaternion);
     universeEdges.quaternion.copy(boxQuaternion);
     universeFloor.position.set(0, -UNIVERSE_SIZE / 2, 0).applyQuaternion(boxQuaternion);
     universeFloor.quaternion.copy(boxQuaternion);
@@ -1719,16 +1802,22 @@ export async function createGlobe3D(
     // Zippier than the old slow orbit: faster azimuth/elevation response, plus
     // a push/pull depth axis so the platform can close in or peel away in
     // full 3D space instead of only sliding around the planet's face.
-    flyAzimuth += (orbitInput * 1.6 + (orbitInput === 0 ? 0.07 : 0)) * delta;
-    flyElevation = clamp(flyElevation + tiltInput * 1.15 * delta, -0.85, 0.85);
-    flyDepth = clamp(flyDepth + zipInput * 1.4 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
+    const platformFrozen = selectedTarget === "platform" && editOffsets.platform.locked;
+    if (!platformFrozen) {
+      flyAzimuth += orbitInput * 1.75 * delta;
+      flyElevation = clamp(flyElevation + tiltInput * 1.25 * delta, -0.85, 0.85);
+      flyDepth = clamp(flyDepth + zipInput * 1.55 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
+    }
     placeIsland(elapsed);
     // The island's own position is set inside placeIsland relative to its
     // un-boxed frame; add the edit offset there, then rotate the whole thing
     // (position and facing alike) into the tumbled box.
-    islandRoot.position.add(editOffsets.alien);
+    islandRoot.position.add(editOffsets.platform);
     islandRoot.position.applyQuaternion(boxQuaternion);
     islandRoot.quaternion.premultiply(boxQuaternion);
+    const platformSelected = selectedTarget === "platform";
+    platform.edgeMaterial.opacity = platformSelected ? .95 : .16;
+    platform.underglow.opacity = platformSelected ? .7 + Math.sin(elapsed * 5) * .18 : .08;
 
     const orbit = elapsed * 0.32;
     satellite.group.position.set(
@@ -1810,8 +1899,9 @@ export async function createGlobe3D(
       zoom = nextZoom;
       applyView();
     },
-    setSize: (nextSize) => {
-      size = nextSize;
+    setSize: (nextWidth, nextHeight) => {
+      width = nextWidth;
+      height = nextHeight;
       applySize();
     },
     setTerritories: (next) => {
@@ -1870,6 +1960,17 @@ export async function createGlobe3D(
       editOffsets[target].locked = locked;
     },
     getEditOffsets: () => JSON.parse(JSON.stringify(editOffsets)) as Record<EditTargetId, EditOffset>,
+    setSelectedTarget: (target) => {
+      selectedTarget = target;
+    },
+    hopAlien: () => {
+      if (walker.y <= .001) walker.vy = 1.18;
+    },
+    ragdollAlien: () => {
+      walker.ragdoll = 1.15;
+      walker.vy = Math.max(walker.vy, .75);
+      walker.spin = 0;
+    },
     setTerrainBrush: (mode) => {
       terrainBrush = mode;
     },

@@ -197,6 +197,23 @@ test("renders the 3D world-select room (Planet Urf archer)", async () => {
   // server-rendered shell — not something to assert on here.
 });
 
+test("Planet Urf exposes the editable world layers, mapped levels, and alien game launch", async () => {
+  const world = await readFile(new URL("../app/urf-3d/WorldSelect.tsx", import.meta.url), "utf8");
+  const engine = await readFile(new URL("../app/urf-3d/globe3d.ts", import.meta.url), "utf8");
+  const game = await readFile(new URL("../public/alien-archer-game/index.html", import.meta.url), "utf8");
+  const response = await request("/alien-archer");
+
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Alien Archer \| Triptotropic/);
+  assert.match(world, /id: "land", label: "Land"/);
+  assert.match(world, /id: "ocean", label: "Ocean"/);
+  assert.match(world, /LAUNCH ARCHER/);
+  assert.match(world, /North America.*South America.*Africa.*China.*Southeast Asia.*India.*Himalayas.*Australia/s);
+  assert.match(engine, /platform\.edgeMaterial\.opacity = platformSelected/);
+  assert.match(engine, /walker\.ragdoll/);
+  assert.match(game, /Raid neon mushroom isles/);
+});
+
 test("landing page's Planet Urf portal opens the 3D world in a modal iframe", async () => {
   const landing = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(landing, /iframe className="urf-modal-frame" src="\/urf-3d"/);

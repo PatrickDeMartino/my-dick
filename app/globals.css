@@ -1271,7 +1271,7 @@ button, input { font: inherit; }
 
 .urf-modal-shell {
   position: fixed;
-  inset: var(--trip-banner-height) 0 0;
+  inset: 0;
   z-index: 1000;
   background: #030912;
   animation: urf-modal-in .24s ease-out;
@@ -1363,7 +1363,8 @@ button, input { font: inherit; }
 }
 
 .world-screen {
-  min-height: 100svh;
+  width: 100vw;
+  min-height: 100dvh;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -1386,12 +1387,16 @@ button, input { font: inherit; }
 .world-header p { margin: 0; color: var(--muted); font-size: clamp(13px, 1.2vw, 17px); }
 .quit-button { position: absolute; z-index: 6; top: calc(var(--trip-banner-height, 0px) + 30px); right: 36px; border: 1px solid rgba(156,194,215,.25); background: rgba(5,17,29,.7); color: #95a9b7; width: 43px; height: 43px; border-radius: 50%; font-size: 27px; line-height: 1; cursor: pointer; transition: .2s; }
 .quit-button:hover { color: white; border-color: #a9c2cf; transform: rotate(90deg); }
-.globe-stage { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 5vh; }
-.globe-frame { width: min(68vw, 76vh, 780px); aspect-ratio: 1; position: relative; }
+.globe-stage { position: absolute; inset: 0; display: grid; place-items: stretch; padding: 0; }
+.globe-frame { width: 100vw; height: 100dvh; position: relative; overflow: hidden; }
+.ocean-void { position: absolute; z-index: 0; left: 50%; top: 50%; width: min(86vw,86vh); aspect-ratio: 1; margin: max(-43vw,-43vh) 0 0 max(-43vw,-43vh); border-radius: 50%; pointer-events: none; opacity: .44; background: repeating-radial-gradient(circle at 44% 38%, rgba(71,248,255,.32) 0 2px, rgba(94,21,164,.2) 3px 11px, rgba(0,8,32,.18) 13px 24px); filter: blur(.4px) saturate(1.6); animation: ocean-void-spin 24s linear infinite; transform-origin: center; }
+.ocean-void::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; background: conic-gradient(from 30deg, transparent, rgba(255,59,214,.22), transparent 28%, rgba(58,241,255,.28), transparent 62%); animation: ocean-void-counter 17s linear infinite; }
+@keyframes ocean-void-spin { to { rotate: 360deg; } }
+@keyframes ocean-void-counter { to { transform: rotate(-360deg) scale(.92); } }
 .globe-satellite-orbit { position: absolute; z-index: 8; inset: 8%; border-radius: 50%; pointer-events: none; animation: satellite-orbit 13s linear infinite; }
 .globe-satellite-orbit span { position: absolute; top: -7%; left: 48%; font-size: clamp(20px,3.6vw,44px); filter: drop-shadow(0 0 8px rgba(105,248,255,.8)); transform: rotate(22deg); }
 @keyframes satellite-orbit { to { transform: rotate(360deg); } }
-.globe-canvas { display: block; cursor: grab; touch-action: none; filter: drop-shadow(0 0 45px rgba(34,130,172,.18)); }
+.globe-canvas { position: absolute; inset: 0; z-index: 1; display: block; cursor: grab; touch-action: none; filter: drop-shadow(0 0 45px rgba(34,130,172,.18)); transform-origin: center; }
 .globe-canvas:active { cursor: grabbing; }
 .globe-shadow { position: absolute; pointer-events: none; width: 62%; height: 8%; left: 19%; bottom: 4%; border-radius: 50%; background: rgba(0,0,0,.8); filter: blur(17px); z-index: -1; }
 .lock-marker, .antarctica-marker { position: absolute; transform: translate(-50%, -50%); transition: opacity .12s; }
@@ -1738,6 +1743,15 @@ button, input { font: inherit; }
   color: #ffe9ae;
 }
 .cube-toolbar__actions button:disabled { opacity: .45; cursor: not-allowed; }
+.cube-toolbar__actions--launch { flex-wrap: wrap; }
+.cube-toolbar__actions--launch .alien-launch { flex-basis: 100%; border-color: #55f2ff; color: #dffeff; box-shadow: 0 0 14px rgba(51,223,255,.25); }
+.cube-toolbar__destinations { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.cube-toolbar__destinations button { min-height: 28px; padding: 4px 6px; border: 1px solid rgba(111,232,239,.3); border-radius: 7px; background: rgba(5,28,42,.82); color: #bfeff4; font-size: 7px; letter-spacing: .06em; cursor: pointer; }
+.cube-toolbar__destinations button:hover { border-color: #63e0ee; color: #fff; }
+
+.alien-archer-screen { position: fixed; inset: 0; overflow: hidden; background: #02030b; }
+.alien-archer-frame { display: block; width: 100%; height: 100%; border: 0; }
+.alien-archer-back { position: fixed; z-index: 20; top: 12px; left: 12px; padding: 8px 12px; border: 1px solid rgba(78,248,255,.7); border-radius: 999px; background: rgba(2,8,20,.78); color: #dffeff; font: 800 9px/1 Arial,sans-serif; letter-spacing: .12em; text-decoration: none; backdrop-filter: blur(8px); }
 
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */
@@ -2436,8 +2450,8 @@ button, input { font: inherit; }
   .world-header { top: 24px; }
   .world-header p { max-width: 230px; }
   .quit-button { top: 19px; right: 19px; }
-  .globe-stage { padding-top: 9vh; }
-  .globe-frame { width: min(112vw, 72vh); }
+  .globe-stage { padding: 0; }
+  .globe-frame { width: 100vw; height: 100dvh; }
   .world-footer { gap: 12px; bottom: 18px; }
   .control-hint p { display: none; }
   .status-pill { font-size: 7px; padding: 9px; }
@@ -2463,6 +2477,19 @@ button, input { font: inherit; }
   .rat-meat-can { width: 62px; height: 81px; }
   .rat-meat-can b { font-size: 14px; }
   .worker-ration > button { padding: 11px 10px; font-size: 7px; }
+}
+
+@media (orientation: landscape) and (max-height: 700px) {
+  .world-screen, .globe-frame { width: 100vw; height: 100dvh; min-height: 100dvh; }
+  .globe-stage { inset: 0; padding: 0; }
+  .world-header--minimal { top: 52px; left: 20px; }
+  .world-header h1 { font-size: clamp(24px,5vw,42px); }
+  .quit-button { top: 12px; right: 12px; }
+  .globe-toolbar { left: 18px; top: 10px; }
+  .gyro-nav { left: 126px; top: 8px; }
+  .cube-toolbar { left: 178px; top: 10px; }
+  .cube-toolbar.is-open { max-height: calc(100dvh - 20px); }
+  .world-footer { bottom: 10px; }
 }
 
 @media (max-width: 430px) {
