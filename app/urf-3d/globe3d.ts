@@ -50,6 +50,11 @@ export type Territory = { name: string; center: Point; unlocked: boolean };
  * consumed. */
 export type SatellitePartId = "thrusters" | "big-dish" | "extra-panels" | "beacon-warm";
 
+/** The objects the Cube panel's position editor can nudge along X/Y/Z and
+ * lock in place. "ufo" moves both saucers' shared orbit centre together. */
+export type EditTargetId = "globe" | "alien" | "satellite" | "ufo" | "moon";
+export type EditOffset = { x: number; y: number; z: number; locked: boolean };
+
 export type ShotResult = {
   /** Territory name, or null when the arrow landed in open water. */
   territory: string | null;
@@ -82,6 +87,20 @@ export type Globe3DHandle = {
   setLandFlagMode: (enabled: boolean) => void;
   /** Replaces every bolt-on satellite upgrade with this set (empty = stock satellite). */
   setSatelliteLoadout: (parts: SatellitePartId[]) => void;
+  /** Tumbles the whole enclosed universe — box included — as one rigid
+   * whole, independent of the normal drag-the-globe view rotation. */
+  setBoxRotation: (rotation: { lon: number; lat: number }) => void;
+  /** Nudges one object's animated path by this offset along the given axis.
+   * No-ops while that object is locked. */
+  setEditOffset: (target: EditTargetId, axis: "x" | "y" | "z", value: number) => void;
+  setEditLock: (target: EditTargetId, locked: boolean) => void;
+  getEditOffsets: () => Record<EditTargetId, EditOffset>;
+  /** Arms (or disarms, with null) a raise/lower terrain brush; painting
+   * happens by aiming (setAim) and calling paintTerrain while armed. */
+  setTerrainBrush: (mode: "raise" | "lower" | null) => void;
+  /** Sculpts land height at the current aim point, once per call — call
+   * this continuously (e.g. on pointer move) while the brush is armed. */
+  paintTerrain: () => void;
   dispose: () => void;
 };
 
@@ -249,7 +268,11 @@ function buildLandMask(landFeatures: LandFeature[]): LandMask | null {
  * Builds the landmasses as real geometry: a raised plate per land cell plus a
  * cliff wall wherever land meets water, so coastlines have visible thickness.
  */
-function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): { geometry: THREE_NS.BufferGeometry; flagColors: Float32Array } {
+function buildLandGeometry(
+  THREE: typeof THREE_NS,
+  mask: LandMask,
+  heightOverride?: Float32Array,
+): { geometry: THREE_NS.BufferGeometry; flagColors: Float32Array } {
   const positions: number[] = [];
   const colors: number[] = [];
   const flagColors: number[] = [];
@@ -297,7 +320,8 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): { geometry: 
       if (!mask.isLand(lonCenter, latCenter)) continue;
 
       const ice = mask.isIce(lonCenter, latCenter);
-      const height = ice ? ICE_HEIGHT : LAND_HEIGHT;
+      const warp = heightOverride ? heightOverride[row * LON_CELLS + column] ?? 0 : 0;
+      const height = (ice ? ICE_HEIGHT : LAND_HEIGHT) + warp;
       const top = GLOBE_RADIUS + height;
       const jitter = hashNoise(column, row);
       const rgb: [number, number, number] = ice
@@ -318,26 +342,33 @@ function buildLandGeometry(THREE: typeof THREE_NS, mask: LandMask): { geometry: 
         flagRgb,
       );
 
-      // Cliff walls wherever this cell touches water.
+      // Cliff walls wherever this cell touches water — or, once terrain has
+      // been warped, wherever it steps down to a shorter land neighbour, so
+      // raised/lowered cells still read as solid blocks rather than a gap
+      // you can see straight through into the globe.
       const cliff: [number, number, number] = [rgb[0] * 0.62, rgb[1] * 0.62, rgb[2] * 0.66];
       const flagCliff: [number, number, number] = [flagRgb[0] * 0.62, flagRgb[1] * 0.62, flagRgb[2] * 0.66];
-      const neighbours: { lon: number; lat: number; edge: [number, number][] }[] = [
-        { lon: lonCenter, lat: latCenter + deltaLat, edge: [[lonLeft, latTop], [lonRight, latTop]] },
-        { lon: lonCenter, lat: latCenter - deltaLat, edge: [[lonRight, latBottom], [lonLeft, latBottom]] },
-        { lon: lonCenter - deltaLon, lat: latCenter, edge: [[lonLeft, latBottom], [lonLeft, latTop]] },
-        { lon: lonCenter + deltaLon, lat: latCenter, edge: [[lonRight, latTop], [lonRight, latBottom]] },
+      const neighbours: { lon: number; lat: number; row: number; column: number; edge: [number, number][] }[] = [
+        { lon: lonCenter, lat: latCenter + deltaLat, row: row - 1, column, edge: [[lonLeft, latTop], [lonRight, latTop]] },
+        { lon: lonCenter, lat: latCenter - deltaLat, row: row + 1, column, edge: [[lonRight, latBottom], [lonLeft, latBottom]] },
+        { lon: lonCenter - deltaLon, lat: latCenter, row, column: (column - 1 + LON_CELLS) % LON_CELLS, edge: [[lonLeft, latBottom], [lonLeft, latTop]] },
+        { lon: lonCenter + deltaLon, lat: latCenter, row, column: (column + 1) % LON_CELLS, edge: [[lonRight, latTop], [lonRight, latBottom]] },
       ];
 
       neighbours.forEach((neighbour) => {
         const outside = neighbour.lat > 90 || neighbour.lat < -90;
-        if (!outside && mask.isLand(neighbour.lon, neighbour.lat)) return;
         const [start, end] = neighbour.edge;
-        pushQuad(
-          [start, end, end, start],
-          [top, top, GLOBE_RADIUS, GLOBE_RADIUS],
-          cliff,
-          flagCliff,
-        );
+        if (outside || !mask.isLand(neighbour.lon, neighbour.lat)) {
+          pushQuad([start, end, end, start], [top, top, GLOBE_RADIUS, GLOBE_RADIUS], cliff, flagCliff);
+          return;
+        }
+        if (!heightOverride) return;
+        const neighbourIce = mask.isIce(neighbour.lon, neighbour.lat);
+        const neighbourWarp = heightOverride[neighbour.row * LON_CELLS + neighbour.column] ?? 0;
+        const neighbourTop = GLOBE_RADIUS + (neighbourIce ? ICE_HEIGHT : LAND_HEIGHT) + neighbourWarp;
+        if (neighbourTop < top - 0.0005) {
+          pushQuad([start, end, end, start], [top, top, neighbourTop, neighbourTop], cliff, flagCliff);
+        }
       });
     }
   }
@@ -922,8 +953,14 @@ export async function createGlobe3D(
   occluder.renderOrder = -1;
   planet.add(occluder);
 
-  const { geometry: landGeometry, flagColors } = buildLandGeometry(THREE, mask);
-  const landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
+  // Per-cell terrain warp, in world-radius units added on top of the base
+  // land/ice height — this is what the Cube panel's raise/lower brush edits.
+  // Zero-filled by default, so it changes nothing until the player sculpts.
+  const terrainHeights = new Float32Array(LAT_CELLS * LON_CELLS);
+
+  let { geometry: landGeometry, flagColors } = buildLandGeometry(THREE, mask, terrainHeights);
+  let landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
+  let flagModeActive = false;
   const landMesh = new THREE.Mesh(
     landGeometry,
     new THREE.MeshStandardMaterial({
@@ -936,6 +973,47 @@ export async function createGlobe3D(
   );
   landMesh.renderOrder = 1;
   planet.add(landMesh);
+
+  /** Rebuilds the land mesh from scratch against the current terrainHeights
+   * warp. Not cheap (the full 480x240 grid), so callers throttle this during
+   * a drag and only need to call it once more on release. */
+  const rebuildLandGeometry = () => {
+    const rebuilt = buildLandGeometry(THREE, mask, terrainHeights);
+    landMesh.geometry.dispose();
+    landMesh.geometry = rebuilt.geometry;
+    landGeometry = rebuilt.geometry;
+    flagColors = rebuilt.flagColors;
+    landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
+    if (flagModeActive) {
+      const colorAttr = landGeometry.getAttribute("color") as THREE_NS.BufferAttribute;
+      (colorAttr.array as Float32Array).set(flagColors);
+      colorAttr.needsUpdate = true;
+    }
+  };
+
+  /** Raises (positive delta) or lowers (negative) land height in a small
+   * radius around the given lon/lat, with linear falloff, then rebuilds the
+   * mesh. `lon`/`lat` come from the same land-hit coordinates the shooting
+   * mechanic already computes, so the brush and the bow aim the same way. */
+  const sculptTerrain = (lon: number, lat: number, delta: number, radiusCells: number) => {
+    const deltaLon = 360 / LON_CELLS;
+    const deltaLat = 180 / LAT_CELLS;
+    const centerColumn = Math.floor(((((lon + 180) % 360) + 360) % 360) / deltaLon);
+    const centerRow = clamp(Math.floor((90 - lat) / deltaLat), 0, LAT_CELLS - 1);
+    for (let dRow = -radiusCells; dRow <= radiusCells; dRow += 1) {
+      const row = centerRow + dRow;
+      if (row < 0 || row >= LAT_CELLS) continue;
+      for (let dColumn = -radiusCells; dColumn <= radiusCells; dColumn += 1) {
+        const distance = Math.hypot(dRow, dColumn);
+        if (distance > radiusCells) continue;
+        const column = ((centerColumn + dColumn) % LON_CELLS + LON_CELLS) % LON_CELLS;
+        const falloff = 1 - distance / (radiusCells + 1);
+        const index = row * LON_CELLS + column;
+        terrainHeights[index] = clamp(terrainHeights[index] + delta * falloff, -0.09, 0.16);
+      }
+    }
+    rebuildLandGeometry();
+  };
 
   const stuckLayer = new THREE.Group();
   planet.add(stuckLayer);
@@ -1117,6 +1195,23 @@ export async function createGlobe3D(
   };
   const walker = { x: 0, z: 0.3, facing: 0, stride: 0 };
 
+  // Cube edit mode: tumbles the entire enclosed universe (box included) as
+  // one rigid whole, and lets each object be nudged along X/Y/Z within it
+  // and then locked in place. `editOffsets` positions are added on top of
+  // each object's normal animated path (shifting where that path is
+  // centred), not a replacement for it.
+  let boxLon = 0;
+  let boxLat = 0;
+  const boxQuaternion = new THREE.Quaternion();
+  const editOffsets: Record<EditTargetId, { x: number; y: number; z: number; locked: boolean }> = {
+    globe: { x: 0, y: 0, z: 0, locked: false },
+    alien: { x: 0, y: 0, z: 0, locked: false },
+    satellite: { x: 0, y: 0, z: 0, locked: false },
+    ufo: { x: 0, y: 0, z: 0, locked: false },
+    moon: { x: 0, y: 0, z: 0, locked: false },
+  };
+  let terrainBrush: "raise" | "lower" | null = null;
+
   let drawing = false;
   let drawStartedAt = 0;
   let charge = 0;
@@ -1148,6 +1243,33 @@ export async function createGlobe3D(
   const limbDown = new THREE.Vector3(0, -1, 0);
   const limbHinge = new THREE.Vector3(1, 0, 0);
 
+  // The globe's own spin (from dragging the globe / gyro knob) — computed
+  // here, then combined with the box tumble fresh every frame in
+  // syncPlanetQuaternion, since the box can keep changing after applyView
+  // last ran.
+  const planetLocalQuaternion = new THREE.Quaternion();
+
+  const updateBoxQuaternion = () => {
+    const yaw = new THREE.Quaternion().setFromAxisAngle(axisY, (-boxLon * Math.PI) / 180);
+    const tilt = new THREE.Quaternion().setFromAxisAngle(axisX, (boxLat * Math.PI) / 180);
+    boxQuaternion.copy(tilt).multiply(yaw);
+  };
+
+  /** Combines the globe's own spin with the box tumble, applied outside it —
+   * spin the globe first, then tumble the whole box it sits in. Re-run every
+   * frame so a box-rotate drag updates the globe (and the sky riding along
+   * with it via worldSpin) immediately. */
+  const syncPlanetQuaternion = () => {
+    planet.quaternion.copy(boxQuaternion).multiply(planetLocalQuaternion);
+    // The satellite/moon/UFOs/meteors are a separate sibling group (not a
+    // child of `planet`, to avoid double-applying this rotation) that gets
+    // the identical orientation, so dragging swings the whole sky along with
+    // the globe instead of just the little sphere spinning in isolation —
+    // and, since planet.quaternion now includes the box tumble too, that
+    // rides along with the box for free as well.
+    worldSpin.quaternion.copy(planet.quaternion);
+  };
+
   const applyView = () => {
     const half = 0.5 / (0.43 * zoom);
     camera.left = -half;
@@ -1160,12 +1282,8 @@ export async function createGlobe3D(
     const yaw = new THREE.Quaternion().setFromAxisAngle(axisY, (-rotation.lon * Math.PI) / 180);
     const tilt = new THREE.Quaternion().setFromAxisAngle(axisX, (rotation.lat * Math.PI) / 180);
     const roll = new THREE.Quaternion().setFromAxisAngle(axisZ, (rotation.roll * Math.PI) / 180);
-    planet.quaternion.copy(roll).multiply(tilt).multiply(yaw);
-    // The satellite/moon/UFOs/meteors are a separate sibling group (not a
-    // child of `planet`, to avoid double-applying this rotation) that gets
-    // the identical orientation, so dragging swings the whole sky along with
-    // the globe instead of just the little sphere spinning in isolation.
-    worldSpin.quaternion.copy(planet.quaternion);
+    planetLocalQuaternion.copy(roll).multiply(tilt).multiply(yaw);
+    syncPlanetQuaternion();
   };
 
   const applySize = () => {
@@ -1570,6 +1688,15 @@ export async function createGlobe3D(
     previous = now;
     const elapsed = now / 1000;
 
+    // The box tumble can change every frame during a cube-rotate drag, so
+    // it's recomputed here rather than only when the view state changes.
+    updateBoxQuaternion();
+    syncPlanetQuaternion();
+    planet.position.set(editOffsets.globe.x, editOffsets.globe.y, editOffsets.globe.z).applyQuaternion(boxQuaternion);
+    universeEdges.quaternion.copy(boxQuaternion);
+    universeFloor.position.set(0, -UNIVERSE_SIZE / 2, 0).applyQuaternion(boxQuaternion);
+    universeFloor.quaternion.copy(boxQuaternion);
+
     // Charge is read straight off the clock rather than accumulated per frame,
     // so a slow device draws the bow at exactly the same rate as a fast one.
     if (drawing && quiver > 0) charge = Math.min(1, (now - drawStartedAt) / DRAW_MILLISECONDS);
@@ -1596,12 +1723,18 @@ export async function createGlobe3D(
     flyElevation = clamp(flyElevation + tiltInput * 1.15 * delta, -0.85, 0.85);
     flyDepth = clamp(flyDepth + zipInput * 1.4 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
     placeIsland(elapsed);
+    // The island's own position is set inside placeIsland relative to its
+    // un-boxed frame; add the edit offset there, then rotate the whole thing
+    // (position and facing alike) into the tumbled box.
+    islandRoot.position.add(editOffsets.alien);
+    islandRoot.position.applyQuaternion(boxQuaternion);
+    islandRoot.quaternion.premultiply(boxQuaternion);
 
     const orbit = elapsed * 0.32;
     satellite.group.position.set(
-      Math.cos(orbit) * 1.52,
-      Math.sin(orbit * 0.6) * 0.42 + 0.18,
-      Math.sin(orbit) * 1.52,
+      Math.cos(orbit) * 1.52 + editOffsets.satellite.x,
+      Math.sin(orbit * 0.6) * 0.42 + 0.18 + editOffsets.satellite.y,
+      Math.sin(orbit) * 1.52 + editOffsets.satellite.z,
     );
     satellite.group.rotation.y = -orbit + Math.PI / 2;
     satellite.group.rotation.z = Math.sin(elapsed * 0.7) * 0.12;
@@ -1609,18 +1742,25 @@ export async function createGlobe3D(
 
     // Ambient sky dressing: a distant moon, a couple of patrolling UFOs, and
     // the occasional meteor streaking past. None of it interacts with the
-    // archer, the arrows, or the territories below.
+    // archer, the arrows, or the territories below. All three (and the
+    // satellite above) are children of worldSpin, which already carries the
+    // combined drag + box rotation, so only their positions need the edit
+    // offset added here — the rotation comes along for free via the parent.
     const moonOrbit = elapsed * 0.045;
     moon.group.position.set(
-      Math.cos(moonOrbit) * 2.7,
-      Math.sin(moonOrbit * 0.35) * 0.55 + 0.35,
-      Math.sin(moonOrbit) * 2.7,
+      Math.cos(moonOrbit) * 2.7 + editOffsets.moon.x,
+      Math.sin(moonOrbit * 0.35) * 0.55 + 0.35 + editOffsets.moon.y,
+      Math.sin(moonOrbit) * 2.7 + editOffsets.moon.z,
     );
     moon.group.rotation.y += delta * 0.04;
 
     ufos.forEach((ufo, index) => {
       const t = elapsed * 0.55 + index * 2.4;
-      ufo.group.position.set(Math.sin(t) * 1.95, 1.05 + Math.sin(t * 1.6 + index) * 0.3, Math.cos(t) * 1.95);
+      ufo.group.position.set(
+        Math.sin(t) * 1.95 + editOffsets.ufo.x,
+        1.05 + Math.sin(t * 1.6 + index) * 0.3 + editOffsets.ufo.y,
+        Math.cos(t) * 1.95 + editOffsets.ufo.z,
+      );
       ufo.group.rotation.y = -t + Math.PI / 2;
       (ufo.beam.material as THREE_NS.MeshBasicMaterial).opacity = 0.35 + Math.abs(Math.sin(t * 2)) * 0.25;
     });
@@ -1701,6 +1841,7 @@ export async function createGlobe3D(
       material.color.setHex(hex);
     },
     setLandFlagMode: (enabled) => {
+      flagModeActive = enabled;
       const colorAttr = landGeometry.getAttribute("color") as THREE_NS.BufferAttribute;
       (colorAttr.array as Float32Array).set(enabled ? flagColors : landBaseColors);
       colorAttr.needsUpdate = true;
@@ -1715,6 +1856,33 @@ export async function createGlobe3D(
         .forEach((id) => satelliteUpgrades.add(buildSatelliteUpgrade(THREE, id)));
       satellite.beacon.color.setHex(warm ? 0xffb23c : 0xff4f6d);
       satellite.beacon.emissive.setHex(warm ? 0xff8a1f : 0xff2a4d);
+    },
+    setBoxRotation: (nextRotation) => {
+      boxLon = nextRotation.lon;
+      boxLat = nextRotation.lat;
+    },
+    setEditOffset: (target, axis, value) => {
+      const offset = editOffsets[target];
+      if (offset.locked) return;
+      offset[axis] = value;
+    },
+    setEditLock: (target, locked) => {
+      editOffsets[target].locked = locked;
+    },
+    getEditOffsets: () => JSON.parse(JSON.stringify(editOffsets)) as Record<EditTargetId, EditOffset>,
+    setTerrainBrush: (mode) => {
+      terrainBrush = mode;
+    },
+    paintTerrain: () => {
+      if (!terrainBrush) return;
+      const point = worldFromScreen(aim.x, aim.y);
+      const local = scratch.copy(point).applyQuaternion(planet.quaternion.clone().invert()).normalize();
+      const lat = (Math.asin(clamp(local.y, -1, 1)) * 180) / Math.PI;
+      const lon = (Math.atan2(local.x, local.z) * 180) / Math.PI;
+      // A wide enough brush (10 cells, ~7.5° across) and strong enough step
+      // that a single click reads as a real, deliberate landform change —
+      // one grid cell alone is imperceptibly small against a 480x240 globe.
+      sculptTerrain(lon, lat, terrainBrush === "raise" ? 0.03 : -0.03, 10);
     },
     dispose: () => {
       disposed = true;
