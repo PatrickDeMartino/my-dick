@@ -880,6 +880,15 @@ button, input { font: inherit; }
   perspective: 1200px;
 }
 
+.home-room-3d { position:absolute; inset:0; z-index:0; }
+.home-room-3d canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+.home-room-3d canvas:active { cursor:grabbing; }
+.home-camera-hint { position:absolute; z-index:3; left:50%; bottom:18px; margin:0; transform:translateX(-50%); color:rgba(212,255,247,.7); font:800 9px/1 var(--font-geist-mono),monospace; letter-spacing:.18em; pointer-events:none; text-shadow:0 2px 8px #000; }
+.home-room-tools { position:absolute; z-index:8; left:18px; bottom:18px; display:flex; align-items:center; gap:7px; padding:7px; border:1px solid rgba(100,255,225,.38); border-radius:14px; background:rgba(10,3,22,.76); backdrop-filter:blur(12px); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+.home-room-tools > span { padding:0 7px; color:#75f7e0; font:900 8px/1 var(--font-geist-mono),monospace; letter-spacing:.14em; }
+.home-room-tools button { min-height:34px; padding:0 11px; border:1px solid rgba(255,255,255,.28); border-radius:9px; color:#fff; background:linear-gradient(135deg,rgba(116,35,153,.82),rgba(21,87,96,.72)); font:900 8px/1 var(--font-geist-mono),monospace; letter-spacing:.08em; cursor:pointer; }
+.home-room-tools button:hover,.home-room-tools button:focus-visible { border-color:#ffe966; color:#ffe966; transform:translateY(-2px); outline:0; }
+
 .choice-landing::before {
   content: "";
   position: absolute;
@@ -1150,9 +1159,32 @@ button, input { font: inherit; }
 .choice-object-brain .choice-object-visual {
   background-image: url("/media/brain-cutout.png");
   background-position: right center;
+  opacity: .46;
+  mix-blend-mode: screen;
   animation-duration: 5.6s;
   animation-direction: reverse;
 }
+
+.brain-world-3d { position:absolute; inset:0; z-index:1; }
+.brain-world-3d canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+.brain-world-3d canvas:active { cursor:grabbing; }
+.brain-room__art-overlay { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:.42; mix-blend-mode:screen; }
+.brain-room__art-overlay img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; filter:saturate(.88) contrast(1.08); }
+
+.home-urf-gate { position:fixed; inset:var(--trip-banner-height) 0 0; z-index:1200; display:grid; place-items:center; align-content:center; gap:30px; overflow:hidden; padding:36px; color:#fff; background:radial-gradient(circle at 50% 46%,rgba(137,32,181,.42),transparent 34%),linear-gradient(145deg,rgba(3,8,20,.98),rgba(27,4,38,.98)); backdrop-filter:blur(18px); animation:urf-modal-in .24s ease-out; }
+.home-urf-gate::before { content:""; position:absolute; inset:0; opacity:.46; pointer-events:none; background-image:radial-gradient(circle,rgba(255,255,255,.9) 0 1px,transparent 1.5px); background-size:89px 89px; }
+.home-urf-gate header { position:relative; text-align:center; }
+.home-urf-gate header small { color:#79f6e8; font:900 10px/1 var(--font-geist-mono),monospace; letter-spacing:.28em; }
+.home-urf-gate h2 { margin:10px 0 0; font:900 clamp(34px,6vw,74px)/.9 Impact,sans-serif; letter-spacing:.03em; }
+.home-urf-gate__close { position:absolute; z-index:3; right:24px; top:24px; width:48px; aspect-ratio:1; border:1px solid rgba(255,255,255,.36); border-radius:50%; color:#fff; background:rgba(10,5,23,.8); font-size:30px; cursor:pointer; }
+.home-urf-gate__doors { position:relative; display:grid; grid-template-columns:repeat(2,minmax(250px,390px)); gap:22px; width:min(820px,100%); }
+.home-urf-gate__doors a { min-height:230px; display:flex; align-items:center; gap:24px; padding:28px; overflow:hidden; border:1px solid rgba(122,240,238,.38); border-radius:24px; color:white; text-decoration:none; background:linear-gradient(145deg,rgba(14,30,51,.88),rgba(73,15,93,.86)); box-shadow:inset 0 0 55px rgba(62,239,228,.05),0 20px 60px rgba(0,0,0,.4); transition:.22s ease; }
+.home-urf-gate__doors a:nth-child(2) { background:linear-gradient(145deg,rgba(40,13,59,.92),rgba(111,25,80,.82)); }
+.home-urf-gate__doors a:hover,.home-urf-gate__doors a:focus-visible { transform:translateY(-8px) rotateX(3deg); border-color:#fff079; box-shadow:0 0 0 3px rgba(255,224,82,.14),0 28px 70px rgba(0,0,0,.55); outline:0; }
+.home-urf-gate__doors b { flex:0 0 auto; font:900 clamp(82px,10vw,132px)/.7 Impact,sans-serif; color:#ffe661; text-shadow:5px 7px 0 #802273; }
+.home-urf-gate__doors span { display:grid; gap:8px; }
+.home-urf-gate__doors strong { font:900 clamp(18px,2vw,28px)/1 Impact,sans-serif; letter-spacing:.08em; }
+.home-urf-gate__doors small { color:#a7dcd8; font:800 9px/1.5 var(--font-geist-mono),monospace; letter-spacing:.11em; }
 
 .choice-object::before {
   content: "";
@@ -1310,6 +1342,12 @@ button, input { font: inherit; }
 }
 
 @media (max-width: 700px) {
+  .home-room-tools { left:8px; right:8px; bottom:8px; justify-content:center; }
+  .home-room-tools > span,.home-camera-hint { display:none; }
+  .home-urf-gate { padding:76px 16px 20px; gap:18px; }
+  .home-urf-gate__doors { grid-template-columns:1fr; gap:12px; }
+  .home-urf-gate__doors a { min-height:126px; padding:18px 24px; }
+  .home-urf-gate__doors b { font-size:68px; }
   .choice-kicker {
     top: calc(var(--trip-banner-height) + 38px);
     left: 55%;
@@ -1419,7 +1457,7 @@ button, input { font: inherit; }
 .lock-marker { display: grid; place-items: center; gap: 4px; color: #d5dbe0; text-shadow: 0 2px 8px #000; pointer-events: none; }
 .lock-marker span { font-size: clamp(13px, 1.5vw, 20px); filter: grayscale(1); }
 .lock-marker small { padding: 3px 6px; border-radius: 3px; color: #aab4ba; background: rgba(7,14,20,.65); font-size: clamp(7px, .7vw, 10px); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
-.antarctica-marker { display: flex; align-items: center; gap: 10px; background: rgba(3,15,24,.88); color: white; border: 1px solid rgba(111,232,239,.65); border-radius: 5px; padding: 8px 13px 8px 9px; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 20px rgba(67,224,235,.15); text-align: left; }
+.antarctica-marker { width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:rgba(3,15,24,.88); color:white; border:1px solid rgba(111,232,239,.65); border-radius:50%; padding:0; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 20px rgba(67,224,235,.24); }
 .antarctica-marker:hover { transform: translate(-50%, -50%) scale(1.05); background: #0b2730; border-color: var(--cyan); }
 
 /* 3D world layer: real extruded land, the orbiting satellite and the alien
@@ -1428,6 +1466,7 @@ button, input { font: inherit; }
 .globe-satellite-orbit.is-upgraded { display: none; }
 
 .archer-hud { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+.archer-activate { position:absolute; z-index:20; left:50%; top:57%; transform:translate(-50%,-50%); min-height:42px; padding:0 18px; border:1px solid #ffe86b; border-radius:999px; color:#1b1022; background:#ffe86b; font:900 9px/1 var(--font-geist-mono),monospace; letter-spacing:.12em; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(255,232,107,.42); }
 .archer-chip { position: absolute; right: 1%; top: 2%; display: flex; align-items: center; gap: 9px; padding: 7px 13px 7px 9px; border: 1px solid rgba(120,232,255,.42); border-radius: 9px; background: rgba(4,10,24,.74); box-shadow: 0 6px 22px rgba(0,0,0,.4); }
 .archer-face { font-size: clamp(17px, 2.1vw, 24px); filter: drop-shadow(0 0 7px rgba(112,240,110,.75)); }
 .archer-gauges { display: grid; gap: 3px; }

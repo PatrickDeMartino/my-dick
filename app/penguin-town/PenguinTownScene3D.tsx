@@ -1136,6 +1136,18 @@ export default function PenguinTownScene3D({
       if (penguin.mode === "walk" || penguin.mode === "idle") penguin.mode = "selected";
       selectRing.visible = true;
     }
+    const penguinKeys = new Set<string>();
+    const onPenguinKeyDown = (event: KeyboardEvent) => {
+      if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code) && selectedPenguin !== null) event.preventDefault();
+      penguinKeys.add(event.code);
+      if (event.code === "Space" && selectedPenguin !== null) {
+        const penguin = penguins[selectedPenguin];
+        if (penguin && penguin.mode === "selected" && penguin.group.position.y <= ISLAND_HEIGHT + .08) penguin.velocity.y = 5.8;
+      }
+    };
+    const onPenguinKeyUp = (event: KeyboardEvent) => penguinKeys.delete(event.code);
+    window.addEventListener("keydown", onPenguinKeyDown);
+    window.addEventListener("keyup", onPenguinKeyUp);
 
     // ---------------- Backdrop: distant mainland Antarctica ----------------
     // A close ring of real 3D peaks reads as solid geometry near the camera;
@@ -1296,6 +1308,11 @@ export default function PenguinTownScene3D({
     }
 
     let pointerDownAt: { x: number; y: number; time: number } | null = null;
+    let grabbedPenguin: number | null = null;
+    const grabPlane = new THREE.Plane();
+    const grabHit = new THREE.Vector3();
+    const grabNormal = new THREE.Vector3();
+    let lastGrab = { point: new THREE.Vector3(), time: 0 };
 
     function onPointerDown(event: PointerEvent) {
       pointerDownAt = { x: event.clientX, y: event.clientY, time: performance.now() };
@@ -1305,6 +1322,19 @@ export default function PenguinTownScene3D({
       // through to whatever's visually underneath at that screen position —
       // without this, tapping ROTATE could silently commit a placement.
       dom.setPointerCapture(event.pointerId);
+      if (!propsRef.current.placingBuildingId) {
+        setPointerFromEvent(event);
+        const penguinHits = raycaster.intersectObjects(penguinGroup.children, true);
+        const penguinIndex = penguinHits.length ? (penguinHits[0].object.userData.penguinIndex as number | undefined) : undefined;
+        if (typeof penguinIndex === "number") {
+          grabbedPenguin = penguinIndex;
+          selectPenguin(penguinIndex);
+          camera.getWorldDirection(grabNormal);
+          grabPlane.setFromNormalAndCoplanarPoint(grabNormal, penguins[penguinIndex].group.position);
+          lastGrab = { point: penguins[penguinIndex].group.position.clone(), time: performance.now() };
+          controls.enabled = false;
+        }
+      }
       if (propsRef.current.placingBuildingId) {
         // Placement mode: keep the camera still so a tap-to-place isn't
         // read as an orbit drag, and compute a preview immediately so a
@@ -1315,10 +1345,32 @@ export default function PenguinTownScene3D({
     }
 
     function onPointerMove(event: PointerEvent) {
+      if (grabbedPenguin !== null) {
+        setPointerFromEvent(event);
+        const penguin = penguins[grabbedPenguin];
+        if (penguin && raycaster.ray.intersectPlane(grabPlane, grabHit)) {
+          const now = performance.now();
+          const dt = Math.max(.008, (now - lastGrab.time) / 1000);
+          penguin.velocity.copy(grabHit).sub(lastGrab.point).divideScalar(dt).multiplyScalar(.7);
+          penguin.group.position.copy(grabHit);
+          penguin.group.position.y = Math.max(ISLAND_HEIGHT + .15, penguin.group.position.y);
+          penguin.mode = "selected";
+          lastGrab = { point: grabHit.clone(), time: now };
+        }
+        return;
+      }
       if (propsRef.current.placingBuildingId) updatePlacementPreview(event);
     }
 
     function onPointerUp(event: PointerEvent) {
+      if (grabbedPenguin !== null) {
+        const penguin = penguins[grabbedPenguin];
+        if (penguin) { penguin.mode = "ragdoll"; penguin.spin.set(Math.random()-.5,Math.random()-.5,Math.random()-.5); }
+        grabbedPenguin = null;
+        controls.enabled = true;
+        pointerDownAt = null;
+        return;
+      }
       const placingId = propsRef.current.placingBuildingId;
       const downAt = pointerDownAt;
       pointerDownAt = null;
@@ -1392,8 +1444,22 @@ export default function PenguinTownScene3D({
       for (const penguin of penguins) {
         const { group } = penguin;
         if (penguin.mode === "selected") {
-          group.rotation.z = Math.sin(elapsed * 3 + penguin.hopPhase) * .055;
-          group.position.y = ISLAND_HEIGHT + 0.05;
+          let mx = 0, mz = 0;
+          if (penguinKeys.has("KeyA") || penguinKeys.has("ArrowLeft")) mx -= 1;
+          if (penguinKeys.has("KeyD") || penguinKeys.has("ArrowRight")) mx += 1;
+          if (penguinKeys.has("KeyW") || penguinKeys.has("ArrowUp")) mz -= 1;
+          if (penguinKeys.has("KeyS") || penguinKeys.has("ArrowDown")) mz += 1;
+          const movement = Math.hypot(mx, mz);
+          if (movement > 0) {
+            mx /= movement; mz /= movement;
+            group.position.x = THREE.MathUtils.clamp(group.position.x + mx * frameDeltaSec * 2.6, -9.7, 9.7);
+            group.position.z = THREE.MathUtils.clamp(group.position.z + mz * frameDeltaSec * 2.6, -9.7, 9.7);
+            penguin.facing = Math.atan2(mx, mz); group.rotation.y = penguin.facing;
+          }
+          penguin.velocity.y -= 14 * frameDeltaSec;
+          group.position.y += penguin.velocity.y * frameDeltaSec;
+          if (group.position.y <= ISLAND_HEIGHT + .05) { group.position.y = ISLAND_HEIGHT + .05; penguin.velocity.y = 0; }
+          group.rotation.z = Math.sin(elapsed * 7 + penguin.hopPhase) * (movement ? .13 : .055);
           group.scale.set(1, 1, 1);
         } else if (penguin.mode === "idle" || penguin.mode === "walk") {
           penguin.timer -= frameDeltaSec;
@@ -1650,6 +1716,8 @@ export default function PenguinTownScene3D({
       dom.removeEventListener("pointerdown", onPointerDown);
       dom.removeEventListener("pointermove", onPointerMove);
       dom.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("keydown", onPenguinKeyDown);
+      window.removeEventListener("keyup", onPenguinKeyUp);
       controls.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {

@@ -70,6 +70,7 @@ export type Globe3DEvents = {
 };
 
 export type Globe3DHandle = {
+  setActive: (active: boolean) => void;
   setView: (rotation: { lon: number; lat: number; roll: number }, zoom: number) => void;
   setSize: (width: number, height: number) => void;
   setTerritories: (territories: Territory[]) => void;
@@ -1663,7 +1664,10 @@ export async function createGlobe3D(
 
   // ---------------------------------------------------------------- input --
 
+  let archerActive = false;
+
   const onKeyDown = (event: KeyboardEvent) => {
+    if (!archerActive) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = true;
     else if (code === "KeyS" || code === "ArrowDown") keys.down = true;
@@ -1692,6 +1696,7 @@ export async function createGlobe3D(
   };
 
   const onKeyUp = (event: KeyboardEvent) => {
+    if (!archerActive) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = false;
     else if (code === "KeyS" || code === "ArrowDown") keys.down = false;
@@ -1887,6 +1892,10 @@ export async function createGlobe3D(
   frame = window.requestAnimationFrame(tick);
 
   return {
+    setActive: (active) => {
+      archerActive = active;
+      if (!active) { Object.keys(keys).forEach((key) => { keys[key as keyof typeof keys] = false; }); drawing = false; charge = 0; }
+    },
     setView: (nextRotation, nextZoom) => {
       rotation.lon = nextRotation.lon;
       rotation.lat = nextRotation.lat;
@@ -1907,10 +1916,12 @@ export async function createGlobe3D(
       aim.y = clamp(y, -1.4, 1.4);
     },
     setMove: (x, y) => {
+      if (!archerActive) return;
       move.x = clamp(x, -1, 1);
       move.y = clamp(y, -1, 1);
     },
     setDrawing: (next) => {
+      if (!archerActive) return;
       if (next) {
         if (!drawing) beginDraw();
         return;

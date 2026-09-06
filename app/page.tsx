@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import HomeGlobe from "./components/HomeGlobe";
+import HomeRoom3D, { spawnHomeCan } from "./components/HomeRoom3D";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
 
@@ -31,6 +32,7 @@ export default function LandingPage() {
 
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
+      <HomeRoom3D />
       <div className="choice-world-stage" aria-label="Choose between Planet Urf and Dr. Bongo">
         <button
           className="choice-object choice-object-earth"
@@ -70,6 +72,14 @@ export default function LandingPage() {
       </div>
       <div className="choice-vignette" aria-hidden="true" />
 
+      <div className="home-room-tools" aria-label="Spawn an interactive can">
+        <span>DROP A CAN</span>
+        <button type="button" onClick={() => spawnHomeCan("YOOHOO")}>YOOHOO</button>
+        <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
+        <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
+      </div>
+      <p className="home-camera-hint">DRAG THE ROOM · MOVE CAMERA</p>
+
       <a
         className="choice-kicker"
         href="/anubis"
@@ -87,11 +97,14 @@ export default function LandingPage() {
         <span className="guide-orb__label">ship&apos;s chart</span>
       </Link>
 
-      {showUrf && (
-        <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
-          <iframe className="urf-modal-frame" src="/urf-3d" title="Planet Urf territory selector" />
-        </section>
-      )}
+      {showUrf && <section className="home-urf-gate" role="dialog" aria-modal="true" aria-label="Choose a Planet Urf room">
+        <button className="home-urf-gate__close" type="button" onClick={() => setShowUrf(false)} aria-label="Close Planet Urf selector">×</button>
+        <header><small>PLANET URF TRANSMISSION</small><h2>CHOOSE A ROOM</h2></header>
+        <div className="home-urf-gate__doors">
+          <a href="/urf-3d"><b>1</b><span><strong>GO ANYWHERE</strong><small>3D GLOBE · ALIEN ARCHER · TERRAIN LAB</small></span></a>
+          <a href="/alien-game/index.html"><b>2</b><span><strong>VOID RAID</strong><small>DOOP · ZORF · PLOOZORB</small></span></a>
+        </div>
+      </section>}
     </main>
   );
 }

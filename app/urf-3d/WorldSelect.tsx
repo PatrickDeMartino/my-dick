@@ -81,6 +81,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [world3d, setWorld3d] = useState(false);
   const [charge, setCharge] = useState(0);
   const [quiver, setQuiver] = useState(12);
+  const [archerActive, setArcherActive] = useState(false);
   const [stick, setStick] = useState({ x: 0, y: 0 });
   const [reticle, setReticle] = useState<{ x: number; y: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; tone: string } | null>(null);
@@ -567,16 +568,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         aria-label="Enter Antarctica"
       >
         <span className="marker-dot" />
-        <span className="marker-copy"><b>ANTARCTICA</b><small>AVAILABLE</small></span>
       </button>
       {world3d && (
         <div className="archer-hud">
+          {!archerActive && <button type="button" className="archer-activate" onClick={() => { setArcherActive(true); worldRef.current?.setActive(true); }}>CLICK TO CONTROL ARCHER</button>}
           <div className="archer-chip">
             <span className="archer-face" aria-hidden="true">👽</span>
             <div className="archer-gauges">
               <b>URF SCOUT</b>
               <div className="archer-bar" role="presentation"><i style={{ width: `${Math.round(charge * 100)}%` }} /></div>
-              <small>{quiver} ARROWS · WASD MOVE · CLICK OR SPACE TO LOOSE</small>
+              <small>{quiver} ARROWS · {archerActive ? "WASD MOVE · CLICK OR SPACE TO LOOSE" : "FLOATING · CLICK TO ACTIVATE"}</small>
             </div>
           </div>
           <div
