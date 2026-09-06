@@ -1377,6 +1377,9 @@ button, input { font: inherit; }
 }
 .stars { position: absolute; inset: 0; z-index: -1; opacity: .75; background-image: radial-gradient(circle, rgba(255,255,255,.85) 0 1px, transparent 1.5px); background-size: 113px 113px; background-position: 17px 31px; mask-image: linear-gradient(to bottom, black, transparent 82%); }
 .world-header { position: absolute; z-index: 5; top: calc(var(--trip-banner-height, 0px) + clamp(28px, 6vh, 70px)); left: clamp(24px, 6vw, 90px); }
+/* World-select ("Go anywhere") keeps the terrain toggle pill above its
+ * title instead of the two competing for the same strip of screen. */
+.world-header--minimal { top: calc(var(--trip-banner-height, 0px) + 66px); }
 .eyebrow { color: var(--cyan); letter-spacing: .23em; font-size: 12px; font-weight: 800; display: flex; gap: 10px; align-items: center; }
 .eyebrow span { width: 22px; height: 2px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
 .world-header h1 { margin: 14px 0 7px; font-size: clamp(30px, 4.4vw, 66px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; max-width: 560px; }
@@ -1488,16 +1491,24 @@ button, input { font: inherit; }
   filter: blur(10px);
 }
 
-/* World select land-colour toolbar + island-orbit hint. */
+/* World select land-colour toolbar + island-orbit hint.
+ * Anchored top-left, above the "Go anywhere" title, so the two never
+ * collide. Collapsed it's just the gear pill; opened, it drops down as a
+ * vertical panel hugging the left edge instead of a horizontal row fighting
+ * the header and the archer HUD chip for the same strip of screen. */
 .globe-toolbar {
-  position: absolute;
-  z-index: 10;
-  left: 50%;
-  top: 10px;
+  /* Fixed to the viewport rather than absolute within .globe-frame — the
+   * frame is centered and offset by the globe-stage layout, a different
+   * coordinate space than the header's, which made "above the title"
+   * impossible to guarantee from inside the frame. */
+  position: fixed;
+  z-index: 11;
+  left: clamp(24px, 6vw, 90px);
+  top: calc(var(--trip-banner-height, 0px) + 14px);
   bottom: auto;
-  transform: translateX(-50%);
+  transform: none;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   padding: 6px 10px;
   border: 1px solid rgba(111, 232, 239, .38);
@@ -1507,17 +1518,33 @@ button, input { font: inherit; }
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 22px rgba(0, 0, 0, .4);
 }
+.globe-toolbar.is-open {
+  flex-direction: column;
+  align-items: stretch;
+  width: clamp(150px, 20vw, 220px);
+  max-height: 64vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
 .globe-toolbar > span {
   color: var(--cyan);
   font-size: 8px;
   letter-spacing: .18em;
   font-weight: 800;
 }
+.globe-toolbar.is-open > span { margin-top: 4px; }
 .globe-toolbar > small {
   color: #8fd4e4;
   font-size: 8px;
   letter-spacing: .12em;
   margin-left: 4px;
+}
+.globe-toolbar.is-open > small { margin-left: 0; }
+.globe-toolbar.is-open button {
+  width: 100%;
+  text-align: left;
 }
 .globe-toolbar button {
   min-width: 36px;
@@ -1531,6 +1558,7 @@ button, input { font: inherit; }
   letter-spacing: .12em;
   cursor: pointer;
 }
+.globe-toolbar.is-open button { border-radius: 8px; }
 .globe-toolbar button.is-active {
   border-color: var(--swatch, var(--cyan));
   box-shadow: 0 0 10px color-mix(in srgb, var(--swatch, #69f8ff) 45%, transparent);
@@ -1545,7 +1573,7 @@ button, input { font: inherit; }
   color: var(--cyan) !important;
   border-color: color-mix(in srgb, var(--cyan) 55%, transparent) !important;
 }
-.globe-toolbar.is-open .globe-toolbar-toggle { color: #fff !important; }
+.globe-toolbar.is-open .globe-toolbar-toggle { color: #fff !important; align-self: flex-start; }
 
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */
