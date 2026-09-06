@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
-import type { Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
+import type { EditOffset, EditTargetId, Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
 import { LAND_COLOR_PRESETS, PIN_MARKERS, TERRITORIES } from "../lib/territories";
 import SocialPopup from "../components/SocialPopup";
 import { useProfile } from "../lib/useProfile";
@@ -29,6 +29,23 @@ const SATELLITE_PARTS: { id: SatellitePartId; label: string; swatch: string }[] 
   { id: "beacon-warm", label: "Warm Beacon", swatch: "#ffb23c" },
 ];
 
+const EDIT_TARGETS: { id: EditTargetId; label: string; range: number }[] = [
+  { id: "globe", label: "Globe", range: 1.5 },
+  { id: "alien", label: "Alien", range: 1 },
+  { id: "satellite", label: "Satellite", range: 2 },
+  { id: "ufo", label: "UFOs", range: 2 },
+  { id: "moon", label: "Moon", range: 3 },
+];
+
+const EMPTY_OFFSET: EditOffset = { x: 0, y: 0, z: 0, locked: false };
+const makeEditOffsets = (): Record<EditTargetId, EditOffset> => ({
+  globe: { ...EMPTY_OFFSET },
+  alien: { ...EMPTY_OFFSET },
+  satellite: { ...EMPTY_OFFSET },
+  ufo: { ...EMPTY_OFFSET },
+  moon: { ...EMPTY_OFFSET },
+});
+
 const wrapAngle = (value: number) => ((value + 540) % 360) - 180;
 const clampUnit = (value: number) => Math.max(-1, Math.min(1, value));
 const formatCoordinate = (value: number, axis: "NS" | "EW") => {
@@ -45,6 +62,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const pressRef = useRef({ down: false, x: 0, y: 0, moved: false });
   const stickRef = useRef({ active: false, id: -1, cx: 0, cy: 0 });
   const dragRef = useRef({ active: false, x: 0, y: 0, mode: "orbit" as "orbit" | "roll" });
+  const gyroRef = useRef({ active: false, x: 0, y: 0 });
   const [rotation, setRotation] = useState({ lon: 0, lat: -15, roll: 0 });
   const [zoom, setZoom] = useState(1);
   const [size, setSize] = useState({ width: 720, height: 720 });
@@ -61,6 +79,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [landPreset, setLandPreset] = useState("original");
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
+  const [cubeMode, setCubeMode] = useState(false);
+  const [editTarget, setEditTarget] = useState<EditTargetId>("globe");
+  const [editOffsets, setEditOffsets] = useState<Record<EditTargetId, EditOffset>>(makeEditOffsets);
+  const [terrainBrush, setTerrainBrush] = useState<"raise" | "lower" | null>(null);
+  const boxDragRef = useRef({ active: false, x: 0, y: 0 });
+  const boxRotationRef = useRef({ lon: 0, lat: 0 });
   const [usaFlagMode, setUsaFlagMode] = useState(false);
   const [loginGateTerritory, setLoginGateTerritory] = useState<string | null>(null);
   const { profile, save: saveProfile } = useProfile();
@@ -217,6 +241,48 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     setSatelliteParts((current) => (current.includes(id) ? current.filter((part) => part !== id) : [...current, id]));
   };
 
+  useEffect(() => {
+    worldRef.current?.setTerrainBrush(terrainBrush);
+  }, [terrainBrush, world3d]);
+
+  const setOffsetAxis = (target: EditTargetId, axis: "x" | "y" | "z", value: number) => {
+    setEditOffsets((current) => {
+      if (current[target].locked) return current;
+      const next = { ...current, [target]: { ...current[target], [axis]: value } };
+      worldRef.current?.setEditOffset(target, axis, value);
+      return next;
+    });
+  };
+
+  const toggleEditLock = (target: EditTargetId) => {
+    setEditOffsets((current) => {
+      const locked = !current[target].locked;
+      worldRef.current?.setEditLock(target, locked);
+      return { ...current, [target]: { ...current[target], locked } };
+    });
+  };
+
+  const resetEditOffset = (target: EditTargetId) => {
+    setEditOffsets((current) => {
+      if (current[target].locked) return current;
+      (["x", "y", "z"] as const).forEach((axis) => worldRef.current?.setEditOffset(target, axis, 0));
+      return { ...current, [target]: { x: 0, y: 0, z: 0, locked: false } };
+    });
+  };
+
+  const moveBoxDrag = (x: number, y: number) => {
+    if (!boxDragRef.current.active) return;
+    const dx = x - boxDragRef.current.x;
+    const dy = y - boxDragRef.current.y;
+    boxDragRef.current = { active: true, x, y };
+    const next = {
+      lon: wrapAngle(boxRotationRef.current.lon - dx * .32),
+      lat: wrapAngle(boxRotationRef.current.lat + dy * .32),
+    };
+    boxRotationRef.current = next;
+    worldRef.current?.setBoxRotation(next);
+  };
+
   const project = useCallback((point: Point) => {
     const [lon, lat] = point;
     const lambda = (lon - rotation.lon) * Math.PI / 180;
@@ -350,6 +416,21 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         });
   };
 
+  // The gyroscope knob drives the exact same lon/lat state a drag on the
+  // globe itself does — it's a second, more deliberate way to navigate the
+  // same 3D space rather than a separate control scheme.
+  const moveGyro = (x: number, y: number) => {
+    if (!gyroRef.current.active) return;
+    const dx = x - gyroRef.current.x;
+    const dy = y - gyroRef.current.y;
+    gyroRef.current = { active: true, x, y };
+    setRotation((value) => ({
+      ...value,
+      lon: wrapAngle(value.lon - dx * .6),
+      lat: wrapAngle(value.lat + dy * .6),
+    }));
+  };
+
   const updateAim = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -391,9 +472,24 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       <canvas
         ref={canvasRef}
         className="globe-canvas"
-        aria-label="Rotatable globe. Drag in any direction for full 360 degree rotation, Shift-drag to roll, and scroll to zoom. Point to aim the archer and click to loose an arrow."
+        aria-label={
+          terrainBrush
+            ? `Terrain brush armed: drag across land to ${terrainBrush} it.`
+            : cubeMode
+              ? "Cube rotate mode: drag to tumble the entire enclosed universe."
+              : "Rotatable globe. Drag in any direction for full 360 degree rotation, Shift-drag to roll, and scroll to zoom. Point to aim the archer and click to loose an arrow."
+        }
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
+          if (terrainBrush) {
+            updateAim(event.clientX, event.clientY);
+            worldRef.current?.paintTerrain();
+            return;
+          }
+          if (cubeMode) {
+            boxDragRef.current = { active: true, x: event.clientX, y: event.clientY };
+            return;
+          }
           dragRef.current = {
             active: true,
             x: event.clientX,
@@ -405,6 +501,15 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           worldRef.current?.setDrawing(true);
         }}
         onPointerMove={(event) => {
+          if (terrainBrush) {
+            updateAim(event.clientX, event.clientY);
+            if (event.buttons > 0) worldRef.current?.paintTerrain();
+            return;
+          }
+          if (cubeMode) {
+            moveBoxDrag(event.clientX, event.clientY);
+            return;
+          }
           updateAim(event.clientX, event.clientY);
           if (pressRef.current.down && !pressRef.current.moved) {
             const travel = Math.hypot(event.clientX - pressRef.current.x, event.clientY - pressRef.current.y);
@@ -415,13 +520,18 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           }
           moveDrag(event.clientX, event.clientY);
         }}
-        onPointerUp={() => { dragRef.current.active = false; releasePress(true); }}
-        onPointerCancel={() => { dragRef.current.active = false; releasePress(false); }}
-        onLostPointerCapture={() => { dragRef.current.active = false; releasePress(false); }}
+        onPointerUp={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(true); }}
+        onPointerCancel={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(false); }}
+        onLostPointerCapture={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(false); }}
         onContextMenu={(event) => event.preventDefault()}
         onWheel={(event) => {
           event.preventDefault();
-          setZoom((value) => Math.max(.72, Math.min(1.16, value - event.deltaY * .0008)));
+          // Widened way out from the old .72–1.16 band (barely more than a
+          // single close-up framing) to a real range spanning a tight
+          // close-up through to seeing the whole enclosed universe cube and
+          // everything drifting inside it. Exponential falloff so scrolling
+          // feels equally responsive at both ends of that much bigger range.
+          setZoom((value) => Math.max(.08, Math.min(3.4, value * Math.exp(-event.deltaY * .0012))));
         }}
       />
       <canvas ref={webglRef} className="globe-webgl" aria-hidden="true" />
@@ -583,7 +693,116 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   {part.label}
                 </button>
               ))}
-              <small>Q/E FLY · R/F TILT</small>
+              <small>Q/E FLY · R/F TILT · Z/X ZIP</small>
+            </>
+          )}
+        </div>
+      )}
+      {world3d && (
+        <div
+          className="gyro-nav"
+          role="slider"
+          aria-label="Gyroscopic navigation — drag to steer your view through the 3D space"
+          aria-valuemin={-180}
+          aria-valuemax={180}
+          aria-valuenow={Math.round(rotation.lon)}
+          aria-valuetext={`Longitude ${Math.round(rotation.lon)}, latitude ${Math.round(rotation.lat)}`}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            gyroRef.current = { active: true, x: event.clientX, y: event.clientY };
+          }}
+          onPointerMove={(event) => moveGyro(event.clientX, event.clientY)}
+          onPointerUp={() => { gyroRef.current.active = false; }}
+          onPointerCancel={() => { gyroRef.current.active = false; }}
+          onLostPointerCapture={() => { gyroRef.current.active = false; }}
+        >
+          <div
+            className="gyro-nav__ring gyro-nav__ring--outer"
+            style={{ transform: `rotateX(${-rotation.lat}deg) rotateY(${rotation.lon}deg)` }}
+          />
+          <div
+            className="gyro-nav__ring gyro-nav__ring--inner"
+            style={{ transform: `rotateY(${-rotation.lon}deg) rotateX(${rotation.lat}deg)` }}
+          />
+          <div className="gyro-nav__core" />
+        </div>
+      )}
+      {world3d && (
+        <div className={`cube-toolbar${cubeMode ? " is-open" : ""}`} onPointerDown={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            className="cube-toolbar-toggle"
+            onClick={() => setCubeMode((value) => !value)}
+            aria-expanded={cubeMode}
+            aria-pressed={cubeMode}
+            aria-label={cubeMode ? "Exit cube edit mode" : "Enter cube edit mode"}
+          >
+            ⬛ CUBE
+          </button>
+          {cubeMode && (
+            <>
+              <small className="cube-toolbar__hint">Drag the globe to tumble the whole box</small>
+              <span>OBJECT</span>
+              <div className="cube-toolbar__targets">
+                {EDIT_TARGETS.map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    className={editTarget === target.id ? "is-active" : ""}
+                    onClick={() => setEditTarget(target.id)}
+                  >
+                    {target.label}
+                  </button>
+                ))}
+              </div>
+              {(["x", "y", "z"] as const).map((axis) => {
+                const range = EDIT_TARGETS.find((target) => target.id === editTarget)?.range ?? 1;
+                return (
+                  <label key={axis} className="cube-toolbar__axis">
+                    <span>{axis.toUpperCase()}</span>
+                    <input
+                      type="range"
+                      min={-range}
+                      max={range}
+                      step={0.01}
+                      value={editOffsets[editTarget][axis]}
+                      disabled={editOffsets[editTarget].locked}
+                      onChange={(event) => setOffsetAxis(editTarget, axis, Number(event.target.value))}
+                    />
+                  </label>
+                );
+              })}
+              <div className="cube-toolbar__actions">
+                <button
+                  type="button"
+                  className={editOffsets[editTarget].locked ? "is-active" : ""}
+                  onClick={() => toggleEditLock(editTarget)}
+                  aria-pressed={editOffsets[editTarget].locked}
+                >
+                  {editOffsets[editTarget].locked ? "🔒 Locked" : "🔓 Lock"}
+                </button>
+                <button type="button" onClick={() => resetEditOffset(editTarget)} disabled={editOffsets[editTarget].locked}>
+                  Reset
+                </button>
+              </div>
+              <span>EARTH SHAPE</span>
+              <div className="cube-toolbar__targets">
+                <button
+                  type="button"
+                  className={terrainBrush === "raise" ? "is-active" : ""}
+                  onClick={() => setTerrainBrush((value) => (value === "raise" ? null : "raise"))}
+                >
+                  ▲ Raise
+                </button>
+                <button
+                  type="button"
+                  className={terrainBrush === "lower" ? "is-active" : ""}
+                  onClick={() => setTerrainBrush((value) => (value === "lower" ? null : "lower"))}
+                >
+                  ▼ Lower
+                </button>
+              </div>
+              {terrainBrush && <small className="cube-toolbar__hint">Drag on land to sculpt</small>}
             </>
           )}
         </div>
@@ -616,7 +835,7 @@ export default function WorldSelect() {
       <footer className="world-footer world-footer--minimal">
         <div className="control-hint" title="Drag: 360° rotate · Shift-drag: roll"><span>↔</span></div>
         <div className="control-hint" title="Scroll to zoom"><span>＋</span></div>
-        <div className="control-hint" title="WASD walk · Q/E fly island · R/F tilt"><span>🏹</span></div>
+        <div className="control-hint" title="WASD walk · Q/E fly island · R/F tilt · Z/X zip closer/farther"><span>🏹</span></div>
       </footer>
     </main>
   );
