@@ -583,7 +583,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   {part.label}
                 </button>
               ))}
-              <small>Q/E FLY · R/F TILT</small>
+              <small>Q/E FLY · R/F TILT · Z/X ZIP</small>
             </>
           )}
         </div>
@@ -616,7 +616,7 @@ export default function WorldSelect() {
       <footer className="world-footer world-footer--minimal">
         <div className="control-hint" title="Drag: 360° rotate · Shift-drag: roll"><span>↔</span></div>
         <div className="control-hint" title="Scroll to zoom"><span>＋</span></div>
-        <div className="control-hint" title="WASD walk · Q/E fly island · R/F tilt"><span>🏹</span></div>
+        <div className="control-hint" title="WASD walk · Q/E fly island · R/F tilt · Z/X zip closer/farther"><span>🏹</span></div>
       </footer>
     </main>
   );

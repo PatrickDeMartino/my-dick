@@ -80,7 +80,7 @@ export function Can3D({ kind = "rat-meat", size = 40 }: { kind?: CanKind; size?:
       label.wrapS = THREE.ClampToEdgeWrapping;
       label.wrapT = THREE.ClampToEdgeWrapping;
 
-      let disposables: Array<{ dispose: () => void }> = [label];
+      const disposables: Array<{ dispose: () => void }> = [label];
 
       new GLTFLoader().loadAsync(MODEL[kind]).then((gltf) => {
         if (disposed) return;

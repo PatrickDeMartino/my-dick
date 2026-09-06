@@ -11,6 +11,7 @@ declare global {
       getX?: () => number;
       getZ?: () => number;
       getIsland?: () => { x: number; y: number; z: number; az: number; el: number };
+      getFlight?: () => { depth: number; heading: number };
       setKeys?: (codes: string[]) => void;
     };
   }
@@ -929,27 +930,51 @@ export async function createGlobe3D(
   const meteors: { group: THREE_NS.Group; velocity: THREE_NS.Vector3; age: number }[] = [];
   let meteorTimer = 2.5;
 
-  // The flying island is a parent group so the platform and the scout
-  // orbit the globe together. Position is a wide 360° loop around the
-  // planet's face (always in the ortho frustum so the archer stays on
-  // screen) with extra spherical wiggle on depth and elevation. The
-  // island stays camera-upright (no lookAt) so the 2D ocean and 3D land
-  // stay aligned.
+  // The flying island is a parent group so the platform and the scout zip
+  // around together. Position is free-roaming spherical coordinates around
+  // the planet's face (azimuth, elevation, and now radius/depth too, all
+  // player-controlled) with extra wiggle layered on for life. The platform
+  // also carries a real yaw that tracks its own heading, so flying it in a
+  // full circle visibly spins the platform (and the scout standing on it)
+  // all the way around — not just the small settle-wiggle it had before.
+  // It still never uses lookAt, so the 2D ocean and 3D land stay aligned;
+  // the spin is an explicit rotation the flight controls drive, not a
+  // camera-facing correction.
   const FLY_ORBIT = 0.9;
   const FLY_DEPTH = 1.82;
+  const FLY_DEPTH_MIN = 1.15;
+  const FLY_DEPTH_MAX = 2.6;
   let flyAzimuth = -Math.PI / 2;
   let flyElevation = -0.28;
+  let flyDepth = FLY_DEPTH;
+  let flyHeading = 0;
+  let prevIslandX = 0;
+  let prevIslandY = 0;
 
   const placeIsland = (elapsed: number) => {
     const wiggleAz = flyAzimuth + Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05;
     const wiggleEl = flyElevation + Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04;
-    const wiggleZ = FLY_DEPTH + Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18;
-    islandRoot.position.set(
-      Math.sin(wiggleAz) * FLY_ORBIT,
-      Math.cos(wiggleAz) * FLY_ORBIT * 0.48 + wiggleEl * 0.8 - 0.22,
-      wiggleZ,
-    );
-    islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08;
+    const wiggleZ = flyDepth + Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18;
+    const nextX = Math.sin(wiggleAz) * FLY_ORBIT;
+    const nextY = Math.cos(wiggleAz) * FLY_ORBIT * 0.48 + wiggleEl * 0.8 - 0.22;
+    islandRoot.position.set(nextX, nextY, wiggleZ);
+
+    // Heading follows the direction of travel across the screen, so banking
+    // the platform hard into a turn reads as an actual turn, not a wobble.
+    // It's a full, unclamped rotation — several laps around the globe winds
+    // this up past a full 360° and keeps going.
+    const travel = Math.hypot(nextX - prevIslandX, nextY - prevIslandY);
+    if (travel > 0.0004) {
+      const targetHeading = Math.atan2(nextX - prevIslandX, nextY - prevIslandY);
+      let delta = targetHeading - (flyHeading % (Math.PI * 2));
+      delta = ((delta + Math.PI) % (Math.PI * 2)) - Math.PI;
+      flyHeading += delta * Math.min(1, travel * 18);
+    }
+    prevIslandX = nextX;
+    prevIslandY = nextY;
+
+    islandRoot.rotation.y = flyHeading;
+    islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08 - flyHeading * 0.12;
     islandRoot.rotation.x = Math.cos(elapsed * 0.53) * 0.05;
     camera.position.set(islandRoot.position.x * 0.2, islandRoot.position.y * 0.14, 8);
     camera.up.set(0, 1, 0);
@@ -1034,7 +1059,11 @@ export async function createGlobe3D(
   const rotation = { lon: 0, lat: -15, roll: 0 };
   const aim = { x: 0.35, y: 0.35 };
   const move = { x: 0, y: 0 };
-  const keys = { up: false, down: false, left: false, right: false, orbitLeft: false, orbitRight: false, tiltUp: false, tiltDown: false };
+  const keys = {
+    up: false, down: false, left: false, right: false,
+    orbitLeft: false, orbitRight: false, tiltUp: false, tiltDown: false,
+    zipIn: false, zipOut: false,
+  };
   const walker = { x: 0, z: 0.3, facing: 0, stride: 0 };
 
   let drawing = false;
@@ -1311,7 +1340,10 @@ export async function createGlobe3D(
     // from any angle instead of fighting the aim direction.
     const facing = Math.atan2(aimDirection.x, aimDirection.z);
     const toCamera = Math.atan2(camera.position.x - islandRoot.position.x, camera.position.z - islandRoot.position.z);
-    const mixed = facing * 0.62 + toCamera * 0.38;
+    // Weighted toward the camera rather than the aim line — the scout reads
+    // as facing forward, toward the viewer, most of the time, and only turns
+    // sharply side-on when the shot itself is far off to one side.
+    const mixed = facing * 0.35 + toCamera * 0.65;
     walker.facing += ((mixed - walker.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, delta * 9);
     alien.group.rotation.y = walker.facing;
 
@@ -1402,6 +1434,8 @@ export async function createGlobe3D(
     else if (code === "KeyE") keys.orbitRight = true;
     else if (code === "KeyR") keys.tiltUp = true;
     else if (code === "KeyF") keys.tiltDown = true;
+    else if (code === "KeyZ") keys.zipIn = true;
+    else if (code === "KeyX") keys.zipOut = true;
     else if (code === "Space") {
       if (!drawing) beginDraw();
       event.preventDefault();
@@ -1420,6 +1454,8 @@ export async function createGlobe3D(
     else if (code === "KeyE") keys.orbitRight = false;
     else if (code === "KeyR") keys.tiltUp = false;
     else if (code === "KeyF") keys.tiltDown = false;
+    else if (code === "KeyZ") keys.zipIn = false;
+    else if (code === "KeyX") keys.zipOut = false;
     else if (code === "Space") {
       if (drawing) loose();
     }
@@ -1440,6 +1476,7 @@ export async function createGlobe3D(
         az: flyAzimuth,
         el: flyElevation,
       }),
+      getFlight: () => ({ depth: flyDepth, heading: flyHeading }),
       getSpeed: () => Math.hypot(
         (keys.right ? 1 : 0) - (keys.left ? 1 : 0),
         (keys.up ? 1 : 0) - (keys.down ? 1 : 0),
@@ -1453,6 +1490,8 @@ export async function createGlobe3D(
         keys.orbitRight = codes.includes("KeyE");
         keys.tiltUp = codes.includes("KeyR");
         keys.tiltDown = codes.includes("KeyF");
+        keys.zipIn = codes.includes("KeyZ");
+        keys.zipOut = codes.includes("KeyX");
       },
     };
   }
@@ -1493,8 +1532,13 @@ export async function createGlobe3D(
 
     const orbitInput = (keys.orbitRight ? 1 : 0) - (keys.orbitLeft ? 1 : 0);
     const tiltInput = (keys.tiltUp ? 1 : 0) - (keys.tiltDown ? 1 : 0);
-    flyAzimuth += (orbitInput * 0.85 + (orbitInput === 0 ? 0.07 : 0)) * delta;
-    flyElevation = clamp(flyElevation + tiltInput * 0.7 * delta, -0.55, 0.55);
+    const zipInput = (keys.zipOut ? 1 : 0) - (keys.zipIn ? 1 : 0);
+    // Zippier than the old slow orbit: faster azimuth/elevation response, plus
+    // a push/pull depth axis so the platform can close in or peel away in
+    // full 3D space instead of only sliding around the planet's face.
+    flyAzimuth += (orbitInput * 1.6 + (orbitInput === 0 ? 0.07 : 0)) * delta;
+    flyElevation = clamp(flyElevation + tiltInput * 1.15 * delta, -0.85, 0.85);
+    flyDepth = clamp(flyDepth + zipInput * 1.4 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
     placeIsland(elapsed);
 
     const orbit = elapsed * 0.32;
