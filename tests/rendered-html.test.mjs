@@ -191,6 +191,8 @@ test("renders the 3D world-select room (Planet Urf archer)", async () => {
   assert.match(gateHtml, /CHOOSE A VOID/);
   assert.match(gateHtml, /URF EDITOR/);
   assert.match(gateHtml, /ALIEN SANDBOX/);
+  assert.match(gateHtml, /href="\/urf-3d\/editor"/);
+  assert.match(gateHtml, /href="\/alien-archer"/);
 
   const response = await request("/urf-3d/editor");
   assert.equal(response.status, 200);
