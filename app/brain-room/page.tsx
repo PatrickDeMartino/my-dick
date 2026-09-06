@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import BrainWorld3D from "./BrainWorld3D";
 
-type Subject = "bongo" | "rat";
+type Subject = "pongo" | "rat";
 type Motion = { x: number; y: number; vx: number; vy: number };
 type Message = { role: "user" | "assistant"; content: string };
 const opening: Message = { role: "assistant", content: "Bongo online. The room is a brain, the brain is a room, and I still require bananas." };
@@ -26,7 +26,7 @@ export default function BrainRoom() {
     setSubject((current) => current === next ? null : next);
     setPov(false);
     setRoomEvent("DRAG · THROW · BOUNCE");
-    if (next === "bongo") setConsoleOpen(true);
+    if (next === "pongo") setConsoleOpen(false);
   };
 
   useEffect(() => {
@@ -93,13 +93,13 @@ export default function BrainRoom() {
     <header className="brain-room__title"><small>NEURAL PLAYROOM</small><h1>{pov ? "Walk the cortex" : "Choose a test subject"}</h1></header>
 
     {!pov && <nav className="brain-room__controls" aria-label="Brain room experiments">
-      <button type="button" aria-pressed={subject === "bongo"} onClick={() => chooseSubject("bongo")}><img src="/media/dr-bongo-model-icon-v1.png" alt="" /><span><b>DR. BONGO</b><small>{subject === "bongo" ? "Return Bongo to containment" : "Activate full-room physics ragdoll"}</small></span></button>
+      <button type="button" aria-pressed={subject === "pongo"} onClick={() => chooseSubject("pongo")}><img src="/media/dr-bongo-model-icon-v1.png" alt="" /><span><b>PONGO</b><small>{subject === "pongo" ? "Pongo go nap now" : "Pongo dumb · Bongo smart"}</small></span></button>
       <button type="button" aria-pressed={subject === "rat"} onClick={() => chooseSubject("rat")}><img src="/media/lab-rat-ragdoll-v2.png" alt="" /><span><b>LAB RAT</b><small>{subject === "rat" ? "Return rat to cage" : "Activate articulated physics rat"}</small></span></button>
     </nav>}
     {!pov && <a className="brain-room__full-lab" href="/bongo">OPEN STANDALONE BONGO LAB ↗</a>}
 
     {subject && <button className="brain-room__pov" type="button" onClick={() => setPov((value) => !value)}>{pov ? "EXIT POV" : "SWITCH TO POV"}</button>}
-    {subject === "bongo" && !pov && <p className="brain-room__hint">WASD WALK · SPACE JUMP · DRAG CAMERA</p>}
+    {subject === "pongo" && !pov && <p className="brain-room__hint">PONGO · WASD WALK · SPACE JUMP · DRAG CAMERA</p>}
 
     {false && subject === "rat" && !pov && <button type="button" className={`brain-room__rat${Math.abs(ratMotion.vx) + Math.abs(ratMotion.vy) > 7 ? " is-flying" : ""}`} aria-label="Drag and throw the articulated laboratory rat" style={{ left: `${ratMotion.x}%`, top: `${ratMotion.y}%`, transform: `rotate(${Math.max(-28, Math.min(28, ratMotion.vx * .6))}deg)` }}
       onPointerDown={(event) => { const bounds = roomRef.current?.getBoundingClientRect(); if (!bounds) return; event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { pointer: event.pointerId, dx: event.clientX - bounds.left - bounds.width * ratMotion.x / 100, dy: event.clientY - bounds.top - bounds.height * ratMotion.y / 100, lastX: event.clientX, lastY: event.clientY, lastTime: performance.now() }; }}
@@ -112,14 +112,12 @@ export default function BrainRoom() {
     {false && pov && subject && <section className="brain-room__pov-world" aria-label="Navigable third-person brain room">
       <button className="brain-hotspot brain-window" type="button" onClick={() => { setRoomEvent("VOID ACCEPTED · RESPAWNING SUBJECT"); setWalker({ x: 50, y: 66 }); }}>JUMP OUT WINDOW <small>(suicide)</small></button>
       <button className="brain-hotspot brain-beanbag" type="button" onClick={() => { setRoomEvent("GOOD · NEURAL COMFORT +1"); setWalker({ x: 73, y: 64 }); }}>SIT IN BEAN BAG <small>(good)</small></button>
-      <div className={`brain-room__walker is-${subject}`} style={{ left: `${walker.x}%`, top: `${walker.y}%`, transform: `translate(-50%,-100%) scale(${.66 + walker.y / 125})` }}><img src={subject === "bongo" ? "/media/dr-bongo-model-icon-v1.png" : "/media/lab-rat-ragdoll-v2.png"} alt={subject === "bongo" ? "Dr. Bongo" : "Laboratory rat"} /></div>
+      <div className={`brain-room__walker is-${subject}`} style={{ left: `${walker.x}%`, top: `${walker.y}%`, transform: `translate(-50%,-100%) scale(${.66 + walker.y / 125})` }}><img src={subject === "pongo" ? "/media/dr-bongo-model-icon-v1.png" : "/media/lab-rat-ragdoll-v2.png"} alt={subject === "pongo" ? "Pongo" : "Laboratory rat"} /></div>
       <p className="brain-room__event">{roomEvent}</p>
       <div className="brain-room__dpad" aria-label="Movement controls"><button onClick={() => moveWalker(0,-3)}>▲</button><button onClick={() => moveWalker(-4,0)}>◀</button><button onClick={() => moveWalker(0,3)}>▼</button><button onClick={() => moveWalker(4,0)}>▶</button></div>
     </section>}
 
     {subject === "rat" && !pov && <p className="brain-room__hint">WASD WALK · SPACE JUMP · DRAG CAMERA</p>}
-    {subject === "bongo" && consoleOpen && <aside className="brain-bongo-console" aria-label="Dr. Bongo cybernetics console"><header><div><small>CYBERNETIC LINK</small><b>DR. BONGO</b></div><button type="button" aria-label="Close Bongo console" onClick={() => setConsoleOpen(false)}>×</button></header><div className="brain-bongo-console__messages" aria-live="polite">{messages.slice(-4).map((message, index) => <p className={message.role} key={index}><b>{message.role === "assistant" ? "BONGO" : "YOU"}</b>{message.content}</p>)}{thinking && <p className="assistant"><b>BONGO</b>thinking in bananas…</p>}</div><form onSubmit={transmit}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Talk to his AI cybernetics…" maxLength={600} /><button disabled={!draft.trim() || thinking}>SEND</button></form></aside>}
-    {subject === "bongo" && !consoleOpen && <button className="brain-console-reopen" type="button" onClick={() => setConsoleOpen(true)}>OPEN BONGO LINK</button>}
   </main>;
 }
 

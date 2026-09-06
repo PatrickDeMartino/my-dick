@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-type Subject = "bongo" | "rat" | null;
+export type BrainSubject = "pongo" | "rat" | null;
 
 function material(color: number, emissive = 0) {
   return new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: .24, roughness: .58, metalness: .04 });
@@ -19,17 +19,17 @@ function part(parent: THREE.Object3D, geometry: THREE.BufferGeometry, mat: THREE
   return mesh;
 }
 
-function makeCreature(kind: Exclude<Subject, null>) {
+export function makeBrainCreature(kind: Exclude<BrainSubject, null>) {
   const root = new THREE.Group();
-  const fur = material(kind === "bongo" ? 0x9b4a20 : 0xe8e1dc, kind === "bongo" ? 0x2b0903 : 0x291631);
-  const skin = material(kind === "bongo" ? 0x4b2114 : 0xf0aab9);
-  const dark = material(kind === "bongo" ? 0x24100d : 0x6a5362);
-  const torso = part(root, new THREE.SphereGeometry(1, 22, 18), fur, [0, 1.5, 0], kind === "bongo" ? [.62, .82, .5] : [.68, .38, .38]);
+  const fur = material(kind === "pongo" ? 0x9b4a20 : 0xe8e1dc, kind === "pongo" ? 0x2b0903 : 0x291631);
+  const skin = material(kind === "pongo" ? 0x4b2114 : 0xf0aab9);
+  const dark = material(kind === "pongo" ? 0x24100d : 0x6a5362);
+  const torso = part(root, new THREE.SphereGeometry(1, 22, 18), fur, [0, 1.5, 0], kind === "pongo" ? [.62, .82, .5] : [.68, .38, .38]);
   const head = new THREE.Group();
-  head.position.set(kind === "bongo" ? 0 : .68, kind === "bongo" ? 2.47 : 1.72, 0);
+  head.position.set(kind === "pongo" ? 0 : .68, kind === "pongo" ? 2.47 : 1.72, 0);
   root.add(head);
-  part(head, new THREE.SphereGeometry(.5, 22, 18), fur, [0, 0, 0], kind === "bongo" ? [1, .92, .9] : [.72, .62, .62]);
-  part(head, new THREE.SphereGeometry(.3, 18, 12), skin, [kind === "bongo" ? 0 : .28, -.08, .36], kind === "bongo" ? [1.1, .66, .52] : [1.3, .72, .62]);
+  part(head, new THREE.SphereGeometry(.5, 22, 18), fur, [0, 0, 0], kind === "pongo" ? [1, .92, .9] : [.72, .62, .62]);
+  part(head, new THREE.SphereGeometry(.3, 18, 12), skin, [kind === "pongo" ? 0 : .28, -.08, .36], kind === "pongo" ? [1.1, .66, .52] : [1.3, .72, .62]);
   for (const side of [-1, 1]) {
     part(head, new THREE.SphereGeometry(.09, 12, 10), dark, [side * .2 + (kind === "rat" ? .08 : 0), .08, .39]);
     if (kind === "rat") part(head, new THREE.SphereGeometry(.18, 14, 12), skin, [side * .24, .29, 0], [1, .35, 1]);
@@ -37,18 +37,18 @@ function makeCreature(kind: Exclude<Subject, null>) {
   const limbs: THREE.Group[] = [];
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Group();
-    shoulder.position.set(side * (kind === "bongo" ? .55 : .35), kind === "bongo" ? 1.9 : 1.48, 0);
+    shoulder.position.set(side * (kind === "pongo" ? .55 : .35), kind === "pongo" ? 1.9 : 1.48, 0);
     root.add(shoulder);
-    part(shoulder, new THREE.CylinderGeometry(.12, .1, kind === "bongo" ? 1.35 : .62, 10), fur, [0, -.58, 0]);
-    const elbow = new THREE.Group(); elbow.position.y = kind === "bongo" ? -1.18 : -.55; shoulder.add(elbow);
-    part(elbow, new THREE.CylinderGeometry(.1, .07, kind === "bongo" ? 1.15 : .5, 10), fur, [0, -.5, 0]);
-    part(elbow, new THREE.SphereGeometry(.14, 12, 10), skin, [0, kind === "bongo" ? -1.05 : -.46, 0]);
+    part(shoulder, new THREE.CylinderGeometry(.12, .1, kind === "pongo" ? 1.35 : .62, 10), fur, [0, -.58, 0]);
+    const elbow = new THREE.Group(); elbow.position.y = kind === "pongo" ? -1.18 : -.55; shoulder.add(elbow);
+    part(elbow, new THREE.CylinderGeometry(.1, .07, kind === "pongo" ? 1.15 : .5, 10), fur, [0, -.5, 0]);
+    part(elbow, new THREE.SphereGeometry(.14, 12, 10), skin, [0, kind === "pongo" ? -1.05 : -.46, 0]);
     limbs.push(shoulder, elbow);
-    const hip = new THREE.Group(); hip.position.set(side * (kind === "bongo" ? .28 : .34), 1.05, 0); root.add(hip);
-    part(hip, new THREE.CylinderGeometry(.14, .11, kind === "bongo" ? .82 : .55, 10), fur, [0, -.34, 0]);
-    const knee = new THREE.Group(); knee.position.y = kind === "bongo" ? -.72 : -.5; hip.add(knee);
+    const hip = new THREE.Group(); hip.position.set(side * (kind === "pongo" ? .28 : .34), 1.05, 0); root.add(hip);
+    part(hip, new THREE.CylinderGeometry(.14, .11, kind === "pongo" ? .82 : .55, 10), fur, [0, -.34, 0]);
+    const knee = new THREE.Group(); knee.position.y = kind === "pongo" ? -.72 : -.5; hip.add(knee);
     part(knee, new THREE.SphereGeometry(.14, 12, 10), skin, [0, 0, 0]);
-    part(knee, new THREE.CylinderGeometry(.1, .08, kind === "bongo" ? .7 : .45, 10), fur, [0, -.3, 0]);
+    part(knee, new THREE.CylinderGeometry(.1, .08, kind === "pongo" ? .7 : .45, 10), fur, [0, -.3, 0]);
     limbs.push(hip, knee);
   }
   if (kind === "rat") {
@@ -79,7 +79,7 @@ function addBrainWall(scene: THREE.Scene, z: number, rotationY = 0, x = 0) {
   return wall;
 }
 
-export default function BrainWorld3D({ subject, walkMode }: { subject: Subject; walkMode: boolean }) {
+export default function BrainWorld3D({ subject, walkMode }: { subject: BrainSubject; walkMode: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const mount = mountRef.current;
@@ -108,7 +108,7 @@ export default function BrainWorld3D({ subject, walkMode }: { subject: Subject; 
     for (const [x, color] of [[-3.2,0xed439e],[3.5,0x5d39db]] as const) {
       const bag = new THREE.Mesh(new THREE.SphereGeometry(1.25, 28, 22), new THREE.MeshPhysicalMaterial({ color, roughness: .72, clearcoat: .25 })); bag.position.set(x,.72,-3.4); bag.scale.set(1.25,.72,1.1); bag.castShadow=true; scene.add(bag);
     }
-    const creature = subject ? makeCreature(subject) : null;
+    const creature = subject ? makeBrainCreature(subject) : null;
     if (creature) { creature.position.set(0,0,1.5); scene.add(creature); }
     const keys = new Set<string>();
     const onKeyDown = (e: KeyboardEvent) => { keys.add(e.code); if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault(); if (e.code === "Space" && creature && Math.abs(creature.position.y) < .03) creature.userData.vy = 6.2; };

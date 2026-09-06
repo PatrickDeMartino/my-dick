@@ -77,6 +77,8 @@ export default function LandingPage() {
         <button type="button" onClick={() => spawnHomeCan("YOOHOO")}>YOOHOO</button>
         <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
         <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
+        <button type="button" onClick={() => spawnHomeCan("RAT MEAT")}>RAT MEAT</button>
+        <button type="button" className="is-pongo" onClick={() => spawnHomeCan("PONGO")}>PONGO</button>
       </div>
       <p className="home-camera-hint">DRAG THE ROOM · MOVE CAMERA</p>
 

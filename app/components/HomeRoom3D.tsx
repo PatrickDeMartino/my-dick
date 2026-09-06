@@ -2,6 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { makeBrainCreature } from "../brain-room/BrainWorld3D";
+
+type CanLabel = "YOOHOO" | "PEPSI" | "MONSTER" | "RAT MEAT";
+type SpawnItem = CanLabel | "PONGO";
 
 type CanBody = {
   mesh: THREE.Group;
@@ -10,14 +14,19 @@ type CanBody = {
   radius: number;
 };
 
+type PongoBody = {
+  mesh: THREE.Group;
+  velocity: THREE.Vector3;
+};
+
 const CAN_EVENT = "trip-spawn-can";
 
-function canTexture(label: "YOOHOO" | "PEPSI" | "MONSTER") {
+function canTexture(label: CanLabel) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 256;
   const ctx = canvas.getContext("2d")!;
-  const colors = label === "YOOHOO" ? ["#3b180b", "#fff0bb"] : label === "PEPSI" ? ["#164cc7", "#e51d39"] : ["#070b08", "#74ff29"];
+  const colors = label === "YOOHOO" ? ["#3b180b", "#fff0bb"] : label === "PEPSI" ? ["#164cc7", "#e51d39"] : label === "RAT MEAT" ? ["#4a4136", "#c6b28c"] : ["#070b08", "#74ff29"];
   const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(.48, colors[1]);
@@ -30,7 +39,12 @@ function canTexture(label: "YOOHOO" | "PEPSI" | "MONSTER") {
   ctx.textBaseline = "middle";
   ctx.shadowColor = "rgba(0,0,0,.7)";
   ctx.shadowBlur = 10;
-  ctx.fillText(label, 256, 128);
+  if (label === "MONSTER") {
+    ctx.font = "900 116px Impact, sans-serif";
+    ctx.fillText("M", 256, 120);
+    ctx.font = "900 28px Arial Black, sans-serif";
+    ctx.fillText("MONSTER ENERGY", 256, 210);
+  } else ctx.fillText(label, 256, 128);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;
@@ -83,10 +97,10 @@ function makeBrain() {
   return root;
 }
 
-function makeCan(label: "YOOHOO" | "PEPSI" | "MONSTER", texture: THREE.Texture) {
+function makeCan(label: CanLabel, texture: THREE.Texture, metalColor = 0xc7cbd3) {
   const group = new THREE.Group();
   const side = new THREE.MeshStandardMaterial({ map: texture, metalness: .5, roughness: .34 });
-  const silver = new THREE.MeshStandardMaterial({ color: 0xc7cbd3, metalness: .9, roughness: .22 });
+  const silver = new THREE.MeshStandardMaterial({ color: metalColor, metalness: .9, roughness: .22 });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(.27, .27, .82, 28, 1, false), [side, silver, silver]);
   body.castShadow = true;
   group.add(body);
@@ -162,18 +176,43 @@ export default function HomeRoom3D() {
     room.add(brain);
 
     const canTextures = {
-      YOOHOO: canTexture("YOOHOO"),
-      PEPSI: canTexture("PEPSI"),
-      MONSTER: canTexture("MONSTER"),
+      YOOHOO: ["/media/can-labels/yoohoo-yellow.png", "/media/can-labels/yoohoo-bottle.png"].map((url) => {
+        const texture = new THREE.TextureLoader().load(url); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.RepeatWrapping; return texture;
+      }),
+      PEPSI: [canTexture("PEPSI")],
+      MONSTER: [canTexture("MONSTER")],
+      "RAT MEAT": ["/media/can-labels/rat-meat-classic.jpg", "/media/can-labels/rat-meat-silver.jpg", "/media/can-labels/rat-meat-gold.jpg"].map((url) => {
+        const texture = new THREE.TextureLoader().load(url); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.RepeatWrapping; return texture;
+      }),
     };
     const cans: CanBody[] = [];
-    const spawnCan = (label: "YOOHOO" | "PEPSI" | "MONSTER") => {
-      const mesh = makeCan(label, canTextures[label]);
+    const pongos: PongoBody[] = [];
+    let selectedPongo: PongoBody | null = null;
+    const keys = new Set<string>();
+    const spawnCan = (label: CanLabel) => {
+      let texture = canTextures[label][Math.floor(Math.random() * canTextures[label].length)];
+      let metal = 0xc7cbd3;
+      if (label === "RAT MEAT") {
+        const rarity = Math.random();
+        const index = rarity < .1 ? 2 : rarity < .3 ? 1 : 0;
+        texture = canTextures[label][index];
+        metal = index === 2 ? 0xd7a82e : index === 1 ? 0xd7d9df : 0xa9a9a4;
+      }
+      const mesh = makeCan(label, texture, metal);
       mesh.position.set((Math.random() - .5) * 2, 4.2, 1.2 + Math.random());
       mesh.rotation.set(Math.random(), Math.random(), Math.random());
       scene.add(mesh);
       cans.push({ mesh, velocity: new THREE.Vector3((Math.random() - .5) * 2.6, 1 + Math.random() * 1.7, (Math.random() - .5) * 1.8), spin: new THREE.Vector3(Math.random() * 5, Math.random() * 5, Math.random() * 5), radius: .47 });
       if (cans.length > 28) scene.remove(cans.shift()!.mesh);
+    };
+    const spawnPongo = () => {
+      const mesh = makeBrainCreature("pongo");
+      mesh.position.set((Math.random() - .5) * 2, 4.5, 1.5);
+      mesh.rotation.y = Math.PI;
+      scene.add(mesh);
+      selectedPongo = { mesh, velocity: new THREE.Vector3((Math.random() - .5) * 1.4, 0, 0) };
+      pongos.push(selectedPongo);
+      if (pongos.length > 5) scene.remove(pongos.shift()!.mesh);
     };
     spawnCan("YOOHOO");
     spawnCan("PEPSI");
@@ -196,8 +235,19 @@ export default function HomeRoom3D() {
     renderer.domElement.addEventListener("pointermove", onMove);
     renderer.domElement.addEventListener("pointerup", onUp);
     renderer.domElement.addEventListener("pointercancel", onUp);
-    const onSpawn = (event: Event) => spawnCan((event as CustomEvent).detail as "YOOHOO" | "PEPSI" | "MONSTER");
+    const onSpawn = (event: Event) => {
+      const item = (event as CustomEvent).detail as SpawnItem;
+      if (item === "PONGO") spawnPongo(); else spawnCan(item);
+    };
     window.addEventListener(CAN_EVENT, onSpawn);
+    const onKeyDown = (event: KeyboardEvent) => {
+      keys.add(event.code);
+      if (selectedPongo && event.code === "Space" && selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
+      if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault();
+    };
+    const onKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
 
     const resize = () => {
       const w = Math.max(1, mount.clientWidth);
@@ -242,6 +292,30 @@ export default function HomeRoom3D() {
         if (Math.abs(can.mesh.position.x) > 9.5) { can.mesh.position.x = Math.sign(can.mesh.position.x) * 9.5; can.velocity.x *= -.55; }
         if (can.mesh.position.z < -4.6 || can.mesh.position.z > 6) { can.mesh.position.z = THREE.MathUtils.clamp(can.mesh.position.z, -4.6, 6); can.velocity.z *= -.55; }
       }
+      for (const pongo of pongos) {
+        let mx = 0, mz = 0;
+        if (pongo === selectedPongo) {
+          if (keys.has("KeyA") || keys.has("ArrowLeft")) mx -= 1;
+          if (keys.has("KeyD") || keys.has("ArrowRight")) mx += 1;
+          if (keys.has("KeyW") || keys.has("ArrowUp")) mz -= 1;
+          if (keys.has("KeyS") || keys.has("ArrowDown")) mz += 1;
+        }
+        const length = Math.hypot(mx, mz) || 1;
+        mx /= length; mz /= length;
+        pongo.velocity.x += (mx * 3.6 - pongo.velocity.x) * Math.min(1, dt * 8);
+        pongo.velocity.z += (mz * 3.6 - pongo.velocity.z) * Math.min(1, dt * 8);
+        pongo.velocity.y -= 12 * dt;
+        pongo.mesh.position.addScaledVector(pongo.velocity, dt);
+        if (pongo.mesh.position.y < -3) { pongo.mesh.position.y = -3; pongo.velocity.y = 0; }
+        pongo.mesh.position.x = THREE.MathUtils.clamp(pongo.mesh.position.x, -8.7, 8.7);
+        pongo.mesh.position.z = THREE.MathUtils.clamp(pongo.mesh.position.z, -4.2, 5.2);
+        const moving = Math.abs(mx) + Math.abs(mz) > .1;
+        if (moving) {
+          pongo.mesh.rotation.y = Math.atan2(mx, mz);
+          pongo.mesh.userData.walk += dt * 8;
+          (pongo.mesh.userData.limbs as THREE.Group[]).forEach((limb, index) => { limb.rotation.x = Math.sin(pongo.mesh.userData.walk + index * Math.PI / 2) * .52; });
+        }
+      }
       renderer.render(scene, camera);
     };
     animate();
@@ -250,11 +324,13 @@ export default function HomeRoom3D() {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener(CAN_EVENT, onSpawn);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerup", onUp);
       renderer.dispose();
-      Object.values(canTextures).forEach((texture) => texture.dispose());
+      Object.values(canTextures).flat().forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
   }, []);
@@ -262,6 +338,6 @@ export default function HomeRoom3D() {
   return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D home room. Drag to move the camera." />;
 }
 
-export function spawnHomeCan(label: "YOOHOO" | "PEPSI" | "MONSTER") {
+export function spawnHomeCan(label: SpawnItem) {
   window.dispatchEvent(new CustomEvent(CAN_EVENT, { detail: label }));
 }

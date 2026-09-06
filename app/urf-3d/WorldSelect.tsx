@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
-import type { EditOffset, EditTargetId, Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
+import type { AlienType, EditOffset, EditTargetId, Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
 import { LAND_COLOR_PRESETS, TERRITORIES } from "../lib/territories";
 import SocialPopup from "../components/SocialPopup";
 import { useProfile } from "../lib/useProfile";
@@ -82,6 +82,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [charge, setCharge] = useState(0);
   const [quiver, setQuiver] = useState(12);
   const [archerActive, setArcherActive] = useState(false);
+  const [alienType, setAlienType] = useState<AlienType>("original");
+  const [aimMode, setAimMode] = useState(false);
   const [stick, setStick] = useState({ x: 0, y: 0 });
   const [reticle, setReticle] = useState<{ x: number; y: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; tone: string } | null>(null);
@@ -241,6 +243,14 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   useEffect(() => {
     worldRef.current?.setSelectedTarget(editTarget);
   }, [editTarget, world3d]);
+
+  useEffect(() => {
+    worldRef.current?.setAlienType(alienType);
+  }, [alienType, world3d]);
+
+  useEffect(() => {
+    worldRef.current?.setAimMode(aimMode);
+  }, [aimMode, world3d]);
 
   useEffect(() => {
     const preset = LAND_COLOR_PRESETS.find((entry) => entry.id === landPreset);
@@ -506,6 +516,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         }
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
+          if (event.button === 2 && archerActive) {
+            updateAim(event.clientX, event.clientY);
+            setAimMode(true);
+            worldRef.current?.setAimMode(true);
+            return;
+          }
           if (terrainBrush) {
             updateAim(event.clientX, event.clientY);
             worldRef.current?.paintTerrain();
@@ -513,6 +529,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           }
           if (cubeMode) {
             boxDragRef.current = { active: true, x: event.clientX, y: event.clientY };
+            return;
+          }
+          if (aimMode && archerActive && event.button === 0) {
+            pressRef.current = { down:true, x:event.clientX, y:event.clientY, moved:false };
+            updateAim(event.clientX,event.clientY);
+            worldRef.current?.setDrawing(true);
             return;
           }
           dragRef.current = {
@@ -523,6 +545,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           };
           pressRef.current = { down: true, x: event.clientX, y: event.clientY, moved: false };
           updateAim(event.clientX, event.clientY);
+          if (aimMode) return;
           worldRef.current?.setDrawing(true);
         }}
         onPointerMove={(event) => {
@@ -545,7 +568,11 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           }
           moveDrag(event.clientX, event.clientY);
         }}
-        onPointerUp={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(true); }}
+        onPointerUp={(event) => {
+          dragRef.current.active = false; boxDragRef.current.active = false;
+          if (event.button === 2) { setAimMode(false); worldRef.current?.setAimMode(false); return; }
+          releasePress(true);
+        }}
         onPointerCancel={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(false); }}
         onLostPointerCapture={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(false); }}
         onContextMenu={(event) => event.preventDefault()}
@@ -575,9 +602,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <div className="archer-chip">
             <span className="archer-face" aria-hidden="true">👽</span>
             <div className="archer-gauges">
-              <b>URF SCOUT</b>
+              <b>{alienType === "original" ? "URF SCOUT" : alienType.toUpperCase()}</b>
               <div className="archer-bar" role="presentation"><i style={{ width: `${Math.round(charge * 100)}%` }} /></div>
-              <small>{quiver} ARROWS · {archerActive ? "WASD MOVE · CLICK OR SPACE TO LOOSE" : "FLOATING · CLICK TO ACTIVATE"}</small>
+              <small>{quiver} {alienType === "original" ? "ARROWS" : "PEPSI CANS"} · {archerActive ? "WASD MOVE · RIGHT CLICK AIM · LEFT CLICK FIRE" : "FLOATING · CLICK TO ACTIVATE"}</small>
             </div>
           </div>
           <div
@@ -603,8 +630,16 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           </div>
           <button
             type="button"
+            className={`archer-aim${aimMode ? " is-active" : ""}`}
+            aria-pressed={aimMode}
+            onClick={() => { const next=!aimMode; setAimMode(next); worldRef.current?.setAimMode(next); }}
+          >
+            <span>{aimMode ? "AIM ON" : "AIM"}</span>
+          </button>
+          <button
+            type="button"
             className="archer-fire"
-            aria-label="Draw the bow and loose an arrow"
+            aria-label={alienType === "original" ? "Draw the bow and loose an arrow" : "Fire a Pepsi can"}
             onPointerDown={(event) => {
               event.currentTarget.setPointerCapture(event.pointerId);
               worldRef.current?.setDrawing(true);
@@ -801,6 +836,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
               </div>
               {editTarget === "platform" && (
                 <div className="platform-sling-controls">
+                  <div className="alien-select" aria-label="Choose the platform character">
+                    <span>PLATFORM CHARACTER</span>
+                    <div>
+                      {(["original","doop","zorp"] as AlienType[]).map((type) => <button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{type === "original" ? "ARCHER" : type.toUpperCase()}</button>)}
+                    </div>
+                  </div>
                   <label>
                     <span>SLING ROTATION</span>
                     <input
