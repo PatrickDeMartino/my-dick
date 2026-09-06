@@ -1575,6 +1575,53 @@ button, input { font: inherit; }
 }
 .globe-toolbar.is-open .globe-toolbar-toggle { color: #fff !important; align-self: flex-start; }
 
+/* Gyroscopic navigation knob — sits beside the Terrain toggle, top-left.
+ * Two CSS-3D rings that physically tilt to match the current lon/lat, and a
+ * glowing core; dragging it steers the same rotation state a drag on the
+ * globe itself does, so it's a second, more deliberate way to navigate the
+ * enclosed 3D space rather than a separate control scheme. */
+.gyro-nav {
+  position: fixed;
+  z-index: 11;
+  left: calc(clamp(24px, 6vw, 90px) + 112px);
+  top: calc(var(--trip-banner-height, 0px) + 12px);
+  width: 40px;
+  height: 40px;
+  perspective: 160px;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, rgba(20, 40, 55, .85), rgba(3, 10, 20, .9));
+  box-shadow: 0 0 0 1px rgba(111, 232, 239, .3), 0 8px 22px rgba(0, 0, 0, .45);
+}
+.gyro-nav:active { cursor: grabbing; }
+.gyro-nav__ring {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(111, 232, 239, .6);
+  transform-style: preserve-3d;
+  box-shadow: 0 0 9px rgba(111, 232, 239, .35), inset 0 0 7px rgba(111, 232, 239, .25);
+  transition: transform .05s linear;
+}
+.gyro-nav__ring--inner {
+  inset: 10px;
+  border-color: rgba(255, 120, 206, .65);
+  box-shadow: 0 0 9px rgba(255, 120, 206, .35), inset 0 0 7px rgba(255, 120, 206, .25);
+}
+.gyro-nav__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #7ef7ff);
+  box-shadow: 0 0 7px #7ef7ff, 0 0 14px rgba(126, 247, 255, .65);
+}
+
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */
 .world-header--minimal p { display: none; }

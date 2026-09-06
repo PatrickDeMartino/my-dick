@@ -45,6 +45,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const pressRef = useRef({ down: false, x: 0, y: 0, moved: false });
   const stickRef = useRef({ active: false, id: -1, cx: 0, cy: 0 });
   const dragRef = useRef({ active: false, x: 0, y: 0, mode: "orbit" as "orbit" | "roll" });
+  const gyroRef = useRef({ active: false, x: 0, y: 0 });
   const [rotation, setRotation] = useState({ lon: 0, lat: -15, roll: 0 });
   const [zoom, setZoom] = useState(1);
   const [size, setSize] = useState({ width: 720, height: 720 });
@@ -350,6 +351,21 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         });
   };
 
+  // The gyroscope knob drives the exact same lon/lat state a drag on the
+  // globe itself does — it's a second, more deliberate way to navigate the
+  // same 3D space rather than a separate control scheme.
+  const moveGyro = (x: number, y: number) => {
+    if (!gyroRef.current.active) return;
+    const dx = x - gyroRef.current.x;
+    const dy = y - gyroRef.current.y;
+    gyroRef.current = { active: true, x, y };
+    setRotation((value) => ({
+      ...value,
+      lon: wrapAngle(value.lon - dx * .6),
+      lat: wrapAngle(value.lat + dy * .6),
+    }));
+  };
+
   const updateAim = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -421,7 +437,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         onContextMenu={(event) => event.preventDefault()}
         onWheel={(event) => {
           event.preventDefault();
-          setZoom((value) => Math.max(.72, Math.min(1.16, value - event.deltaY * .0008)));
+          // Widened way out from the old .72–1.16 band (barely more than a
+          // single close-up framing) to a real range spanning a tight
+          // close-up through to seeing the whole enclosed universe cube and
+          // everything drifting inside it. Exponential falloff so scrolling
+          // feels equally responsive at both ends of that much bigger range.
+          setZoom((value) => Math.max(.08, Math.min(3.4, value * Math.exp(-event.deltaY * .0012))));
         }}
       />
       <canvas ref={webglRef} className="globe-webgl" aria-hidden="true" />
@@ -586,6 +607,35 @@ function Globe({ onEnter }: { onEnter: () => void }) {
               <small>Q/E FLY · R/F TILT · Z/X ZIP</small>
             </>
           )}
+        </div>
+      )}
+      {world3d && (
+        <div
+          className="gyro-nav"
+          role="slider"
+          aria-label="Gyroscopic navigation — drag to steer your view through the 3D space"
+          aria-valuemin={-180}
+          aria-valuemax={180}
+          aria-valuenow={Math.round(rotation.lon)}
+          aria-valuetext={`Longitude ${Math.round(rotation.lon)}, latitude ${Math.round(rotation.lat)}`}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            gyroRef.current = { active: true, x: event.clientX, y: event.clientY };
+          }}
+          onPointerMove={(event) => moveGyro(event.clientX, event.clientY)}
+          onPointerUp={() => { gyroRef.current.active = false; }}
+          onPointerCancel={() => { gyroRef.current.active = false; }}
+          onLostPointerCapture={() => { gyroRef.current.active = false; }}
+        >
+          <div
+            className="gyro-nav__ring gyro-nav__ring--outer"
+            style={{ transform: `rotateX(${-rotation.lat}deg) rotateY(${rotation.lon}deg)` }}
+          />
+          <div
+            className="gyro-nav__ring gyro-nav__ring--inner"
+            style={{ transform: `rotateY(${-rotation.lon}deg) rotateX(${rotation.lat}deg)` }}
+          />
+          <div className="gyro-nav__core" />
         </div>
       )}
       <div className="globe-shadow" />

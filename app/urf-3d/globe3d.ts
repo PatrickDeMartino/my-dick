@@ -881,6 +881,34 @@ export async function createGlobe3D(
   bounce.position.set(1.2, -2.6, 2.4);
   scene.add(bounce);
 
+  // The playable universe's outer boundary: a large wireframe cube holding
+  // the planet, satellite, moon, UFOs and the alien's platform all inside
+  // one enclosed volume of empty XYZ space. Fixed in place (never rotated or
+  // moved) so it reads as the walls of the space everything else lives and
+  // moves inside, rather than another object drifting around with the rest
+  // of the scene.
+  // True to the scene's actual scale — big enough to hold the globe, the
+  // satellite's and UFOs' orbits, the moon's much wider orbit, and the
+  // meteors' spawn range, all with real margin. The camera's zoom range
+  // (see the wheel handler in WorldSelect.tsx) was widened specifically so
+  // scrolling out can actually reveal a box this size, rather than shrinking
+  // the box down to whatever the old, much narrower zoom range could show.
+  const UNIVERSE_SIZE = 8;
+  const universeEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIVERSE_SIZE, UNIVERSE_SIZE, UNIVERSE_SIZE)),
+    new THREE.LineBasicMaterial({ color: 0x5be6ff, transparent: true, opacity: 0.4 }),
+  );
+  scene.add(universeEdges);
+
+  // A faint holodeck-style floor grid on the cube's lower face, purely for a
+  // sense of scale and depth inside the empty volume.
+  const universeFloor = new THREE.GridHelper(UNIVERSE_SIZE, 16, 0x8a5cff, 0x1c3a4a);
+  const floorMaterial = universeFloor.material as THREE_NS.Material & { opacity: number; transparent: boolean };
+  floorMaterial.transparent = true;
+  floorMaterial.opacity = 0.22;
+  universeFloor.position.y = -UNIVERSE_SIZE / 2;
+  scene.add(universeFloor);
+
   // Everything that belongs to the planet lives in here and spins together.
   const planet = new THREE.Group();
   scene.add(planet);
