@@ -165,7 +165,7 @@ export default function SiteBanner() {
         </div>
         <div className="trip-banner__stat trip-banner__oil" aria-label="An unquenchable thirst for oil">
           <OilGauge />
-          <strong>Oil thirst</strong>
+          <strong>Thirst for Oil</strong>
         </div>
         </div>
 

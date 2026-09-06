@@ -1377,6 +1377,9 @@ button, input { font: inherit; }
 }
 .stars { position: absolute; inset: 0; z-index: -1; opacity: .75; background-image: radial-gradient(circle, rgba(255,255,255,.85) 0 1px, transparent 1.5px); background-size: 113px 113px; background-position: 17px 31px; mask-image: linear-gradient(to bottom, black, transparent 82%); }
 .world-header { position: absolute; z-index: 5; top: calc(var(--trip-banner-height, 0px) + clamp(28px, 6vh, 70px)); left: clamp(24px, 6vw, 90px); }
+/* World-select ("Go anywhere") keeps the terrain toggle pill above its
+ * title instead of the two competing for the same strip of screen. */
+.world-header--minimal { top: calc(var(--trip-banner-height, 0px) + 66px); }
 .eyebrow { color: var(--cyan); letter-spacing: .23em; font-size: 12px; font-weight: 800; display: flex; gap: 10px; align-items: center; }
 .eyebrow span { width: 22px; height: 2px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
 .world-header h1 { margin: 14px 0 7px; font-size: clamp(30px, 4.4vw, 66px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; max-width: 560px; }
@@ -1488,16 +1491,24 @@ button, input { font: inherit; }
   filter: blur(10px);
 }
 
-/* World select land-colour toolbar + island-orbit hint. */
+/* World select land-colour toolbar + island-orbit hint.
+ * Anchored top-left, above the "Go anywhere" title, so the two never
+ * collide. Collapsed it's just the gear pill; opened, it drops down as a
+ * vertical panel hugging the left edge instead of a horizontal row fighting
+ * the header and the archer HUD chip for the same strip of screen. */
 .globe-toolbar {
-  position: absolute;
-  z-index: 10;
-  left: 50%;
-  top: 10px;
+  /* Fixed to the viewport rather than absolute within .globe-frame — the
+   * frame is centered and offset by the globe-stage layout, a different
+   * coordinate space than the header's, which made "above the title"
+   * impossible to guarantee from inside the frame. */
+  position: fixed;
+  z-index: 11;
+  left: clamp(24px, 6vw, 90px);
+  top: calc(var(--trip-banner-height, 0px) + 14px);
   bottom: auto;
-  transform: translateX(-50%);
+  transform: none;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   padding: 6px 10px;
   border: 1px solid rgba(111, 232, 239, .38);
@@ -1507,17 +1518,33 @@ button, input { font: inherit; }
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 22px rgba(0, 0, 0, .4);
 }
+.globe-toolbar.is-open {
+  flex-direction: column;
+  align-items: stretch;
+  width: clamp(150px, 20vw, 220px);
+  max-height: 64vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
 .globe-toolbar > span {
   color: var(--cyan);
   font-size: 8px;
   letter-spacing: .18em;
   font-weight: 800;
 }
+.globe-toolbar.is-open > span { margin-top: 4px; }
 .globe-toolbar > small {
   color: #8fd4e4;
   font-size: 8px;
   letter-spacing: .12em;
   margin-left: 4px;
+}
+.globe-toolbar.is-open > small { margin-left: 0; }
+.globe-toolbar.is-open button {
+  width: 100%;
+  text-align: left;
 }
 .globe-toolbar button {
   min-width: 36px;
@@ -1531,6 +1558,7 @@ button, input { font: inherit; }
   letter-spacing: .12em;
   cursor: pointer;
 }
+.globe-toolbar.is-open button { border-radius: 8px; }
 .globe-toolbar button.is-active {
   border-color: var(--swatch, var(--cyan));
   box-shadow: 0 0 10px color-mix(in srgb, var(--swatch, #69f8ff) 45%, transparent);
@@ -1545,7 +1573,171 @@ button, input { font: inherit; }
   color: var(--cyan) !important;
   border-color: color-mix(in srgb, var(--cyan) 55%, transparent) !important;
 }
-.globe-toolbar.is-open .globe-toolbar-toggle { color: #fff !important; }
+.globe-toolbar.is-open .globe-toolbar-toggle { color: #fff !important; align-self: flex-start; }
+
+/* Gyroscopic navigation knob — sits beside the Terrain toggle, top-left.
+ * Two CSS-3D rings that physically tilt to match the current lon/lat, and a
+ * glowing core; dragging it steers the same rotation state a drag on the
+ * globe itself does, so it's a second, more deliberate way to navigate the
+ * enclosed 3D space rather than a separate control scheme. */
+.gyro-nav {
+  position: fixed;
+  z-index: 11;
+  left: calc(clamp(24px, 6vw, 90px) + 112px);
+  top: calc(var(--trip-banner-height, 0px) + 12px);
+  width: 40px;
+  height: 40px;
+  perspective: 160px;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, rgba(20, 40, 55, .85), rgba(3, 10, 20, .9));
+  box-shadow: 0 0 0 1px rgba(111, 232, 239, .3), 0 8px 22px rgba(0, 0, 0, .45);
+}
+.gyro-nav:active { cursor: grabbing; }
+.gyro-nav__ring {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(111, 232, 239, .6);
+  transform-style: preserve-3d;
+  box-shadow: 0 0 9px rgba(111, 232, 239, .35), inset 0 0 7px rgba(111, 232, 239, .25);
+  transition: transform .05s linear;
+}
+.gyro-nav__ring--inner {
+  inset: 10px;
+  border-color: rgba(255, 120, 206, .65);
+  box-shadow: 0 0 9px rgba(255, 120, 206, .35), inset 0 0 7px rgba(255, 120, 206, .25);
+}
+.gyro-nav__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #7ef7ff);
+  box-shadow: 0 0 7px #7ef7ff, 0 0 14px rgba(126, 247, 255, .65);
+}
+
+/* Cube edit mode toggle + panel — sits right after the gyro knob, top-left.
+ * Same collapsed-pill / open-vertical-panel pattern as .globe-toolbar, in a
+ * violet accent to read as a distinct mode from Terrain's cyan. While open,
+ * a drag on the globe tumbles the whole enclosed universe instead of just
+ * spinning the globe, and the panel exposes per-object X/Y/Z offsets (with
+ * a lock) plus a raise/lower terrain brush. */
+.cube-toolbar {
+  position: fixed;
+  z-index: 11;
+  left: calc(clamp(24px, 6vw, 90px) + 164px);
+  top: calc(var(--trip-banner-height, 0px) + 14px);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(168, 111, 239, .4);
+  border-radius: 999px;
+  background: rgba(12, 3, 24, .78);
+  pointer-events: auto;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .4);
+}
+.cube-toolbar.is-open {
+  flex-direction: column;
+  align-items: stretch;
+  width: clamp(170px, 22vw, 240px);
+  max-height: 68vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
+.cube-toolbar-toggle {
+  min-width: 0 !important;
+  font-weight: 700;
+  color: #d9b6ff !important;
+  border-color: rgba(168, 111, 239, .55) !important;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid;
+  border-radius: 999px;
+  background: rgba(20, 6, 32, .9);
+  font-size: 8px;
+  letter-spacing: .12em;
+  cursor: pointer;
+}
+.cube-toolbar.is-open .cube-toolbar-toggle { color: #fff !important; align-self: flex-start; }
+.cube-toolbar > span {
+  color: #d9b6ff;
+  font-size: 8px;
+  letter-spacing: .18em;
+  font-weight: 800;
+  margin-top: 4px;
+}
+.cube-toolbar__hint {
+  color: #c79bf0;
+  font-size: 8px;
+  letter-spacing: .08em;
+  line-height: 1.4;
+}
+.cube-toolbar__targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.cube-toolbar__targets button {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(168, 111, 239, .45);
+  border-radius: 8px;
+  background: rgba(30, 10, 46, .8);
+  color: #eee0ff;
+  font-size: 8px;
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+.cube-toolbar__targets button.is-active {
+  border-color: #d9b6ff;
+  background: rgba(168, 111, 239, .35);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(168, 111, 239, .45);
+}
+.cube-toolbar__axis {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9b6ff;
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+.cube-toolbar__axis span { width: 10px; flex: 0 0 auto; }
+.cube-toolbar__axis input[type="range"] {
+  flex: 1 1 auto;
+  accent-color: #b98cf2;
+}
+.cube-toolbar__actions {
+  display: flex;
+  gap: 6px;
+}
+.cube-toolbar__actions button {
+  flex: 1 1 auto;
+  height: 24px;
+  border: 1px solid rgba(168, 111, 239, .45);
+  border-radius: 8px;
+  background: rgba(30, 10, 46, .8);
+  color: #eee0ff;
+  font-size: 8px;
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+.cube-toolbar__actions button.is-active {
+  border-color: #ffd76e;
+  background: rgba(255, 215, 110, .18);
+  color: #ffe9ae;
+}
+.cube-toolbar__actions button:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */
