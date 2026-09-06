@@ -5,7 +5,8 @@ import { useRef, useState } from "react";
 
 const SPAWNS = [
   ["vehicle","VEHICLE"],["jetpack","JET PACK"],["ak47","AK-47"],["revolver","REVOLVER"],["bow","BOW"],["arrow","ARROW"],
-  ["pepsi","PEPSI CAN"],["yoohoo","YOO-HOO CAN"],["biplane","PENGUIN BIPLANE"],["penguin","PENGUIN RAGDOLL"],["bongo","BONGO RAGDOLL"],
+  ["rat-meat","RAT MEAT · MIX"],["rat-meat-silver","RAT MEAT · SILVER"],["rat-meat-gold","RAT MEAT · GOLD"],["yoohoo","YOO-HOO CAN"],
+  ["biplane","PENGUIN BIPLANE"],["penguin","PENGUIN RAGDOLL"],["bongo","BONGO RAGDOLL"],
 ] as const;
 const ALIENS = [["zix","ZIX"],["pip","PIP"],["vex","VEX"]] as const;
 
@@ -25,7 +26,7 @@ export default function AlienArcherShell() {
           <div>{ALIENS.map(([id,label])=><button type="button" key={id} onClick={()=>send(id)}>{label}</button>)}</div>
         </aside>
       )}
-      <iframe ref={frame} className="alien-archer-frame" src="/alien-archer-game/index.html" title="Alien Archer physics sandbox" allow="fullscreen; autoplay" />
+      <iframe ref={frame} className="alien-archer-frame" src="/alien-archer-game/index.html" title="Alien Archer physics sandbox" allow="fullscreen; autoplay; pointer-lock" />
     </main>
   );
 }

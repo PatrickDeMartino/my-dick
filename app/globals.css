@@ -880,6 +880,25 @@ button, input { font: inherit; }
   perspective: 1200px;
 }
 
+.choice-landing::before {
+  content: "";
+  position: absolute;
+  inset: -28%;
+  background:
+    radial-gradient(ellipse at 35% 42%, rgba(45,255,211,.76), transparent 24%),
+    radial-gradient(ellipse at 70% 58%, rgba(82,65,255,.72), transparent 28%),
+    repeating-conic-gradient(from 18deg at 50% 50%, #051d35 0 7deg, #4a1680 9deg 14deg, #05a98c 16deg 21deg, #071126 23deg 29deg);
+  filter: saturate(1.55) contrast(1.15) blur(2px);
+  opacity: .52;
+  transform: perspective(700px) rotateX(64deg) scale(1.35);
+  animation: home-void-ocean 18s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes home-void-ocean {
+  to { transform: perspective(700px) rotateX(64deg) rotateZ(360deg) scale(1.35); }
+}
+
 .choice-world-stage {
   position: absolute;
   inset: 0;
@@ -887,6 +906,7 @@ button, input { font: inherit; }
   height: 100%;
   transform-style: preserve-3d;
   pointer-events: none;
+  z-index: 1;
 }
 
 .choice-vignette {
@@ -1741,6 +1761,10 @@ button, input { font: inherit; }
 .cube-toolbar__actions button:disabled { opacity: .45; cursor: not-allowed; }
 .cube-toolbar__actions--launch { flex-wrap: wrap; }
 .cube-toolbar__actions--launch .alien-launch { flex-basis: 100%; border-color: #55f2ff; color: #dffeff; box-shadow: 0 0 14px rgba(51,223,255,.25); }
+.platform-sling-controls { display:grid; gap:7px; padding:9px; border:1px solid rgba(51,223,255,.45); border-radius:12px; background:radial-gradient(circle at 50% 120%,rgba(24,192,255,.18),rgba(20,6,32,.84) 68%); box-shadow:inset 0 0 20px rgba(51,223,255,.08); }
+.platform-sling-controls label { display:grid; grid-template-columns:92px 1fr 42px; align-items:center; gap:6px; color:#bffaff; font-size:7px; letter-spacing:.1em; }
+.platform-sling-controls input { width:100%; accent-color:#28dfff; cursor:ew-resize; }
+.platform-sling-controls b { color:#fff; text-align:right; font-size:8px; }
 .cube-toolbar__destinations { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .cube-toolbar__destinations button { min-height: 28px; padding: 4px 6px; border: 1px solid rgba(111,232,239,.3); border-radius: 7px; background: rgba(5,28,42,.82); color: #bfeff4; font-size: 7px; letter-spacing: .06em; cursor: pointer; }
 .cube-toolbar__destinations button:hover { border-color: #63e0ee; color: #fff; }

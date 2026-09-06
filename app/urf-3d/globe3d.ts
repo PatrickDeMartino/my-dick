@@ -96,6 +96,8 @@ export type Globe3DHandle = {
   setEditLock: (target: EditTargetId, locked: boolean) => void;
   getEditOffsets: () => Record<EditTargetId, EditOffset>;
   setSelectedTarget: (target: EditTargetId) => void;
+  setPlatformScale: (scale: number) => void;
+  setPlatformYaw: (degrees: number) => void;
   hopAlien: () => void;
   ragdollAlien: () => void;
   /** Arms (or disarms, with null) a raise/lower terrain brush; painting
@@ -1097,6 +1099,8 @@ export async function createGlobe3D(
   let flyElevation = -0.28;
   let flyDepth = FLY_DEPTH;
   let flyHeading = 0;
+  let platformScale = 1;
+  let platformYaw = 0;
   let prevIslandX = 0;
   let prevIslandY = 0;
   let selectedTarget: EditTargetId = "globe";
@@ -1124,7 +1128,7 @@ export async function createGlobe3D(
     prevIslandX = nextX;
     prevIslandY = nextY;
 
-    islandRoot.rotation.y = flyHeading;
+    islandRoot.rotation.y = flyHeading + platformYaw;
     islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08 - flyHeading * 0.12;
     islandRoot.rotation.x = Math.cos(elapsed * 0.53) * 0.05;
     // The camera tracks the platform's flight much more now — roughly
@@ -1134,13 +1138,20 @@ export async function createGlobe3D(
     // toy drifting in front of it. It still looks straight at the globe's
     // center throughout: the aim math depends on that lookAt target and
     // can't be repointed at the island without redoing the shot geometry.
-    camera.position.set(
-      islandRoot.position.x * 0.42,
-      islandRoot.position.y * 0.32,
-      8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
-    );
     camera.up.set(0, 1, 0);
-    camera.lookAt(0, 0, 0);
+    if (selectedTarget === "platform") {
+      const front = new THREE.Vector3(0, 0.72, 2.55)
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), islandRoot.rotation.y);
+      camera.position.copy(islandRoot.position).add(front);
+      camera.lookAt(islandRoot.position.x, islandRoot.position.y + 0.3, islandRoot.position.z);
+    } else {
+      camera.position.set(
+        islandRoot.position.x * 0.42,
+        islandRoot.position.y * 0.32,
+        8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
+      );
+      camera.lookAt(0, 0, 0);
+    }
   };
 
   const islandRoot = new THREE.Group();
@@ -1537,10 +1548,12 @@ export async function createGlobe3D(
     walker.vz += (inputZ * WALK_SPEED - walker.vz) * Math.min(1, delta * acceleration);
     if (Math.abs(inputX) < .05) walker.vx *= Math.max(0, 1 - delta * 8.5);
     if (Math.abs(inputZ) < .05) walker.vz *= Math.max(0, 1 - delta * 8.5);
-    walker.x = clamp(walker.x + walker.vx * delta, -WALK_LIMIT_X, WALK_LIMIT_X);
-    walker.z = clamp(walker.z + walker.vz * delta, 0, 1);
-    if (Math.abs(walker.x) >= WALK_LIMIT_X) walker.vx *= -.22;
-    if (walker.z <= 0 || walker.z >= 1) walker.vz *= -.22;
+    const walkLimitX = WALK_LIMIT_X * platformScale;
+    const walkLimitZ = platformScale;
+    walker.x = clamp(walker.x + walker.vx * delta, -walkLimitX, walkLimitX);
+    walker.z = clamp(walker.z + walker.vz * delta, 0, walkLimitZ);
+    if (Math.abs(walker.x) >= walkLimitX) walker.vx *= -.22;
+    if (walker.z <= 0 || walker.z >= walkLimitZ) walker.vz *= -.22;
     walker.vy -= 2.8 * delta;
     walker.y += walker.vy * delta;
     if (walker.y < 0) {
@@ -1790,6 +1803,7 @@ export async function createGlobe3D(
       flyDepth = clamp(flyDepth + zipInput * 1.55 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
     }
     placeIsland(elapsed);
+    platform.group.scale.set(platformScale, 1, platformScale);
     // The island's own position is set inside placeIsland relative to its
     // un-boxed frame; add the edit offset there, then rotate the whole thing
     // (position and facing alike) into the tumbled box.
@@ -1943,6 +1957,12 @@ export async function createGlobe3D(
     getEditOffsets: () => JSON.parse(JSON.stringify(editOffsets)) as Record<EditTargetId, EditOffset>,
     setSelectedTarget: (target) => {
       selectedTarget = target;
+    },
+    setPlatformScale: (scale) => {
+      platformScale = clamp(scale, 0.55, 2.25);
+    },
+    setPlatformYaw: (degrees) => {
+      platformYaw = THREE.MathUtils.degToRad(degrees);
     },
     hopAlien: () => {
       if (walker.y <= .001) walker.vy = 1.18;

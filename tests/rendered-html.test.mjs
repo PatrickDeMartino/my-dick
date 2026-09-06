@@ -217,15 +217,21 @@ test("Planet Urf exposes the editable world layers, mapped levels, and alien gam
   assert.match(world, /id: "land", label: "Land"/);
   assert.match(world, /id: "ocean", label: "Ocean"/);
   assert.match(world, /LAUNCH ARCHER/);
+  assert.match(world, /SLING ROTATION/);
+  assert.match(world, /PLATFORM SIZE/);
   assert.match(world, /North America.*South America.*Africa.*China.*Southeast Asia.*India.*Himalayas.*Australia/s);
   assert.match(engine, /platform\.edgeMaterial\.opacity = platformSelected/);
   assert.match(engine, /walker\.ragdoll/);
+  assert.match(engine, /setPlatformScale/);
+  assert.match(engine, /setPlatformYaw/);
   assert.match(game, /Raid neon mushroom isles/);
   const shell = await readFile(new URL("../app/alien-archer/AlienArcherShell.tsx", import.meta.url), "utf8");
   const sandbox = await readFile(new URL("../games/alien-archer/src/game/sandbox.ts", import.meta.url), "utf8");
   assert.match(shell, /SPAWN SHIT/);
   assert.match(shell, /PENGUIN BIPLANE/);
   assert.match(shell, /BONGO RAGDOLL/);
+  assert.match(shell, /RAT MEAT · MIX/);
+  assert.match(shell, /pointer-lock/);
   assert.match(sandbox, /makeSandboxProp/);
 });
 

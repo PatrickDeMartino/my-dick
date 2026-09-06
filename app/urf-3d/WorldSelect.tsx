@@ -91,6 +91,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [cubeMode, setCubeMode] = useState(false);
   const [editTarget, setEditTarget] = useState<EditTargetId>("globe");
   const [editOffsets, setEditOffsets] = useState<Record<EditTargetId, EditOffset>>(makeEditOffsets);
+  const [platformScale, setPlatformScale] = useState(1);
+  const [platformYaw, setPlatformYaw] = useState(0);
   const [terrainBrush, setTerrainBrush] = useState<"raise" | "lower" | null>(null);
   const boxDragRef = useRef({ active: false, x: 0, y: 0 });
   const boxRotationRef = useRef({ lon: 0, lat: 0 });
@@ -796,11 +798,47 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   Reset
                 </button>
               </div>
+              {editTarget === "platform" && (
+                <div className="platform-sling-controls">
+                  <label>
+                    <span>SLING ROTATION</span>
+                    <input
+                      type="range"
+                      min={-180}
+                      max={180}
+                      step={1}
+                      value={platformYaw}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        setPlatformYaw(value);
+                        worldRef.current?.setPlatformYaw(value);
+                      }}
+                    />
+                    <b>{platformYaw}°</b>
+                  </label>
+                  <label>
+                    <span>PLATFORM SIZE</span>
+                    <input
+                      type="range"
+                      min={0.55}
+                      max={2.25}
+                      step={0.05}
+                      value={platformScale}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        setPlatformScale(value);
+                        worldRef.current?.setPlatformScale(value);
+                      }}
+                    />
+                    <b>{platformScale.toFixed(2)}×</b>
+                  </label>
+                </div>
+              )}
               {(editTarget === "platform" || editTarget === "alien") && (
                 <div className="cube-toolbar__actions cube-toolbar__actions--launch">
                   <button type="button" onClick={() => worldRef.current?.hopAlien()}>HOP</button>
                   <button type="button" onClick={() => worldRef.current?.ragdollAlien()}>RAGDOLL</button>
-                  <button type="button" className="alien-launch" onClick={() => router.push("/alien-archer")}>LAUNCH ARCHER</button>
+                  <button type="button" className="alien-launch" onClick={() => window.location.assign("/alien-archer")}>LAUNCH ARCHER</button>
                 </div>
               )}
               {editTarget === "platform" && <small className="cube-toolbar__hint">Q/E orbit · R/F rise · Z/X depth · release to stop instantly · Lock freezes flight</small>}
