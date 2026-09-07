@@ -36,6 +36,7 @@ export function GameApp() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-void-deep text-fg">
+      <a href="/urf-3d" className="pointer-events-auto absolute left-3 top-3 z-30 rounded-md border border-lime/50 bg-void-deep/80 px-3 py-2 font-display text-[10px] tracking-widest text-lime backdrop-blur-sm">← THREE PLANETS</a>
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full touch-none"

@@ -19,11 +19,12 @@ type CanBody = {
 type PongoBody = {
   mesh: THREE.Group;
   velocity: THREE.Vector3;
-  swing: { vine: JungleVine; angle: number; angularVelocity: number } | null;
+  swing: { vine: JungleVine; velocity: THREE.Vector3; gyro: THREE.Vector3 } | null;
 };
 
 type JungleVine = {
-  mesh: THREE.Mesh;
+  mesh: THREE.Group;
+  segments: THREE.Mesh[];
   anchor: THREE.Vector3;
   length: number;
   phase: number;
@@ -65,60 +66,87 @@ function canTexture(label: CanLabel) {
 function makeBrain() {
   const root = new THREE.Group();
   const matter = new THREE.MeshPhysicalMaterial({
-    color: 0xe45ac6,
-    emissive: 0x4e073f,
-    emissiveIntensity: .46,
-    roughness: .5,
+    color: 0xf08fc9,
+    emissive: 0x4b102f,
+    emissiveIntensity: .26,
+    roughness: .58,
     metalness: .02,
-    clearcoat: .48,
-    clearcoatRoughness: .42,
+    clearcoat: .64,
+    clearcoatRoughness: .34,
   });
-  const sulcus = new THREE.MeshStandardMaterial({ color: 0x74105f, emissive: 0x26031f, emissiveIntensity: .3, roughness: .72 });
+  const gyrus = new THREE.MeshPhysicalMaterial({ color: 0xffa6d8, emissive: 0x5d153f, emissiveIntensity: .32, roughness: .48, clearcoat: .55 });
+  const sulcus = new THREE.MeshStandardMaterial({ color: 0x641044, emissive: 0x220218, emissiveIntensity: .28, roughness: .8 });
   const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .1, blending: THREE.AdditiveBlending, depthWrite: false });
   const wrinkles: THREE.Mesh[] = [];
+  const worms: THREE.Group[] = [];
 
-  // Two softly overlapping hemispheres make the silhouette read as a brain
-  // before the animated gyri are added.
+  // Distinct hemispheres, temporal lobes, cerebellum and stem establish a
+  // readable human-brain silhouette before the cortical folds are applied.
   for (let hemisphere = -1; hemisphere <= 1; hemisphere += 2) {
-    const lobe = new THREE.Mesh(new THREE.SphereGeometry(1.2, 44, 32), matter.clone());
-    lobe.position.x = hemisphere * .5;
-    lobe.scale.set(.82, 1.12, .86);
-    lobe.castShadow = true;
-    root.add(lobe);
-    for (let i = 0; i < 22; i += 1) {
+    const cerebrum = new THREE.Mesh(new THREE.SphereGeometry(1.18, 64, 46), matter.clone());
+    cerebrum.position.set(hemisphere * .52, .12, -.04);
+    cerebrum.scale.set(.82, 1.02, 1.18);
+    cerebrum.castShadow = true;
+    root.add(cerebrum);
+    const temporal = new THREE.Mesh(new THREE.SphereGeometry(.7, 42, 30), matter.clone());
+    temporal.position.set(hemisphere * .72, -.48, .3);
+    temporal.scale.set(.78, .62, 1.02);
+    temporal.castShadow = true;
+    root.add(temporal);
+    for (let i = 0; i < 19; i += 1) {
       const points: THREE.Vector3[] = [];
-      const latitude = -1.12 + (i % 11) * .225;
-      const band = Math.floor(i / 11);
-      for (let s = 0; s <= 34; s += 1) {
-        const t = s / 34;
-        const y = latitude + Math.sin(t * Math.PI * (3 + i % 3) + i * .73) * .105;
-        const z = -.82 + t * 1.64 + Math.sin(t * Math.PI * (4 + i % 4) + i) * .13;
-        const shell = Math.sqrt(Math.max(.04, 1 - (y * y) / 1.55 - (z * z) / 1.02));
-        const x = hemisphere * (.48 + shell * .53) + Math.sin(t * Math.PI * 5 + i) * .045;
+      const latitude = -.82 + (i % 10) * .19;
+      for (let s = 0; s <= 40; s += 1) {
+        const t = s / 40;
+        const z = -1.02 + t * 2.03 + Math.sin(t * Math.PI * (3 + i % 3) + i * .91) * .11;
+        const y = latitude + Math.sin(t * Math.PI * (2 + i % 4) + i * .63) * .09;
+        const shell = Math.sqrt(Math.max(.055, 1 - (y * y) / 1.18 - (z * z) / 1.45));
+        const x = hemisphere * (.53 + shell * .53) + Math.sin(t * Math.PI * 4 + i) * .026;
         points.push(new THREE.Vector3(x, y, z));
       }
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, .055 + band * .008, 8, false), sulcus.clone());
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 84, .075, 12, false), gyrus.clone());
       tube.userData.phase = i * .43 + hemisphere;
-      tube.userData.baseScale = .985 + (i % 3) * .006;
+      tube.userData.baseScale = .99 + (i % 3) * .004;
       tube.castShadow = true;
       wrinkles.push(tube);
       root.add(tube);
     }
+    // Lateral fissure: the strong horizontal landmark above each temporal lobe.
+    const lateral = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(hemisphere * .82, -.18, .82), new THREE.Vector3(hemisphere * 1.03, -.28, .35),
+      new THREE.Vector3(hemisphere * 1.02, -.22, -.18), new THREE.Vector3(hemisphere * .83, -.08, -.68),
+    ]), 42, .045, 10, false), sulcus.clone());
+    root.add(lateral);
   }
   const fissure = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 1.18, -.72), new THREE.Vector3(.015, .6, -.94),
-    new THREE.Vector3(-.02, 0, -1.02), new THREE.Vector3(.02, -.62, -.88),
-    new THREE.Vector3(0, -1.15, -.55),
-  ]), 48, .075, 9, false), sulcus);
+    new THREE.Vector3(0, 1.18, -1.02), new THREE.Vector3(.012, .7, -1.24),
+    new THREE.Vector3(-.012, .15, -1.31), new THREE.Vector3(.012, -.36, -1.12),
+  ]), 64, .06, 12, false), sulcus);
   root.add(fissure);
-  const cerebellum = new THREE.Mesh(new THREE.SphereGeometry(.66, 30, 22), matter.clone());
-  cerebellum.position.set(0, -.9, .48);
-  cerebellum.scale.set(1.18, .56, .72);
+  const cerebellum = new THREE.Mesh(new THREE.SphereGeometry(.7, 46, 34), matter.clone());
+  cerebellum.position.set(0, -.88, -.72);
+  cerebellum.scale.set(1.14, .58, .68);
   root.add(cerebellum);
-  const stem = new THREE.Mesh(new THREE.CapsuleGeometry(.2, .6, 8, 14), matter.clone());
-  stem.position.set(.08, -1.43, .38);
-  stem.rotation.z = -.15;
+  for (let i=0;i<8;i++) {
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.46-i*.018,.035,8,28,Math.PI*1.45),gyrus.clone());
+    band.position.set(0,-.69-i*.07,-.9); band.rotation.set(Math.PI/2,0,.75); root.add(band);
+  }
+  const stem = new THREE.Mesh(new THREE.CapsuleGeometry(.19, .72, 12, 20), matter.clone());
+  stem.position.set(.06, -1.42, -.46);
+  stem.rotation.z = -.11;
   root.add(stem);
+  // Bright, smiling cortical worms orbit and burrow around the folds.
+  const wormColors=[0x78ffe4,0xffed69,0x9bff67,0xff7ecb,0x83a8ff];
+  for(let i=0;i<9;i++){
+    const worm=new THREE.Group();
+    const segments:THREE.Mesh[]=[];
+    const color=wormColors[i%wormColors.length];
+    const wormMat=new THREE.MeshPhysicalMaterial({color,emissive:color,emissiveIntensity:.32,roughness:.38,clearcoat:.7});
+    for(let j=0;j<7;j++){const bead=new THREE.Mesh(new THREE.SphereGeometry(.075-j*.003,14,10),wormMat);segments.push(bead);worm.add(bead);}
+    const eyeMat=new THREE.MeshBasicMaterial({color:0x16051b});
+    for(const side of [-1,1]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.014,8,6),eyeMat);eye.position.set(side*.028,.025,.071);segments[0].add(eye);}
+    worm.userData={segments,phase:i*.79,hemisphere:i%2?-1:1}; worms.push(worm); root.add(worm);
+  }
   const hitMaterial = new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
   const core = new THREE.Mesh(new THREE.SphereGeometry(1.28, 28, 22), hitMaterial);
   core.scale.set(1.12, 1.04, .82);
@@ -129,6 +157,7 @@ function makeBrain() {
   root.add(aura);
   root.rotation.z = -.08;
   root.userData.wrinkles = wrinkles;
+  root.userData.worms = worms;
   root.userData.aura = aura;
   return root;
 }
@@ -193,12 +222,23 @@ function makeJungleTree(index: number) {
   return tree;
 }
 
-function aimVine(vine: JungleVine, end: THREE.Vector3) {
-  const direction = end.clone().sub(vine.anchor);
-  const length = direction.length();
-  vine.mesh.position.copy(vine.anchor).add(end).multiplyScalar(.5);
-  vine.mesh.scale.set(1, length, 1);
-  vine.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+function aimVine(vine: JungleVine, end: THREE.Vector3, taut = false) {
+  const down = new THREE.Vector3(0, -1, 0);
+  const across = end.clone().sub(vine.anchor);
+  const side = new THREE.Vector3().crossVectors(across, down).normalize();
+  if (side.lengthSq() < .01) side.set(0,0,1);
+  const points = Array.from({length: vine.segments.length + 1}, (_, index) => {
+    const t = index / vine.segments.length;
+    const point = vine.anchor.clone().lerp(end, t);
+    if (!taut) point.addScaledVector(side, Math.sin(Math.PI*t)*.1);
+    return point;
+  });
+  vine.segments.forEach((segment,index)=>{
+    const direction=points[index+1].clone().sub(points[index]);
+    segment.position.copy(points[index]).add(points[index+1]).multiplyScalar(.5);
+    segment.scale.set(1,direction.length(),1);
+    segment.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
+  });
 }
 
 function makeCan(label: CanLabel, texture: THREE.Texture, metalColor = 0xc7cbd3) {
@@ -262,40 +302,20 @@ export default function HomeRoom3D() {
 
     const room = new THREE.Group();
     scene.add(room);
-    const cubeShell = new THREE.Mesh(
-      new THREE.BoxGeometry(20, 14, 14),
-      new THREE.MeshPhysicalMaterial({ color:0x0b3b28, transparent:true, opacity:.055, transmission:.16, roughness:.72, side:THREE.BackSide, depthWrite:false }),
-    );
-    cubeShell.position.set(0, 3, 1.5);
-    room.add(cubeShell);
+    // Keep the controllable cube as a light navigational frame, but leave the
+    // jungle completely open: no back/side walls and no ceiling.
     const cubeEdges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(20, 14, 14)),
-      new THREE.LineBasicMaterial({ color:0x62ffd7, transparent:true, opacity:.42 }),
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(30, 18, 30)),
+      new THREE.LineBasicMaterial({ color:0x62ffd7, transparent:true, opacity:.2 }),
     );
-    cubeEdges.position.copy(cubeShell.position);
+    cubeEdges.position.set(0, 5, 0);
     room.add(cubeEdges);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x142d1b, roughness: .96, metalness: .02 });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 18, 20, 20), floorMat);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(64, 64, 40, 40), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -3;
     floor.receiveShadow = true;
     room.add(floor);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x082015, roughness: .96, side: THREE.DoubleSide });
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(24, 14, 12, 8), wallMat);
-    back.position.set(0, 3, -5);
-    back.receiveShadow = true;
-    room.add(back);
-    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(20, 14), wallMat.clone());
-    ceiling.rotation.x = Math.PI / 2;
-    ceiling.position.set(0, 10, 1.5);
-    ceiling.receiveShadow = true;
-    room.add(ceiling);
-    [-1, 1].forEach((side) => {
-      const wall = new THREE.Mesh(new THREE.PlaneGeometry(18, 14), wallMat.clone());
-      wall.position.set(side * 10, 3, 2);
-      wall.rotation.y = side * -Math.PI / 2;
-      room.add(wall);
-    });
     const crystals: THREE.Group[] = [];
     for (let i = 0; i < 18; i += 1) {
       const cluster = makeCrystalCluster(i);
@@ -330,12 +350,15 @@ export default function HomeRoom3D() {
     }
     room.add(jungle);
 
-    const vineMaterial = new THREE.MeshPhysicalMaterial({ color: 0x123e1e, roughness: .68, clearcoat: .28 });
-    const vines: JungleVine[] = [-6.2, -3.3, -.2, 3.05, 6.25].map((x, index) => {
-      const length = 4.1 + (index % 3) * .42;
-      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(.055, .075, 1, 10), vineMaterial.clone());
-      mesh.castShadow = true;
-      const vine = { mesh, anchor: new THREE.Vector3(x, 5.8 + (index % 2) * .22, -2.15 - (index % 3) * .55), length, phase: index * 1.37 };
+    const vineMaterial = new THREE.MeshPhysicalMaterial({ color: 0x174f25, roughness: .62, clearcoat: .32 });
+    const vines: JungleVine[] = [-11,-6.2,-2.5,1.2,5.3,9.8].map((x, index) => {
+      const length = 6.2 + (index % 3) * .65;
+      const mesh = new THREE.Group();
+      const segments=Array.from({length:18},()=>{
+        const segment=new THREE.Mesh(new THREE.CylinderGeometry(.048,.058,1,12),vineMaterial.clone());
+        segment.castShadow=true; mesh.add(segment); return segment;
+      });
+      const vine = { mesh, segments, anchor: new THREE.Vector3(x, 8.4 + (index % 2) * .45, -3.3 + (index%3)*3.2), length, phase: index * 1.37 };
       aimVine(vine, vine.anchor.clone().add(new THREE.Vector3(0, -length, 0)));
       room.add(mesh);
       return vine;
@@ -390,11 +413,6 @@ export default function HomeRoom3D() {
       if (activate) { selectedPongo = pongo; pongoMode = true; }
       if (pongos.length > 5) scene.remove(pongos.shift()!.mesh);
     };
-    spawnCan("YOOHOO");
-    spawnCan("PEPSI");
-    spawnCan("MONSTER");
-    spawnPongo(false);
-
     const raycaster=new THREE.Raycaster();
     const pointer=new THREE.Vector2();
     const onUp = (event:PointerEvent) => {
@@ -407,8 +425,12 @@ export default function HomeRoom3D() {
     const onSpawn = (event: Event) => {
       const item = (event as CustomEvent).detail as SpawnItem;
       if (item === "PONGO") {
-        if (pongos.length === 0) spawnPongo(true);
-        else { pongoMode = !pongoMode; selectedPongo = pongoMode ? pongos[pongos.length - 1] : null; }
+        if (!pongoMode) spawnPongo(true);
+        else {
+          if (heldCan) { heldCan = null; heldTime = 0; }
+          pongos.forEach((pongo)=>scene.remove(pongo.mesh));
+          pongos.length=0; selectedPongo=null; pongoMode=false;
+        }
       } else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
@@ -431,14 +453,13 @@ export default function HomeRoom3D() {
       keys.add(event.code);
       if (selectedPongo && event.code === "Space" && !event.repeat) {
         if (selectedPongo.swing) {
-          const { vine, angle, angularVelocity } = selectedPongo.swing;
-          selectedPongo.velocity.set(angularVelocity * vine.length * Math.cos(angle), angularVelocity * vine.length * Math.sin(angle), 0);
+          selectedPongo.velocity.copy(selectedPongo.swing.velocity);
           selectedPongo.swing = null;
         } else {
           const shoulder = selectedPongo.mesh.position.clone().add(new THREE.Vector3(0, 2.25, 0));
           const nearest = vines.map(vine=>({vine,distance:shoulder.distanceTo(vine.anchor.clone().add(new THREE.Vector3(0,-vine.length,0)))})).sort((a,b)=>a.distance-b.distance)[0];
-          if (nearest && nearest.distance < 2.2) {
-            selectedPongo.swing = { vine: nearest.vine, angle: (selectedPongo.mesh.position.x-nearest.vine.anchor.x)/nearest.vine.length, angularVelocity: selectedPongo.velocity.x/nearest.vine.length };
+          if (nearest && nearest.distance < 3.4) {
+            selectedPongo.swing = { vine: nearest.vine, velocity: selectedPongo.velocity.clone(), gyro: new THREE.Vector3() };
           } else if (selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
         }
       }
@@ -474,6 +495,17 @@ export default function HomeRoom3D() {
         (wrinkle.material as THREE.MeshStandardMaterial).emissiveIntensity = .28 + Math.sin(time * 2 + index) * .08;
       });
       (brain.userData.aura as THREE.Mesh).scale.setScalar(1 + Math.sin(time * 1.5) * .035);
+      (brain.userData.worms as THREE.Group[]).forEach((worm,index)=>{
+        const phase=time*(.72+(index%3)*.1)+worm.userData.phase;
+        const hemisphere=worm.userData.hemisphere as number;
+        const center=new THREE.Vector3(hemisphere*(.78+.18*Math.sin(phase*.7)),.78*Math.sin(phase*.83),.9*Math.cos(phase*.67));
+        (worm.userData.segments as THREE.Mesh[]).forEach((segment,j)=>{
+          const trail=phase-j*.16;
+          segment.position.set(center.x+Math.sin(trail*2.1)*.13,center.y+Math.sin(trail*1.7+j*.3)*.12,center.z+Math.cos(trail*1.9)*.13);
+          segment.scale.setScalar(1+Math.sin(trail*3)*.08);
+        });
+        worm.rotation.y=Math.sin(phase*.41)*.24;
+      });
       crystals.forEach((cluster,index)=>{cluster.rotation.y+=dt*(index%2?.08:-.06);});
       vines.forEach(vine=>{
         const swinger=pongos.find(pongo=>pongo.swing?.vine===vine);
@@ -505,33 +537,53 @@ export default function HomeRoom3D() {
         const movementLength = Math.hypot(mx, mz) || 1;
         mx /= movementLength; mz /= movementLength;
         if (pongo.swing) {
-          pongo.swing.angularVelocity += (-9.8 / pongo.swing.vine.length * Math.sin(pongo.swing.angle) + mx * 1.05) * dt;
-          pongo.swing.angularVelocity *= Math.max(0, 1-dt*.075);
-          pongo.swing.angle = THREE.MathUtils.clamp(pongo.swing.angle + pongo.swing.angularVelocity * dt, -1.16, 1.16);
-          const hand = pongo.swing.vine.anchor.clone().add(new THREE.Vector3(Math.sin(pongo.swing.angle)*pongo.swing.vine.length,-Math.cos(pongo.swing.angle)*pongo.swing.vine.length,mz*.35));
+          const swing=pongo.swing;
+          const oldHand=pongo.mesh.position.clone().add(new THREE.Vector3(0,2.15,0));
+          swing.velocity.y-=9.81*dt;
+          swing.velocity.x+=mx*8.5*dt; swing.velocity.z+=mz*8.5*dt;
+          swing.velocity.multiplyScalar(1-dt*.045);
+          const hand=oldHand.clone().addScaledVector(swing.velocity,dt);
+          const radius=hand.clone().sub(swing.vine.anchor).normalize();
+          hand.copy(swing.vine.anchor).addScaledVector(radius,swing.vine.length);
+          swing.velocity.copy(hand).sub(oldHand).divideScalar(Math.max(dt,.001));
+          const tangentSpin=new THREE.Vector3().crossVectors(radius,swing.velocity).multiplyScalar(.055);
+          swing.gyro.lerp(tangentSpin,.18);
           pongo.mesh.position.copy(hand).add(new THREE.Vector3(0,-2.15,0));
-          pongo.mesh.rotation.z = -pongo.swing.angle * .28;
-          (pongo.mesh.userData.limbs as THREE.Group[]).slice(0,4).forEach(limb=>limb.rotation.x=Math.PI*.78);
-          aimVine(pongo.swing.vine,hand);
+          pongo.mesh.rotation.x=THREE.MathUtils.clamp(swing.gyro.x,-.7,.7);
+          pongo.mesh.rotation.z=THREE.MathUtils.clamp(-swing.gyro.z,-.85,.85);
+          pongo.mesh.rotation.y+=swing.gyro.y*dt;
+          const limbs=pongo.mesh.userData.limbs as THREE.Group[];
+          limbs[0].rotation.x=Math.PI*.84; limbs[1].rotation.x=-.3;
+          limbs[4].rotation.x=Math.PI*.84; limbs[5].rotation.x=-.3;
+          aimVine(swing.vine,hand,true);
         } else {
-          pongo.mesh.rotation.z += (0-pongo.mesh.rotation.z)*.15;
+          pongo.mesh.rotation.x*=.84; pongo.mesh.rotation.z*=.84;
           pongo.velocity.x += (mx * 3.6 - pongo.velocity.x) * Math.min(1, dt * 8);
           pongo.velocity.z += (mz * 3.6 - pongo.velocity.z) * Math.min(1, dt * 8);
           pongo.velocity.y -= 12 * dt;
           pongo.mesh.position.addScaledVector(pongo.velocity, dt);
         }
         if (pongo.mesh.position.y < -3) { pongo.mesh.position.y = -3; pongo.velocity.y = 0; }
-        pongo.mesh.position.x = THREE.MathUtils.clamp(pongo.mesh.position.x, -8.7, 8.7);
-        pongo.mesh.position.z = THREE.MathUtils.clamp(pongo.mesh.position.z, -4.2, 5.2);
+        if(!pongo.swing){pongo.mesh.position.x = THREE.MathUtils.clamp(pongo.mesh.position.x, -28, 28);pongo.mesh.position.z = THREE.MathUtils.clamp(pongo.mesh.position.z, -28, 28);}
         const moving = Math.abs(mx) + Math.abs(mz) > .1;
         if (moving && !pongo.swing) {
           pongo.mesh.rotation.y = Math.atan2(mx, mz);
           pongo.mesh.userData.walk += dt * 8;
-          (pongo.mesh.userData.limbs as THREE.Group[]).forEach((limb, index) => { limb.rotation.x = Math.sin(pongo.mesh.userData.walk + index * Math.PI / 2) * .52; });
+          const limbs=pongo.mesh.userData.limbs as THREE.Group[];
+          limbs.forEach((limb,index)=>{limb.rotation.x=Math.sin(pongo.mesh.userData.walk+index*Math.PI/2)*(index%4<2?.64:.48);});
         }
         if(pongo===selectedPongo){
           if(!heldCan){heldCan=cans.find(can=>can.mesh.position.distanceTo(pongo.mesh.position)<1.35)??null;heldTime=0;}
-          if(heldCan){heldTime+=dt;const forward=new THREE.Vector3(Math.sin(pongo.mesh.rotation.y),0,Math.cos(pongo.mesh.rotation.y));const handTarget=pongo.mesh.position.clone().add(forward.clone().multiplyScalar(.55)).add(new THREE.Vector3(0,1.55,0));heldCan.mesh.position.lerp(handTarget,.3);heldCan.mesh.rotation.z+=dt*8;if(heldTime>.72){heldCan.velocity.copy(forward.multiplyScalar(9)).add(new THREE.Vector3(0,5.4,0));heldCan.spin.set(8,5,9);heldCan=null;heldTime=0;}}
+          if(heldCan){
+            heldTime+=dt;const forward=new THREE.Vector3(Math.sin(pongo.mesh.rotation.y),0,Math.cos(pongo.mesh.rotation.y));
+            const limbs=pongo.mesh.userData.limbs as THREE.Group[];
+            const reach=THREE.MathUtils.smoothstep(heldTime,0,.3),wind=THREE.MathUtils.smoothstep(heldTime,.3,.72);
+            limbs[4].rotation.x=THREE.MathUtils.lerp(limbs[4].rotation.x,-1.28,reach);limbs[5].rotation.x=THREE.MathUtils.lerp(limbs[5].rotation.x,-.82+wind*1.5,reach);
+            pongo.mesh.userData.torso.rotation.x=-.13*(1-wind);
+            const handTarget=pongo.mesh.position.clone().add(forward.clone().multiplyScalar(.48-.22*wind)).add(new THREE.Vector3(.28,1.18+wind*.78,0));
+            heldCan.mesh.position.lerp(handTarget,.34);heldCan.mesh.rotation.z+=dt*8;
+            if(heldTime>.82){heldCan.velocity.copy(forward.multiplyScalar(11.5)).add(new THREE.Vector3(0,6.2,0));heldCan.spin.set(9,6,10);heldCan=null;heldTime=0;pongo.mesh.userData.torso.rotation.x=0;}
+          }
         }
       }
       controls.update();

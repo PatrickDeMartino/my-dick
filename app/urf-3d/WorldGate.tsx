@@ -17,10 +17,10 @@ export default function WorldGate() {
         <a className="urf-gate__orb urf-gate__orb--one" href="/urf-3d/editor" aria-label="Planet 1: Alien archer globe">
           <b>1</b><span>ARCHER GLOBE</span><small>EXPLORE + BUILD</small>
         </a>
-        <a className="urf-gate__orb urf-gate__orb--two" href="/hextrip" aria-label="Planet 2: Hextrip tile world">
+        <a className="urf-gate__orb urf-gate__orb--two" href="/hextrip-game/index.html" aria-label="Planet 2: Hextrip tile world">
           <b>2</b><span>HEXTRIP</span><small>PAINT + SPAWN + PLAY</small>
         </a>
-        <a className="urf-gate__orb urf-gate__orb--three" href="/alien-archer" aria-label="Planet 3: Goopy, Doopy and Doorp alien game">
+        <a className="urf-gate__orb urf-gate__orb--three" href="/alien-archer-game/index.html" aria-label="Planet 3: Goopy, Doopy and Doorp alien game">
           <b>3</b><span>ALIEN WORLD</span><small>GOOPY · DOOPY · DOORP</small>
         </a>
       </nav>

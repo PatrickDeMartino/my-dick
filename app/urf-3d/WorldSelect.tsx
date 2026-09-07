@@ -874,7 +874,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                 <div className="cube-toolbar__actions cube-toolbar__actions--launch">
                   <button type="button" onClick={() => worldRef.current?.hopAlien()}>HOP</button>
                   <button type="button" onClick={() => worldRef.current?.ragdollAlien()}>RAGDOLL</button>
-                  <button type="button" className="alien-launch" onClick={() => window.location.assign("/alien-archer")}>LAUNCH ARCHER</button>
+                  <button type="button" className="alien-launch" onClick={() => window.location.assign("/alien-archer-game/index.html")}>LAUNCH ARCHER</button>
                 </div>
               )}
               {editTarget === "platform" && <small className="cube-toolbar__hint">Q/E orbit · R/F rise · Z/X depth · release to stop instantly · Lock freezes flight</small>}

@@ -192,7 +192,7 @@ export function createAlien(kind: AlienId): AlienRig {
     return { arm, forearmG, hand };
   }
 
-  const left = makeArm(-1, false);
+  const left = makeArm(-1, kind === "pongo");
   const right = makeArm(1);
 
   function makeLeg(side: number) {
@@ -426,6 +426,23 @@ export function updateAlien(rig: AlienRig, a: AlienAnim) {
       gun.cylinder.rotation.z = rel * 0.9;
       setCylinderSlugs(gun, a.revLoaded);
     }
+  }
+
+  if (rig.kind === "pongo") {
+    // Match the home-world orangutan: low, rolling knuckle-walk with long
+    // counter-swinging arms, rising into the shooter pose only while firing.
+    rig.hips.position.y = .78 + bob*.7;
+    rig.torso.rotation.x = .22 + walk*.14;
+    rig.chest.rotation.z = swing*.1;
+    rig.armL.rotation.z = -.16;
+    rig.armL.rotation.x = -.18 - swing*.78;
+    rig.forearmL.rotation.x = .2 + Math.max(0,swing)*.48;
+    if (!a.firing) {
+      rig.armR.rotation.set(-.18 + swing*.78,0,.16);
+      rig.forearmR.rotation.set(.2 + Math.max(0,-swing)*.48,0,0);
+      rig.gunMount.rotation.x = -Math.PI/2;
+    }
+    rig.head.rotation.x = -.16 + Math.abs(swing)*.05;
   }
 
   if (a.attract) {
