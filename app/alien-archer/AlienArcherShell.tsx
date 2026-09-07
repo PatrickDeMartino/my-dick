@@ -20,6 +20,7 @@ export default function AlienArcherShell() {
       <button type="button" className="spawn-shit-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>SPAWN SHIT</button>
       {open && (
         <aside className="spawn-shit-menu" aria-label="Spawn sandbox objects">
+          <button type="button" className="menu-close" aria-label="Collapse spawn menu" onClick={()=>setOpen(false)}>×</button>
           <b>DROP INTO PHYSICS</b>
           <div>{SPAWNS.map(([id,label])=><button type="button" key={id} onClick={()=>send(id)}>{label}</button>)}</div>
           <b>SWAP ALIEN</b>

@@ -13,6 +13,8 @@ const HOME_DEFAULTS: Record<HomeObject,Spatial> = { globe:{x:0,y:0,z:0,scale:1},
 export default function LandingPage() {
   const [homeEditTarget,setHomeEditTarget] = useState<HomeObject>("brain");
   const [homeSpatial,setHomeSpatialState] = useState(HOME_DEFAULTS);
+  const [toolsOpen,setToolsOpen] = useState(true);
+  const [cubeOpen,setCubeOpen] = useState(false);
 
   useEffect(()=>{ setHomeSpatial("brain",homeSpatial.brain); },[homeSpatial.brain]);
   useEffect(()=>{ setHomeSpatial("camera",homeSpatial.camera); },[homeSpatial.camera]);
@@ -58,21 +60,24 @@ export default function LandingPage() {
       </div>
       <div className="choice-vignette" aria-hidden="true" />
 
-      <div className="home-room-tools" aria-label="Spawn an interactive can">
+      {toolsOpen ? <div className="home-room-tools" aria-label="Spawn an interactive can">
+        <button type="button" className="menu-close" aria-label="Collapse spawn menu" onClick={()=>setToolsOpen(false)}>×</button>
         <button type="button" onClick={() => spawnHomeCan("YOOHOO")}>YOOHOO</button>
         <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
         <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
         <button type="button" onClick={() => spawnHomeCan("RAT MEAT")}>RAT MEAT</button>
         <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
-      </div>
-      <aside className="home-cube-menu" aria-label="Home room spatial controls">
+        <button type="button" className="is-cube" aria-expanded={cubeOpen} onClick={()=>setCubeOpen(value=>!value)}>⬛ CUBE</button>
+      </div> : <button type="button" className="home-menu-reopen" onClick={()=>setToolsOpen(true)} aria-label="Open spawn menu">＋</button>}
+      {cubeOpen && <aside className="home-cube-menu" aria-label="Home room spatial controls">
+        <button type="button" className="menu-close" aria-label="Collapse cube controls" onClick={()=>setCubeOpen(false)}>×</button>
         <header><b>⬛ CUBE</b><small>{homeEditTarget === "camera" ? "ORBIT · PAN · ZOOM" : homeEditTarget === "globe" ? "OBJECT SPACE" : "XYZ SPACE"}</small></header>
         <div className="home-cube-menu__targets">
           {(["brain","globe","camera"] as HomeObject[]).map(target=><button type="button" key={target} className={homeEditTarget===target?"is-active":""} onClick={()=>setHomeEditTarget(target)}>{target.toUpperCase()}</button>)}
         </div>
         {(["x","y","z","scale"] as (keyof Spatial)[]).map(axis=><label key={axis}><span>{homeEditTarget==="camera"?({x:"YAW",y:"PITCH",z:"ROLL",scale:"ZOOM"} as const)[axis]:axis==="scale"?"SIZE":axis.toUpperCase()}</span><input type="range" min={axis==="scale"?.55:homeEditTarget==="camera"&&axis==="y"?-1.1:-3.14} max={axis==="scale"?2.2:homeEditTarget==="camera"&&axis==="y"?1.1:3.14} step={axis==="scale"?.05:.05} value={homeSpatial[homeEditTarget][axis]} onChange={event=>updateSpatial(axis,Number(event.target.value))}/><b>{homeSpatial[homeEditTarget][axis].toFixed(2)}</b></label>)}
         <button type="button" className="home-cube-menu__reset" onClick={()=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...HOME_DEFAULTS[homeEditTarget]}}))}>RESET {homeEditTarget.toUpperCase()}</button>
-      </aside>
+      </aside>}
       <p className="home-camera-hint">DRAG ROTATE · RIGHT-DRAG PAN · SCROLL ZOOM · PONGO: WASD + SPACE</p>
 
       <a

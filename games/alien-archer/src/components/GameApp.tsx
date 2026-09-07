@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameStore, applyCharacter, type Phase } from "@/game/store";
 import { CHARACTERS, CHARACTER_LIST, type AlienId, type AmmoCan } from "@/game/characters";
-import type { Game } from "@/game/engine";
+import { Game } from "@/game/engine";
+
+let pageGame: Game | null = null;
 
 export function GameApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,27 +13,25 @@ export function GameApp() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef.current as (HTMLCanvasElement & { __urfGame?: Game }) | null;
     if (!canvas) return;
-    let disposed = false;
-    let game: Game | null = null;
-    void import("@/game/engine")
-      .then(({ Game }) => {
-        if (disposed || !canvasRef.current) return;
-        game = new Game(canvasRef.current);
-        gameRef.current = game;
+    try {
+      let game: Game | null = pageGame ?? canvas.__urfGame ?? null;
+      if (!game) {
+        game = new Game(canvas);
+        canvas.__urfGame = game;
+        pageGame = game;
         game.start();
-        setBooting(false);
-      })
-      .catch((e: unknown) => {
-        setErr(e instanceof Error ? e.message : "Failed to open the rift");
-        setBooting(false);
-      });
-    return () => {
-      disposed = true;
-      game?.dispose();
-      gameRef.current = null;
-    };
+      }
+      gameRef.current = game;
+      setBooting(false);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Failed to open the rift");
+      setBooting(false);
+    }
+    // Keep the WebGL engine attached to its canvas for this page lifetime.
+    // React's development safety pass re-runs effects; disposing here leaves
+    // the enabled title screen pointing at a dead renderer.
   }, []);
 
   return (
@@ -80,9 +80,21 @@ function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; read
   const ammoCan = useGameStore((s) => s.ammoCan);
   const pick = (id: AlienId) => {
     applyCharacter(id);
-    gameRef.current?.setCharacter(id);
+    (gameRef.current ?? pageGame)?.setCharacter(id);
   };
-  const raid = () => gameRef.current?.play(selected);
+  const raid = () => {
+    let game = gameRef.current ?? pageGame;
+    if (!game) {
+      const canvas = document.querySelector("canvas");
+      if (canvas) {
+        game = new Game(canvas);
+        pageGame = game;
+        gameRef.current = game;
+        game.start();
+      }
+    }
+    game?.play(selected);
+  };
 
   return (
     <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-between bg-gradient-to-t from-void-deep/85 via-transparent to-void-deep/45 px-4 py-6 sm:px-6 sm:py-8">

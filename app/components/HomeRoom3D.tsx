@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { makeBrainCreature } from "../brain-room/BrainWorld3D";
@@ -32,6 +32,7 @@ type JungleVine = {
 
 const CAN_EVENT = "trip-spawn-can";
 const SPATIAL_EVENT = "trip-home-spatial";
+const CONTROL_EVENT = "trip-home-control";
 
 function canTexture(label: CanLabel) {
   const canvas = document.createElement("canvas");
@@ -260,6 +261,20 @@ function makeCan(label: CanLabel, texture: THREE.Texture, metalColor = 0xc7cbd3)
 
 export default function HomeRoom3D() {
   const mountRef = useRef<HTMLDivElement>(null);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const sendControl=(code:string,down:boolean)=>window.dispatchEvent(new CustomEvent(CONTROL_EVENT,{detail:{code,down}}));
+  const moveJoystick=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    const pad=joystickRef.current;if(!pad)return;
+    const rect=pad.getBoundingClientRect();
+    const dx=THREE.MathUtils.clamp((event.clientX-(rect.left+rect.width/2))/(rect.width*.34),-1,1);
+    const dy=THREE.MathUtils.clamp((event.clientY-(rect.top+rect.height/2))/(rect.height*.34),-1,1);
+    pad.style.setProperty("--joy-x",`${dx*31}px`);pad.style.setProperty("--joy-y",`${dy*31}px`);
+    sendControl("KeyA",dx<-.24);sendControl("KeyD",dx>.24);sendControl("KeyW",dy<-.24);sendControl("KeyS",dy>.24);
+  };
+  const releaseJoystick=()=>{
+    const pad=joystickRef.current;pad?.style.setProperty("--joy-x","0px");pad?.style.setProperty("--joy-y","0px");
+    ["KeyA","KeyD","KeyW","KeyS"].forEach(code=>sendControl(code,false));
+  };
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -449,9 +464,8 @@ export default function HomeRoom3D() {
       }
     };
     window.addEventListener(SPATIAL_EVENT,onSpatial);
-    const onKeyDown = (event: KeyboardEvent) => {
-      keys.add(event.code);
-      if (selectedPongo && event.code === "Space" && !event.repeat) {
+    const activatePongoJump=()=>{
+      if (selectedPongo) {
         if (selectedPongo.swing) {
           selectedPongo.velocity.copy(selectedPongo.swing.velocity);
           selectedPongo.swing = null;
@@ -463,11 +477,17 @@ export default function HomeRoom3D() {
           } else if (selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
         }
       }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      keys.add(event.code);
+      if (event.code === "Space" && !event.repeat) activatePongoJump();
       if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault();
     };
     const onKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
+    const onControl=(event:Event)=>{const {code,down}=(event as CustomEvent<{code:string;down:boolean}>).detail;if(down){if(code==="Space"&&!keys.has(code))activatePongoJump();keys.add(code);}else keys.delete(code);};
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener(CONTROL_EVENT,onControl);
 
     const resize = () => {
       const w = Math.max(1, mount.clientWidth);
@@ -598,6 +618,7 @@ export default function HomeRoom3D() {
       window.removeEventListener(SPATIAL_EVENT,onSpatial);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener(CONTROL_EVENT,onControl);
       renderer.domElement.removeEventListener("pointerup", onUp);
       controls.dispose();
       renderer.dispose();
@@ -606,7 +627,19 @@ export default function HomeRoom3D() {
     };
   }, []);
 
-  return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D jungle cube. Drag to rotate, right-drag to pan, and scroll to zoom." />;
+  return <>
+    <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D jungle cube. Drag to rotate, right-drag to pan, and scroll to zoom." />
+    <div className="home-pongo-mobile" aria-label="Pongo mobile controls">
+      <div ref={joystickRef} className="home-pongo-joystick" role="group" aria-label="Move Pongo"
+        onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);moveJoystick(event);}}
+        onPointerMove={event=>{if(event.currentTarget.hasPointerCapture(event.pointerId))moveJoystick(event);}}
+        onPointerUp={releaseJoystick} onPointerCancel={releaseJoystick}>
+        <i aria-hidden="true" />
+      </div>
+      <button type="button" className="home-pongo-jump" aria-label="Pongo jump or grab vine"
+        onPointerDown={()=>sendControl("Space",true)} onPointerUp={()=>sendControl("Space",false)} onPointerCancel={()=>sendControl("Space",false)}>JUMP<br/><small>GRAB</small></button>
+    </div>
+  </>;
 }
 
 export function spawnHomeCan(label: SpawnItem) {

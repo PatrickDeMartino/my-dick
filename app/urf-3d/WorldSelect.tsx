@@ -92,6 +92,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
   const [cubeMode, setCubeMode] = useState(false);
+  const [alienMenuOpen,setAlienMenuOpen] = useState(true);
   const [editTarget, setEditTarget] = useState<EditTargetId>("globe");
   const [editOffsets, setEditOffsets] = useState<Record<EditTargetId, EditOffset>>(makeEditOffsets);
   const [platformScale, setPlatformScale] = useState(1);
@@ -714,6 +715,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           </button>
           {terrainOpen && (
             <>
+              <button type="button" className="menu-close" aria-label="Collapse terrain menu" onClick={()=>setTerrainOpen(false)}>×</button>
               <span>LAND</span>
               {LAND_COLOR_PRESETS.map((preset) => (
                 <button
@@ -790,6 +792,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           </button>
           {cubeMode && (
             <>
+              <button type="button" className="menu-close" aria-label="Collapse cube menu" onClick={()=>setCubeMode(false)}>×</button>
               <small className="cube-toolbar__hint">Drag the globe to tumble the whole box</small>
               <span>OBJECT</span>
               <div className="cube-toolbar__targets">
@@ -913,8 +916,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
       )}
-      {world3d && (
+      {world3d && alienMenuOpen && (
         <aside className="alien-toolbar" aria-label="Alien and island controls" onPointerDown={(event)=>event.stopPropagation()}>
+          <button type="button" className="menu-close" aria-label="Collapse alien menu" onClick={()=>setAlienMenuOpen(false)}>×</button>
           <header><b>👽 ALIEN</b><small>ISLAND</small></header>
           <div className="alien-toolbar__characters">
             {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{{original:"GOOPY",doop:"DOOPY",zorp:"DOORP"}[type]}</button>)}
@@ -924,6 +928,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <button type="button" className="alien-toolbar__reset" onClick={()=>resetEditOffset("platform")}>RESET ISLAND</button>
         </aside>
       )}
+      {world3d && !alienMenuOpen && <button type="button" className="alien-toolbar-reopen" onClick={()=>setAlienMenuOpen(true)} aria-label="Open alien menu">👽</button>}
       <div className="globe-shadow" />
     </div>
   );

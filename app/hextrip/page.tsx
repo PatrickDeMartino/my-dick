@@ -7,7 +7,7 @@ export default function HextripPage() {
         <a href="https://reef-flora-storm-berry.grok.me" target="_blank" rel="noreferrer">OPEN FULLSCREEN ↗</a>
       </header>
       <iframe
-        src="/hextrip-game/index.html"
+        src="/hextrip-game/"
         title="Hextrip — a Planet Urf hex tabletop game"
         allow="fullscreen; gamepad; pointer-lock"
       />
