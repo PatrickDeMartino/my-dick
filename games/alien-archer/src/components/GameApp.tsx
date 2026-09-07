@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useGameStore, applyCharacter, type Phase } from "@/game/store";
-import { CHARACTERS, CHARACTER_LIST, type AlienId } from "@/game/characters";
+import { CHARACTERS, CHARACTER_LIST, type AlienId, type AmmoCan } from "@/game/characters";
 import type { Game } from "@/game/engine";
 
 export function GameApp() {
@@ -76,6 +76,7 @@ function Overlay({ gameRef }: { gameRef: RefObject<Game | null> }) {
 function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; ready: boolean }) {
   const high = useGameStore((s) => s.highScore);
   const selected = useGameStore((s) => s.character);
+  const ammoCan = useGameStore((s) => s.ammoCan);
   const pick = (id: AlienId) => {
     applyCharacter(id);
     gameRef.current?.setCharacter(id);
@@ -93,17 +94,20 @@ function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; read
 
       <div className="w-full max-w-3xl">
         <p className="mb-3 text-center font-display text-[10px] tracking-[0.28em] text-muted">CHOOSE YOUR RAIDER</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-3">
           {CHARACTER_LIST.map((id) => (
             <CharacterCard key={id} id={id} active={selected === id} onPick={() => pick(id)} />
           ))}
         </div>
+        <div className="mx-auto mt-3 flex w-fit gap-2 rounded-lg border border-border bg-surface/80 p-2" aria-label="Choose can ammunition">
+          {(["pepsi","yoohoo","monster"] as AmmoCan[]).map(can=><button key={can} type="button" onClick={()=>useGameStore.getState().patch({ammoCan:can})} className={`rounded px-3 py-2 font-display text-[10px] tracking-wider ${ammoCan===can?"bg-lime text-void-deep":"bg-surface-2 text-muted"}`}>{can.toUpperCase()}</button>)}
+        </div>
         <div className="mx-auto mt-4 w-full max-w-md rounded-xl border border-border bg-surface/80 p-4 shadow-[0_24px_80px_rgba(8,0,16,0.55)] backdrop-blur-md sm:p-5">
           <ul className="space-y-1 font-display text-[10px] tracking-wider text-muted">
             <li>WASD MOVE · MOUSE / ARROWS LOOK</li>
-            <li>CLICK FIRE PEPSI · 1 REVOLVER · 2 AK · R RELOAD</li>
+            <li>CLICK FIRE CANS · 1 REVOLVER · 2 AK · R RELOAD</li>
             <li>GOOPY BOW · DOOPY REVOLVER · DOORP AK-47</li>
-            <li>SPACE JUMP · SHIFT SPRINT · ESC PAUSE</li>
+            <li>HOLD SPACE JETPACK · SHIFT SPRINT · ESC PAUSE</li>
           </ul>
           {high > 0 && (
             <p className="mt-2 font-display text-xs tabular-nums text-gold">BEST {String(high).padStart(7, "0")}</p>
@@ -267,6 +271,7 @@ function Hud() {
   const score = useGameStore((s) => s.score);
   const wave = useGameStore((s) => s.wave);
   const character = useGameStore((s) => s.character);
+  const ammoCan = useGameStore((s) => s.ammoCan);
   const hp = Math.max(0, health / maxHealth);
 
   return (
@@ -292,6 +297,7 @@ function Hud() {
       </div>
 
       <div className="absolute right-14 top-3 text-right sm:right-16 sm:top-4">
+        <p className="font-display text-[9px] tracking-[0.18em] text-lime">{ammoCan.toUpperCase()} ROUNDS · JET READY</p>
         <p className="font-display text-[10px] tracking-[0.25em] text-muted">LVL {wave}</p>
         <p className="font-display text-xl tabular-nums tracking-wider text-gold sm:text-2xl">
           {String(score).padStart(7, "0")}
@@ -354,10 +360,11 @@ function WeaponChip({
 }
 
 function Portrait({ id, className }: { id: AlienId; className?: string }) {
-  const fill = id === "vex" ? "#b86aff" : id === "pip" ? "#9dff4a" : "#7cff3a";
+  const fill = id === "pongo" ? "#8a4728" : id === "vex" ? "#b86aff" : id === "pip" ? "#9dff4a" : "#7cff3a";
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
       <rect width="64" height="64" className="fill-surface" />
+      {id === "pongo" && <><circle cx="15" cy="31" r="9" fill="#a9653f"/><circle cx="49" cy="31" r="9" fill="#a9653f"/></>}
       {id === "pip" && (
         <>
           <rect x="18" y="4" width="4" height="18" rx="2" fill={fill} />

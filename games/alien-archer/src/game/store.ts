@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AlienId, WeaponId } from "./characters";
+import type { AlienId, AmmoCan, WeaponId } from "./characters";
 import { CHARACTERS } from "./characters";
 
 export type Phase = "attract" | "playing" | "paused" | "dead";
@@ -15,6 +15,7 @@ export type GameHud = {
   phase: Phase;
   character: AlienId;
   weapon: WeaponId;
+  ammoCan: AmmoCan;
   health: number;
   maxHealth: number;
   akAmmo: number;
@@ -63,6 +64,7 @@ export const initialHud: GameHud = {
   phase: "attract",
   character: "zix",
   weapon: "revolver",
+  ammoCan: "pepsi",
   health: 120,
   maxHealth: 120,
   akAmmo: 30,

@@ -1,5 +1,6 @@
-export type AlienId = "zix" | "pip" | "vex";
+export type AlienId = "zix" | "pip" | "vex" | "pongo";
 export type WeaponId = "ak" | "revolver";
+export type AmmoCan = "pepsi" | "yoohoo" | "monster";
 
 export type CharacterDef = {
   id: AlienId;
@@ -75,9 +76,27 @@ export const CHARACTERS: Record<AlienId, CharacterDef> = {
     skinDeep: 0x4a1878,
     emissive: 0x3a1070,
   },
+  pongo: {
+    id: "pongo",
+    name: "PONGO",
+    epithet: "THE JET APE",
+    blurb: "Long arms, heavy hide, and absolutely no pilot certification.",
+    hp: 150,
+    speed: 0.96,
+    jump: 1.12,
+    scale: 1.14,
+    followH: 2.3,
+    radius: 0.4,
+    recoil: 0.72,
+    pickupBonus: 1,
+    skin: 0x8a4728,
+    skinDark: 0x4b2016,
+    skinDeep: 0x2b100c,
+    emissive: 0x240906,
+  },
 };
 
-export const CHARACTER_LIST: AlienId[] = ["zix", "pip", "vex"];
+export const CHARACTER_LIST: AlienId[] = ["zix", "pip", "vex", "pongo"];
 
 export const WEAPONS: Record<
   WeaponId,

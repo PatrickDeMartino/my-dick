@@ -25,6 +25,8 @@ export type AlienRig = {
   gunMount: THREE.Group;
   backMount: THREE.Group;
   hipMount: THREE.Group;
+  jetpack: THREE.Group;
+  jetFlames: THREE.Mesh[];
   walkPhase: number;
   landSquash: number;
   shootKick: number;
@@ -153,7 +155,7 @@ export function createAlien(kind: AlienId): AlienRig {
   } else if (kind === "zix") {
     add(head, new THREE.SphereGeometry(0.04, 8, 6), skinDark, -0.08, 0.32, -0.02);
     add(head, new THREE.SphereGeometry(0.04, 8, 6), skinDark, 0.08, 0.32, -0.02);
-  } else {
+  } else if (kind === "vex") {
     const crystal = new THREE.MeshStandardMaterial({
       color: 0xe14bff,
       emissive: 0x8010c0,
@@ -163,6 +165,13 @@ export function createAlien(kind: AlienId): AlienRig {
     });
     add(head, new THREE.ConeGeometry(0.04, 0.16, 6), crystal, -0.1, 0.34, -0.02, 0.15);
     add(head, new THREE.ConeGeometry(0.035, 0.12, 6), crystal, 0.1, 0.32, -0.02, -0.12);
+  } else if (kind === "pongo") {
+    const ear = skinMat(0xa9653f);
+    add(head, new THREE.SphereGeometry(.105, 10, 8), ear, -.25, .08, -.01, 0, 0, 0, .52, 1, .42);
+    add(head, new THREE.SphereGeometry(.105, 10, 8), ear, .25, .08, -.01, 0, 0, 0, .52, 1, .42);
+    add(head, new THREE.SphereGeometry(.16, 12, 8), ear, 0, -.035, .22, 0, 0, 0, 1.05, .7, .75);
+    add(head, new THREE.SphereGeometry(.035, 8, 6), eye, -.05, -.02, .33);
+    add(head, new THREE.SphereGeometry(.035, 8, 6), eye, .05, -.02, .33);
   }
 
   function makeArm(side: number, visible = true) {
@@ -230,6 +239,25 @@ export function createAlien(kind: AlienId): AlienRig {
   hipMount.rotation.set(0.2, 0, 0.4);
   hips.add(hipMount);
 
+  const jetpack = new THREE.Group();
+  jetpack.position.set(0, .02, -.3);
+  chest.add(jetpack);
+  const jetMetal = new THREE.MeshStandardMaterial({ color:0x43505c, metalness:.86, roughness:.28, flatShading:true });
+  const jetBlue = new THREE.MeshBasicMaterial({ color:0x58efff, transparent:true, opacity:.9 });
+  const jetFlames: THREE.Mesh[] = [];
+  [-1,1].forEach((side) => {
+    add(jetpack, new THREE.CylinderGeometry(.08,.1,.42,9), jetMetal, side*.115,0,0);
+    const flame=add(jetpack,new THREE.ConeGeometry(.075,.34,8),jetBlue,side*.115,-.37,0,0,0,Math.PI);
+    flame.visible=false;
+    jetFlames.push(flame);
+  });
+
+  if (kind === "pongo") {
+    torso.scale.set(1.2, .92, 1.08);
+    left.arm.scale.set(1.08, 1.3, 1.08);
+    right.arm.scale.set(1.08, 1.3, 1.08);
+  }
+
   root.scale.setScalar(def.scale);
 
   return {
@@ -255,6 +283,8 @@ export function createAlien(kind: AlienId): AlienRig {
     gunMount,
     backMount,
     hipMount,
+    jetpack,
+    jetFlames,
     walkPhase: 0,
     landSquash: 0,
     shootKick: 0,
@@ -297,6 +327,7 @@ export type AlienAnim = {
   aimPitch: number;
   reload: number;
   revLoaded: number;
+  jetting: boolean;
 };
 
 function lerp(a: number, b: number, t: number) {
@@ -331,6 +362,10 @@ export function updateAlien(rig: AlienRig, a: AlienAnim) {
 
   const breath = Math.sin(a.time * 2.2) * 0.012;
   rig.chest.scale.setScalar(1 + breath);
+  rig.jetFlames.forEach((flame,index)=>{
+    flame.visible=a.jetting;
+    flame.scale.y=a.jetting ? .75+Math.sin(a.time*26+index)*.22 : .01;
+  });
 
   const ak = a.weapon === "ak";
   const rel = THREE.MathUtils.clamp(a.reload, 0, 1);

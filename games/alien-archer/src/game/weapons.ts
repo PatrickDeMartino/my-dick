@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { WeaponId } from "./characters";
+import type { AmmoCan, WeaponId } from "./characters";
 
 function mat(color: number, extra?: THREE.MeshStandardMaterialParameters) {
   return new THREE.MeshStandardMaterial({
@@ -161,28 +161,54 @@ function makeFlash() {
   return m;
 }
 
-function makePepsiCan(scale = 1, glow = false) {
+function makeCanProjectile(scale = 1, glow = false) {
   const g = new THREE.Group();
   const blue = mat(0x1459d8, { metalness: .72, roughness: .2, emissive: glow ? 0x063ecb : 0x000000, emissiveIntensity: glow ? .9 : 0 });
   const silver = mat(0xdce7f1, { metalness: .9, roughness: .15 });
   const red = mat(0xe92a3d, { metalness: .35, roughness: .24, emissive: glow ? 0x8e0715 : 0x000000, emissiveIntensity: glow ? .7 : 0 });
   const body = new THREE.CylinderGeometry(.075, .075, .22, 14);
   body.rotateX(Math.PI / 2);
-  add(g, body, blue);
+  const canBody = add(g, body, blue);
+  canBody.userData.canPart = "body";
   const rim = new THREE.TorusGeometry(.071, .009, 5, 14);
   add(g, rim, silver, 0, 0, -.11);
   add(g, rim.clone(), silver, 0, 0, .11);
-  add(g, new THREE.BoxGeometry(.12, .045, .006), silver, 0, .015, .076);
-  add(g, new THREE.BoxGeometry(.07, .052, .008), red, -.024, -.018, .08, 0, 0, -.45);
+  const badge = add(g, new THREE.BoxGeometry(.12, .045, .006), silver, 0, .015, .076);
+  badge.userData.canPart = "badge";
+  const slash = add(g, new THREE.BoxGeometry(.07, .052, .008), red, -.024, -.018, .08, 0, 0, -.45);
+  slash.userData.canPart = "slash";
   g.scale.setScalar(scale);
   g.userData.projectile = "PEPSI CAN";
   return g;
 }
 
-export function makeBulletMesh() { return makePepsiCan(1.05, false); }
+export function setProjectileCan(root: THREE.Object3D, kind: AmmoCan) {
+  const colors = kind === "pepsi" ? {body:0x1459d8,badge:0xdce7f1,slash:0xe92a3d} : kind === "yoohoo" ? {body:0x6c3018,badge:0xf4d34f,slash:0x351208} : {body:0x101512,badge:0x8aff39,slash:0x39ff82};
+  root.traverse((node) => {
+    if (!(node instanceof THREE.Mesh) || !node.userData.canPart) return;
+    const material = node.material as THREE.MeshStandardMaterial;
+    material.color.setHex(colors[node.userData.canPart as keyof typeof colors]);
+    if (node.userData.canPart === "body") material.map = projectileCanTexture(kind);
+    material.needsUpdate = true;
+  });
+  root.userData.projectile = `${kind.toUpperCase()} CAN`;
+}
+
+const projectileCanTextures = new Map<AmmoCan, THREE.CanvasTexture>();
+function projectileCanTexture(kind: AmmoCan) {
+  const cached=projectileCanTextures.get(kind); if(cached) return cached;
+  const canvas=document.createElement("canvas"); canvas.width=256; canvas.height=128;
+  const ctx=canvas.getContext("2d")!;
+  const colors=kind==="pepsi"?["#124fd0","#e72b42"]:kind==="yoohoo"?["#6b2b16","#f4d34f"]:["#070b08","#7cff39"];
+  const gradient=ctx.createLinearGradient(0,0,256,0); gradient.addColorStop(0,colors[0]); gradient.addColorStop(.5,colors[1]); gradient.addColorStop(1,colors[0]);
+  ctx.fillStyle=gradient; ctx.fillRect(0,0,256,128); ctx.fillStyle="#fff"; ctx.font="900 30px Arial Black"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(kind.toUpperCase(),128,64);
+  const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace; texture.wrapS=THREE.RepeatWrapping; projectileCanTextures.set(kind,texture); return texture;
+}
+
+export function makeBulletMesh() { return makeCanProjectile(1.05, false); }
 
 export function makeTracerMesh() {
-  return makePepsiCan(.92, true);
+  return makeCanProjectile(.92, true);
 }
 
 export function makeMagPickup() {

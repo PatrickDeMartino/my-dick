@@ -8,7 +8,7 @@ const SPAWNS = [
   ["rat-meat","RAT MEAT · MIX"],["rat-meat-silver","RAT MEAT · SILVER"],["rat-meat-gold","RAT MEAT · GOLD"],["yoohoo","YOO-HOO CAN"],
   ["biplane","PENGUIN BIPLANE"],["penguin","PENGUIN RAGDOLL"],["bongo","BONGO RAGDOLL"],
 ] as const;
-const ALIENS = [["zix","GOOPY · BOW"],["pip","DOOPY · REVOLVER"],["vex","DOORP · AK-47"]] as const;
+const ALIENS = [["zix","GOOPY · BOW"],["pip","DOOPY · REVOLVER"],["vex","DOORP · AK-47"],["pongo","PONGO · JET APE"]] as const;
 
 export default function AlienArcherShell() {
   const frame = useRef<HTMLIFrameElement>(null);

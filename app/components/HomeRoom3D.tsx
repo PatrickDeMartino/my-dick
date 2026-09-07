@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { makeBrainCreature } from "../brain-room/BrainWorld3D";
 
 type CanLabel = "YOOHOO" | "PEPSI" | "MONSTER" | "RAT MEAT";
 type SpawnItem = CanLabel | "PONGO";
+type HomeSpatialTarget = "brain" | "camera";
 
 type CanBody = {
   mesh: THREE.Group;
@@ -236,6 +238,18 @@ export default function HomeRoom3D() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.16;
     mount.appendChild(renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, -.15, -1.25);
+    controls.enableDamping = true;
+    controls.dampingFactor = .075;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.minDistance = 5.2;
+    controls.maxDistance = 24;
+    controls.minPolarAngle = .18;
+    controls.maxPolarAngle = Math.PI - .18;
+    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+    controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
 
     scene.add(new THREE.HemisphereLight(0x8feeff, 0x310517, 1.5));
     const key = new THREE.PointLight(0xff54dc, 42, 24, 1.4);
@@ -248,6 +262,18 @@ export default function HomeRoom3D() {
 
     const room = new THREE.Group();
     scene.add(room);
+    const cubeShell = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 14, 14),
+      new THREE.MeshPhysicalMaterial({ color:0x0b3b28, transparent:true, opacity:.055, transmission:.16, roughness:.72, side:THREE.BackSide, depthWrite:false }),
+    );
+    cubeShell.position.set(0, 3, 1.5);
+    room.add(cubeShell);
+    const cubeEdges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(20, 14, 14)),
+      new THREE.LineBasicMaterial({ color:0x62ffd7, transparent:true, opacity:.42 }),
+    );
+    cubeEdges.position.copy(cubeShell.position);
+    room.add(cubeEdges);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x142d1b, roughness: .96, metalness: .02 });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 18, 20, 20), floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -259,6 +285,11 @@ export default function HomeRoom3D() {
     back.position.set(0, 3, -5);
     back.receiveShadow = true;
     room.add(back);
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(20, 14), wallMat.clone());
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.set(0, 10, 1.5);
+    ceiling.receiveShadow = true;
+    room.add(ceiling);
     [-1, 1].forEach((side) => {
       const wall = new THREE.Mesh(new THREE.PlaneGeometry(18, 14), wallMat.clone());
       wall.position.set(side * 10, 3, 2);
@@ -381,7 +412,20 @@ export default function HomeRoom3D() {
       } else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
-    const onSpatial=(event:Event)=>{const detail=(event as CustomEvent<{target:"brain";value:{x:number;y:number;z:number;scale:number}}>).detail;if(detail.target==="brain")brainSpatial={...detail.value};};
+    const onSpatial=(event:Event)=>{
+      const detail=(event as CustomEvent<{target:HomeSpatialTarget;value:{x:number;y:number;z:number;scale:number}}>).detail;
+      if(detail.target==="brain") brainSpatial={...detail.value};
+      if(detail.target==="camera") {
+        const radius=12.6/detail.value.scale;
+        const yaw=detail.value.x;
+        const pitch=detail.value.y;
+        const target=controls.target;
+        camera.position.set(target.x+Math.sin(yaw)*Math.cos(pitch)*radius,target.y+Math.sin(pitch)*radius,target.z+Math.cos(yaw)*Math.cos(pitch)*radius);
+        camera.lookAt(target);
+        camera.rotation.z=detail.value.z;
+        controls.update();
+      }
+    };
     window.addEventListener(SPATIAL_EVENT,onSpatial);
     const onKeyDown = (event: KeyboardEvent) => {
       keys.add(event.code);
@@ -490,6 +534,7 @@ export default function HomeRoom3D() {
           if(heldCan){heldTime+=dt;const forward=new THREE.Vector3(Math.sin(pongo.mesh.rotation.y),0,Math.cos(pongo.mesh.rotation.y));const handTarget=pongo.mesh.position.clone().add(forward.clone().multiplyScalar(.55)).add(new THREE.Vector3(0,1.55,0));heldCan.mesh.position.lerp(handTarget,.3);heldCan.mesh.rotation.z+=dt*8;if(heldTime>.72){heldCan.velocity.copy(forward.multiplyScalar(9)).add(new THREE.Vector3(0,5.4,0));heldCan.spin.set(8,5,9);heldCan=null;heldTime=0;}}
         }
       }
+      controls.update();
       renderer.render(scene, camera);
     };
     animate();
@@ -502,19 +547,20 @@ export default function HomeRoom3D() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       renderer.domElement.removeEventListener("pointerup", onUp);
+      controls.dispose();
       renderer.dispose();
       Object.values(canTextures).flat().forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
   }, []);
 
-  return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D jungle brain room with a stationary camera. Use Pongo mode to explore and swing from vines." />;
+  return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D jungle cube. Drag to rotate, right-drag to pan, and scroll to zoom." />;
 }
 
 export function spawnHomeCan(label: SpawnItem) {
   window.dispatchEvent(new CustomEvent(CAN_EVENT, { detail: label }));
 }
 
-export function setHomeSpatial(target:"brain",value:{x:number;y:number;z:number;scale:number}){
+export function setHomeSpatial(target:HomeSpatialTarget,value:{x:number;y:number;z:number;scale:number}){
   window.dispatchEvent(new CustomEvent(SPATIAL_EVENT,{detail:{target,value}}));
 }

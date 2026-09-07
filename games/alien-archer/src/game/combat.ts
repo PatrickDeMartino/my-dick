@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { makeBulletMesh, makeTracerMesh, makeMagPickup, makeAmmoPickup } from "./weapons";
+import { makeBulletMesh, makeTracerMesh, makeMagPickup, makeAmmoPickup, setProjectileCan } from "./weapons";
 import { ISLANDS, sampleGround, type Island } from "./world";
-import type { WeaponId } from "./characters";
+import type { AmmoCan, WeaponId } from "./characters";
 
 export type Enemy = {
   root: THREE.Group;
@@ -193,7 +193,7 @@ export class Combat {
     this.pickups.push({ mesh: g, kind, x, z, y, alive: true, bob: Math.random() * 5 });
   }
 
-  fireShot(origin: THREE.Vector3, dir: THREE.Vector3, weapon: WeaponId, dmg: number, speed: number) {
+  fireShot(origin: THREE.Vector3, dir: THREE.Vector3, weapon: WeaponId, dmg: number, speed: number, ammoCan: AmmoCan) {
     const slot = this.shots.find((s) => !s.alive);
     if (!slot) return false;
     const pref = weapon === "ak" ? this.tracerPool : this.bulletPool;
@@ -205,6 +205,7 @@ export class Combat {
     slot.life = weapon === "ak" ? 4.8 : 5.2;
     slot.dmg = dmg;
     mesh.visible = true;
+    setProjectileCan(mesh, ammoCan);
     mesh.position.copy(origin);
     slot.prev.copy(origin);
     slot.vel.copy(dir).normalize().multiplyScalar(speed);

@@ -423,9 +423,11 @@ const BOW_REACH = 0.34;
  * legs, a torso that twists and leans into the shot, and a head that tracks.
  */
 function buildAlien(THREE: typeof THREE_NS): AlienRig {
-  const skin = new THREE.MeshStandardMaterial({ color: 0x7fd93f, flatShading: true, roughness: 0.62, metalness: 0.04 });
-  const skinShade = new THREE.MeshStandardMaterial({ color: 0x5fb62c, flatShading: true, roughness: 0.7 });
-  const band = new THREE.MeshStandardMaterial({ color: 0x7a3fc9, flatShading: true, roughness: 0.5, metalness: 0.15 });
+  // Match the playable Alien World rig: brighter greentall skin, faceted
+  // geometry, violet wraps and the same oversized shooter-style skull.
+  const skin = new THREE.MeshStandardMaterial({ color: 0x7cff3a, emissive:0x164a08, emissiveIntensity:.2, flatShading: true, roughness: 0.46, metalness: 0.04 });
+  const skinShade = new THREE.MeshStandardMaterial({ color: 0x3aaa1c, flatShading: true, roughness: 0.58 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x6b2d9b, emissive:0x4a1060, emissiveIntensity:.25, flatShading: true, roughness: 0.5, metalness: 0.15 });
   const eye = new THREE.MeshStandardMaterial({ color: 0x0a0610, roughness: 0.12, metalness: 0.5 });
   const wood = new THREE.MeshStandardMaterial({ color: 0x8a5730, flatShading: true, roughness: 0.78 });
   const cord = new THREE.MeshStandardMaterial({ color: 0xf0e6cf, roughness: 0.45 });
@@ -515,14 +517,14 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   head.add(neck);
 
   // The classic teardrop cranium: wide and tall up top, tapering to a chin.
-  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 1), skin);
-  skull.scale.set(1.05, 1.34, 1.16);
+  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.145, 2), skin);
+  skull.scale.set(.98, 1.38, 1.14);
   skull.position.y = 0.13;
   head.add(skull);
 
-  const jaw = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.13, 6), skin);
-  jaw.rotation.x = Math.PI;
-  jaw.position.y = 0.02;
+  const jaw = new THREE.Mesh(new THREE.SphereGeometry(.085,10,8), skinShade);
+  jaw.scale.set(.85,.68,.9);
+  jaw.position.set(0,0,.035);
   head.add(jaw);
 
   [-1, 1].forEach((side) => {

@@ -6,15 +6,16 @@ import HomeGlobe from "./components/HomeGlobe";
 import HomeRoom3D, { setHomeSpatial, spawnHomeCan } from "./components/HomeRoom3D";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
-type HomeObject = "globe" | "brain";
+type HomeObject = "globe" | "brain" | "camera";
 type Spatial = { x:number; y:number; z:number; scale:number };
-const HOME_DEFAULTS: Record<HomeObject,Spatial> = { globe:{x:0,y:0,z:0,scale:1}, brain:{x:0,y:0,z:0,scale:1} };
+const HOME_DEFAULTS: Record<HomeObject,Spatial> = { globe:{x:0,y:0,z:0,scale:1}, brain:{x:0,y:0,z:0,scale:1}, camera:{x:0,y:.2,z:0,scale:1} };
 
 export default function LandingPage() {
   const [homeEditTarget,setHomeEditTarget] = useState<HomeObject>("brain");
   const [homeSpatial,setHomeSpatialState] = useState(HOME_DEFAULTS);
 
   useEffect(()=>{ setHomeSpatial("brain",homeSpatial.brain); },[homeSpatial.brain]);
+  useEffect(()=>{ setHomeSpatial("camera",homeSpatial.camera); },[homeSpatial.camera]);
   const updateSpatial=(key:keyof Spatial,value:number)=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...current[homeEditTarget],[key]:value}}));
   const globeTransform=homeSpatial.globe;
 
@@ -65,14 +66,14 @@ export default function LandingPage() {
         <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
       </div>
       <aside className="home-cube-menu" aria-label="Home room spatial controls">
-        <header><b>⬛ CUBE</b><small>{homeEditTarget === "globe" ? "EASY PAN + ZOOM" : "XYZ SPACE"}</small></header>
+        <header><b>⬛ CUBE</b><small>{homeEditTarget === "camera" ? "ORBIT · PAN · ZOOM" : homeEditTarget === "globe" ? "OBJECT SPACE" : "XYZ SPACE"}</small></header>
         <div className="home-cube-menu__targets">
-          {(["brain","globe"] as HomeObject[]).map(target=><button type="button" key={target} className={homeEditTarget===target?"is-active":""} onClick={()=>setHomeEditTarget(target)}>{target.toUpperCase()}</button>)}
+          {(["brain","globe","camera"] as HomeObject[]).map(target=><button type="button" key={target} className={homeEditTarget===target?"is-active":""} onClick={()=>setHomeEditTarget(target)}>{target.toUpperCase()}</button>)}
         </div>
-        {(["x","y","z","scale"] as (keyof Spatial)[]).map(axis=><label key={axis}><span>{axis==="scale"?"SIZE":axis.toUpperCase()}</span><input type="range" min={axis==="scale"?.55:-2.5} max={axis==="scale"?1.8:2.5} step={axis==="scale"?.05:.05} value={homeSpatial[homeEditTarget][axis]} onChange={event=>updateSpatial(axis,Number(event.target.value))}/><b>{homeSpatial[homeEditTarget][axis].toFixed(2)}</b></label>)}
+        {(["x","y","z","scale"] as (keyof Spatial)[]).map(axis=><label key={axis}><span>{homeEditTarget==="camera"?({x:"YAW",y:"PITCH",z:"ROLL",scale:"ZOOM"} as const)[axis]:axis==="scale"?"SIZE":axis.toUpperCase()}</span><input type="range" min={axis==="scale"?.55:homeEditTarget==="camera"&&axis==="y"?-1.1:-3.14} max={axis==="scale"?2.2:homeEditTarget==="camera"&&axis==="y"?1.1:3.14} step={axis==="scale"?.05:.05} value={homeSpatial[homeEditTarget][axis]} onChange={event=>updateSpatial(axis,Number(event.target.value))}/><b>{homeSpatial[homeEditTarget][axis].toFixed(2)}</b></label>)}
         <button type="button" className="home-cube-menu__reset" onClick={()=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...HOME_DEFAULTS[homeEditTarget]}}))}>RESET {homeEditTarget.toUpperCase()}</button>
       </aside>
-      <p className="home-camera-hint">CAMERA LOCKED · PONGO: WASD MOVE · SPACE JUMP / GRAB VINE</p>
+      <p className="home-camera-hint">DRAG ROTATE · RIGHT-DRAG PAN · SCROLL ZOOM · PONGO: WASD + SPACE</p>
 
       <a
         className="choice-kicker"

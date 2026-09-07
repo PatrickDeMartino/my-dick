@@ -133,7 +133,7 @@ export class Game {
     this.onSpawnMessage = (event) => {
       if (event.origin !== window.location.origin || event.data?.type !== "urf-spawn") return;
       const kind = String(event.data.kind || "");
-      if (kind === "zix" || kind === "pip" || kind === "vex") {
+      if (kind === "zix" || kind === "pip" || kind === "vex" || kind === "pongo") {
         applyCharacter(kind);
         this.setCharacter(kind);
         return;
@@ -329,6 +329,7 @@ export class Game {
         aimPitch: 0,
         reload: 0,
         revLoaded: st.revAmmo,
+        jetting: false,
       });
       this.placeAlien();
       return;
@@ -418,6 +419,9 @@ export class Game {
       this.audio.jump();
     }
 
+    const jetting = act.jump && !this.grounded;
+    if (jetting) this.vel.y = Math.min(7.2, this.vel.y + 25 * dt);
+
     this.vel.y += GRAVITY * dt;
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
@@ -476,6 +480,7 @@ export class Game {
       aimPitch: this.camPitch,
       reload: live.reloading,
       revLoaded: live.revAmmo,
+      jetting,
     });
     this.placeAlien();
     this.stepSpawned(dt);
@@ -567,7 +572,7 @@ export class Game {
     _dir.y += (Math.random() - 0.5) * spread * 0.6;
     _dir.z += (Math.random() - 0.5) * spread;
     _dir.normalize();
-    const ok = this.combat.fireShot(_muzzle, _dir, s.weapon, spec.damage, spec.speed);
+    const ok = this.combat.fireShot(_muzzle, _dir, s.weapon, spec.damage, spec.speed, s.ammoCan);
     if (!ok) return;
 
     this.justShot = true;
