@@ -2,6 +2,7 @@
 import type * as THREE_NS from "three";
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { territoryFromLonLat } from "../lib/territories";
+import { createAlien as createSharedAlien } from "../../games/alien-archer/src/game/alien";
 
 declare global {
   interface Window {
@@ -137,7 +138,7 @@ const PHYSICS_STEP = 1 / 240;
 const IMPACT_RADIUS = GLOBE_RADIUS + 0.012;
 const STUCK_LIFETIME = 5;
 
-const ALIEN_SCALE = 0.8;
+const ALIEN_SCALE = 0.56;
 const WALK_SPEED = 0.42;
 /** The walkable slab is tilted toward the camera, so walking "back" also
  * walks up the screen — an isometric read that keeps depth legible under an
@@ -422,7 +423,7 @@ const BOW_REACH = 0.34;
  * Every joint is a group so the animation code can pose it: two-bone arms and
  * legs, a torso that twists and leans into the shot, and a head that tracks.
  */
-function buildAlien(THREE: typeof THREE_NS): AlienRig {
+function buildLegacyAlien(THREE: typeof THREE_NS): AlienRig {
   // Match the playable Alien World rig: brighter greentall skin, faceted
   // geometry, violet wraps and the same oversized shooter-style skull.
   const skin = new THREE.MeshStandardMaterial({ color: 0x7cff3a, emissive:0x164a08, emissiveIntensity:.2, flatShading: true, roughness: 0.46, metalness: 0.04 });
@@ -679,6 +680,53 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   const muzzle = new THREE.Object3D(); muzzle.position.set(0,0,.96); weaponMount.add(muzzle);
 
   return { group, body, torso, head, frontLeg, backLeg, bowArm, gunArm, bow, quiver, revolver, ak47, muzzle, stringUpper, stringLower, nockedArrow, nock };
+}
+
+/**
+ * Compose the world selector archer from the exact Goopy rig used by the alien
+ * game, then mount the selector's existing bow, quiver and aiming anchors onto
+ * that shared skeleton. This keeps the globe-specific ballistics while making
+ * the character asset and articulated movement consistent across levels.
+ */
+function buildAlien(THREE: typeof THREE_NS): AlienRig {
+  const shared = createSharedAlien("zix");
+  const gear = buildLegacyAlien(THREE);
+
+  gear.bow.removeFromParent();
+  gear.bow.position.set(0, -0.05, 0.03);
+  shared.handR.add(gear.bow);
+
+  gear.quiver.removeFromParent();
+  gear.quiver.position.set(-0.05, 0.02, 0);
+  gear.quiver.rotation.set(0.18, 0, 0.36);
+  shared.backMount.add(gear.quiver);
+
+  shared.ak.root.visible = false;
+  shared.revolver.root.visible = false;
+  shared.jetpack.visible = false;
+  const muzzle = new THREE.Object3D();
+  muzzle.position.set(0, 0, 0.78);
+  shared.gunMount.add(muzzle);
+
+  return {
+    group: shared.root,
+    body: shared.hips,
+    torso: shared.torso,
+    head: shared.head,
+    frontLeg: { hip: shared.legR, knee: shared.shinR },
+    backLeg: { hip: shared.legL, knee: shared.shinL },
+    bowArm: { shoulder: shared.armR, elbow: shared.forearmR },
+    gunArm: { shoulder: shared.armR, elbow: shared.forearmR },
+    bow: gear.bow,
+    quiver: gear.quiver,
+    revolver: shared.revolver.root,
+    ak47: shared.ak.root,
+    muzzle,
+    stringUpper: gear.stringUpper,
+    stringLower: gear.stringLower,
+    nockedArrow: gear.nockedArrow,
+    nock: gear.nock,
+  };
 }
 
 function buildSatellite(THREE: typeof THREE_NS) {
@@ -1975,10 +2023,8 @@ export async function createGlobe3D(
     setAlienType: (type) => {
       alienType = type;
       const archer = type === "original";
-      alien.bowArm.shoulder.visible = archer;
       alien.bow.visible = archer;
       alien.quiver.visible = archer;
-      alien.gunArm.shoulder.visible = !archer;
       alien.revolver.visible = type === "doop";
       alien.ak47.visible = type === "zorp";
       drawing = false;
