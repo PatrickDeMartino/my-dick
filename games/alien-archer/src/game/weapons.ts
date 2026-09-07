@@ -161,24 +161,28 @@ function makeFlash() {
   return m;
 }
 
-export function makeBulletMesh() {
+function makePepsiCan(scale = 1, glow = false) {
   const g = new THREE.Group();
-  const slug = new THREE.CylinderGeometry(0.035, 0.04, 0.16, 8);
-  slug.rotateX(Math.PI / 2);
-  add(g, slug, BRASS);
-  const tip = new THREE.ConeGeometry(0.035, 0.08, 8);
-  tip.rotateX(Math.PI / 2);
-  add(g, tip, STEEL, 0, 0, 0.11);
+  const blue = mat(0x1459d8, { metalness: .72, roughness: .2, emissive: glow ? 0x063ecb : 0x000000, emissiveIntensity: glow ? .9 : 0 });
+  const silver = mat(0xdce7f1, { metalness: .9, roughness: .15 });
+  const red = mat(0xe92a3d, { metalness: .35, roughness: .24, emissive: glow ? 0x8e0715 : 0x000000, emissiveIntensity: glow ? .7 : 0 });
+  const body = new THREE.CylinderGeometry(.075, .075, .22, 14);
+  body.rotateX(Math.PI / 2);
+  add(g, body, blue);
+  const rim = new THREE.TorusGeometry(.071, .009, 5, 14);
+  add(g, rim, silver, 0, 0, -.11);
+  add(g, rim.clone(), silver, 0, 0, .11);
+  add(g, new THREE.BoxGeometry(.12, .045, .006), silver, 0, .015, .076);
+  add(g, new THREE.BoxGeometry(.07, .052, .008), red, -.024, -.018, .08, 0, 0, -.45);
+  g.scale.setScalar(scale);
+  g.userData.projectile = "PEPSI CAN";
   return g;
 }
 
+export function makeBulletMesh() { return makePepsiCan(1.05, false); }
+
 export function makeTracerMesh() {
-  const g = new THREE.Group();
-  const body = new THREE.BoxGeometry(0.03, 0.03, 0.42);
-  add(g, body, LIME);
-  const core = new THREE.BoxGeometry(0.016, 0.016, 0.5);
-  add(g, core, mat(0xffe14a, { emissive: 0xffc020, emissiveIntensity: 0.9 }));
-  return g;
+  return makePepsiCan(.92, true);
 }
 
 export function makeMagPickup() {

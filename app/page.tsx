@@ -11,33 +11,12 @@ type Spatial = { x:number; y:number; z:number; scale:number };
 const HOME_DEFAULTS: Record<HomeObject,Spatial> = { globe:{x:0,y:0,z:0,scale:1}, brain:{x:0,y:0,z:0,scale:1} };
 
 export default function LandingPage() {
-  const [showUrf, setShowUrf] = useState(false);
   const [homeEditTarget,setHomeEditTarget] = useState<HomeObject>("brain");
   const [homeSpatial,setHomeSpatialState] = useState(HOME_DEFAULTS);
 
   useEffect(()=>{ setHomeSpatial("brain",homeSpatial.brain); },[homeSpatial.brain]);
   const updateSpatial=(key:keyof Spatial,value:number)=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...current[homeEditTarget],[key]:value}}));
   const globeTransform=homeSpatial.globe;
-
-  useEffect(() => {
-    const closeUrf = () => setShowUrf(false);
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeUrf();
-    };
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.data === "trip-close-urf") closeUrf();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("message", handleMessage);
-    if (showUrf) document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("message", handleMessage);
-      document.body.style.overflow = "";
-    };
-  }, [showUrf]);
 
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
@@ -47,13 +26,12 @@ export default function LandingPage() {
           className="choice-object choice-object-earth"
           type="button"
           data-portal="earth"
-          aria-label="Open the Planet Urf world selector"
-          aria-haspopup="dialog"
-          onClick={() => setShowUrf(true)}
+          aria-label="Enter Planet Urf"
+          onClick={() => window.location.assign("/urf-3d")}
           style={{ transform:`translate3d(calc(-6.505% + ${globeTransform.x*90+2.9}px),${-globeTransform.y*78}px,0) scale(${globeTransform.scale*(1+globeTransform.z*.18)})` }}
         >
           <span className="choice-object-visual choice-object-visual--globe" aria-hidden="true">
-            <HomeGlobe onActivate={() => setShowUrf(true)} />
+            <HomeGlobe onActivate={() => window.location.assign("/urf-3d")} />
           </span>
           <span className="choice-smoke" aria-hidden="true">
             {smokePuffs.map((puff) => <i key={puff} />)}
@@ -112,15 +90,6 @@ export default function LandingPage() {
         <span className="guide-orb__face" aria-hidden="true">👽</span>
         <span className="guide-orb__label">ship&apos;s chart</span>
       </Link>
-
-      {showUrf && <section className="home-urf-gate" role="dialog" aria-modal="true" aria-label="Choose a Planet Urf room">
-        <button className="home-urf-gate__close" type="button" onClick={() => setShowUrf(false)} aria-label="Close Planet Urf selector">×</button>
-        <header><small>PLANET URF TRANSMISSION</small><h2>CHOOSE A ROOM</h2></header>
-        <div className="home-urf-gate__doors">
-          <a href="/urf-3d"><b>1</b><span><strong>GO ANYWHERE</strong><small>3D GLOBE · ALIEN ARCHER · TERRAIN LAB</small></span></a>
-          <a href="/alien-game/index.html"><b>2</b><span><strong>VOID RAID</strong><small>DOOP · ZORP · PLOOZORB</small></span></a>
-        </div>
-      </section>}
     </main>
   );
 }

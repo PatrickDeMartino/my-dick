@@ -602,7 +602,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <div className="archer-chip">
             <span className="archer-face" aria-hidden="true">👽</span>
             <div className="archer-gauges">
-              <b>{alienType === "original" ? "URF SCOUT" : alienType.toUpperCase()}</b>
+              <b>{{original:"GOOPY · BOW",doop:"DOOPY · REVOLVER",zorp:"DOORP · AK-47"}[alienType]}</b>
               <div className="archer-bar" role="presentation"><i style={{ width: `${Math.round(charge * 100)}%` }} /></div>
               <small>{quiver} {alienType === "original" ? "ARROWS" : "PEPSI CANS"} · {archerActive ? "WASD MOVE · RIGHT CLICK AIM · LEFT CLICK FIRE" : "FLOATING · CLICK TO ACTIVATE"}</small>
             </div>
@@ -917,7 +917,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         <aside className="alien-toolbar" aria-label="Alien and island controls" onPointerDown={(event)=>event.stopPropagation()}>
           <header><b>👽 ALIEN</b><small>ISLAND</small></header>
           <div className="alien-toolbar__characters">
-            {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{type==="original"?"ARCHER":type.toUpperCase()}</button>)}
+            {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{{original:"GOOPY",doop:"DOOPY",zorp:"DOORP"}[type]}</button>)}
           </div>
           <label><span>SIZE</span><input type="range" min={.55} max={2.25} step={.05} value={platformScale} onChange={event=>{const value=Number(event.target.value);setPlatformScale(value);worldRef.current?.setPlatformScale(value);}}/><b>{platformScale.toFixed(2)}×</b></label>
           {(["x","y","z"] as const).map(axis=><label key={axis}><span>{axis.toUpperCase()}</span><input type="range" min={-2.5} max={2.5} step={.05} value={editOffsets.platform[axis]} onChange={event=>setOffsetAxis("platform",axis,Number(event.target.value))}/><b>{editOffsets.platform[axis].toFixed(1)}</b></label>)}

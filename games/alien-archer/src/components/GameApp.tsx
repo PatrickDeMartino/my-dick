@@ -101,7 +101,8 @@ function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; read
         <div className="mx-auto mt-4 w-full max-w-md rounded-xl border border-border bg-surface/80 p-4 shadow-[0_24px_80px_rgba(8,0,16,0.55)] backdrop-blur-md sm:p-5">
           <ul className="space-y-1 font-display text-[10px] tracking-wider text-muted">
             <li>WASD MOVE · MOUSE / ARROWS LOOK</li>
-            <li>CLICK FIRE · 1 REVOLVER · 2 AK · R RELOAD</li>
+            <li>CLICK FIRE PEPSI · 1 REVOLVER · 2 AK · R RELOAD</li>
+            <li>GOOPY BOW · DOOPY REVOLVER · DOORP AK-47</li>
             <li>SPACE JUMP · SHIFT SPRINT · ESC PAUSE</li>
           </ul>
           {high > 0 && (

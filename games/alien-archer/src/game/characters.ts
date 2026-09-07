@@ -23,9 +23,9 @@ export type CharacterDef = {
 export const CHARACTERS: Record<AlienId, CharacterDef> = {
   zix: {
     id: "zix",
-    name: "ZIX",
-    epithet: "THE TALL ONE",
-    blurb: "Classic greentall. Long sightline, extra hide, slower feet.",
+    name: "GOOPY",
+    epithet: "THE BOW WEIRDO",
+    blurb: "Long-limbed jungle archer. Extra hide, steady aim, gloriously goopy.",
     hp: 120,
     speed: 0.88,
     jump: 1.02,
@@ -41,9 +41,9 @@ export const CHARACTERS: Record<AlienId, CharacterDef> = {
   },
   pip: {
     id: "pip",
-    name: "PIP",
-    epithet: "THE SHORTWAVE",
-    blurb: "Pocket raider. Giraffe antennas. Fast, jumpy, hard to hit.",
+    name: "DOOPY",
+    epithet: "THE REVOLVER GREMLIN",
+    blurb: "Pocket raider. Giraffe antennas. Fast, jumpy, dangerous with six cans.",
     hp: 80,
     speed: 1.24,
     jump: 1.32,
@@ -59,9 +59,9 @@ export const CHARACTERS: Record<AlienId, CharacterDef> = {
   },
   vex: {
     id: "vex",
-    name: "VEX",
-    epithet: "THE VIOLET",
-    blurb: "Medium menace. Ammo magnet. Mean with a cylinder.",
+    name: "DOORP",
+    epithet: "THE AK MENACE",
+    blurb: "Violet ammo magnet. Built to spray fizzy blue cans across the void.",
     hp: 100,
     speed: 1.04,
     jump: 1.1,

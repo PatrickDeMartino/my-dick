@@ -1547,7 +1547,7 @@ export async function createGlobe3D(
         continue;
       }
 
-      if (arrow.age > (arrow.kind === "pepsi" ? ARROW_LIFETIME * 1.7 : ARROW_LIFETIME) || arrow.mesh.position.length() > (arrow.kind === "pepsi" ? 30 : 12)) {
+      if (arrow.age > (arrow.kind === "pepsi" ? ARROW_LIFETIME * 3.2 : ARROW_LIFETIME) || arrow.mesh.position.length() > (arrow.kind === "pepsi" ? 58 : 12)) {
         scene.remove(arrow.mesh);
         arrows.splice(index, 1);
       }

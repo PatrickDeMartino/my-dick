@@ -1113,6 +1113,9 @@ export default function PenguinTownScene3D({
     }
 
     let selectedPenguin: number | null = null;
+    let flyingPenguin: number | null = null;
+    const flightPlanePosition = new THREE.Vector3();
+    let flightHeading = 0;
     const selectRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.38, 0.045, 10, 32),
       new THREE.MeshBasicMaterial({ color: 0x69f8ff, transparent: true, opacity: 0.92 }),
@@ -1138,9 +1141,24 @@ export default function PenguinTownScene3D({
     }
     const penguinKeys = new Set<string>();
     const onPenguinKeyDown = (event: KeyboardEvent) => {
-      if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code) && selectedPenguin !== null) event.preventDefault();
+      if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","ShiftLeft","ShiftRight","KeyF"].includes(event.code) && selectedPenguin !== null) event.preventDefault();
       penguinKeys.add(event.code);
-      if (event.code === "Space" && selectedPenguin !== null) {
+      if (event.code === "KeyF" && !event.repeat && selectedPenguin !== null) {
+        const plane = buildingGroups.get("plane");
+        const penguin = penguins[selectedPenguin];
+        if (plane?.visible && penguin) {
+          if (flyingPenguin === selectedPenguin) {
+            flyingPenguin = null;
+            penguin.group.position.set(flightPlanePosition.x + 1.2, ISLAND_HEIGHT + .05, flightPlanePosition.z);
+          } else {
+            flyingPenguin = selectedPenguin;
+            flightPlanePosition.copy(plane.position);
+            flightPlanePosition.y = Math.max(ISLAND_HEIGHT + 1.1, flightPlanePosition.y);
+            flightHeading = plane.rotation.y;
+          }
+        }
+      }
+      if (event.code === "Space" && selectedPenguin !== null && flyingPenguin === null) {
         const penguin = penguins[selectedPenguin];
         if (penguin && penguin.mode === "selected" && penguin.group.position.y <= ISLAND_HEIGHT + .08) penguin.velocity.y = 5.8;
       }
@@ -1443,6 +1461,7 @@ export default function PenguinTownScene3D({
       const SWIM_SPEED = 1.3;
       for (const penguin of penguins) {
         const { group } = penguin;
+        if (flyingPenguin !== null && penguin === penguins[flyingPenguin]) continue;
         if (penguin.mode === "selected") {
           let mx = 0, mz = 0;
           if (penguinKeys.has("KeyA") || penguinKeys.has("ArrowLeft")) mx -= 1;
@@ -1694,6 +1713,27 @@ export default function PenguinTownScene3D({
 
         const isSelected = props.activeBuildingId === building.id;
         group.scale.setScalar(isSelected ? 1.06 : 1);
+      }
+
+      if (flyingPenguin !== null) {
+        const plane = buildingGroups.get("plane");
+        const pilot = penguins[flyingPenguin];
+        if (plane?.visible && pilot) {
+          const turning = (penguinKeys.has("KeyA") || penguinKeys.has("ArrowLeft") ? 1 : 0) - (penguinKeys.has("KeyD") || penguinKeys.has("ArrowRight") ? 1 : 0);
+          const throttle = (penguinKeys.has("KeyW") || penguinKeys.has("ArrowUp") ? 1 : 0) - (penguinKeys.has("KeyS") || penguinKeys.has("ArrowDown") ? 1 : 0);
+          flightHeading += turning * frameDeltaSec * 1.35;
+          flightPlanePosition.x -= Math.sin(flightHeading) * throttle * frameDeltaSec * 5.4;
+          flightPlanePosition.z -= Math.cos(flightHeading) * throttle * frameDeltaSec * 5.4;
+          if (penguinKeys.has("Space")) flightPlanePosition.y += frameDeltaSec * 2.8;
+          if (penguinKeys.has("ShiftLeft") || penguinKeys.has("ShiftRight")) flightPlanePosition.y -= frameDeltaSec * 2.8;
+          flightPlanePosition.y = THREE.MathUtils.clamp(flightPlanePosition.y, ISLAND_HEIGHT + .75, 8.5);
+          plane.position.copy(flightPlanePosition);
+          plane.rotation.y = flightHeading;
+          plane.rotation.z = -turning * .22;
+          pilot.group.position.copy(flightPlanePosition).add(new THREE.Vector3(0, .52, .05).applyAxisAngle(new THREE.Vector3(0,1,0), flightHeading));
+          pilot.group.rotation.set(0, flightHeading, 0);
+          selectRing.visible = false;
+        }
       }
 
       controls.update();

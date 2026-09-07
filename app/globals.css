@@ -1856,14 +1856,34 @@ button, input { font: inherit; }
 .urf-gate__orb::before { content:""; position:absolute; inset:-13%; border:1px solid rgba(118,232,255,.25); border-radius:50%; transform:rotateX(70deg) rotateZ(18deg); }
 .urf-gate__orb:hover,.urf-gate__orb:focus-visible { scale:1.08; filter:brightness(1.35); outline:0; }
 .urf-gate__orb b { font: 900 clamp(52px,8vw,92px)/1 Arial,sans-serif; text-shadow:0 0 24px rgba(120,238,255,.75); transform:translateZ(34px); }
-.urf-gate__orb span { position:absolute; top:calc(100% + 22px); color:#a9eaf3; font:800 9px/1 Arial,sans-serif; letter-spacing:.22em; white-space:nowrap; }
-.urf-gate__orb--one { left:8%; top:24%; animation:gate-orb-one 8s ease-in-out infinite; }
-.urf-gate__orb--two { right:8%; bottom:17%; background:radial-gradient(circle at 30% 25%,#fff,rgba(255,103,220,.3) 12%,rgba(77,24,117,.66) 48%,#000 76%); border-color:rgba(255,139,227,.55); animation:gate-orb-two 9s ease-in-out infinite; }
+.urf-gate__orb span { position:absolute; top:calc(100% + 19px); color:#a9eaf3; font:800 9px/1 Arial,sans-serif; letter-spacing:.22em; white-space:nowrap; }
+.urf-gate__orb small { position:absolute; top:calc(100% + 38px); color:rgba(255,255,255,.48); font:700 7px/1 Arial,sans-serif; letter-spacing:.16em; white-space:nowrap; }
+.urf-gate__orb--one { left:0; top:30%; animation:gate-orb-one 8s ease-in-out infinite; }
+.urf-gate__orb--two { left:50%; top:5%; translate:-50% 0; background:radial-gradient(circle at 30% 25%,#fff,rgba(121,255,104,.32) 12%,rgba(26,96,66,.72) 48%,#000 76%); border-color:rgba(142,255,126,.58); animation:gate-orb-three 10s ease-in-out infinite; }
+.urf-gate__orb--three { right:0; bottom:12%; background:radial-gradient(circle at 30% 25%,#fff,rgba(255,103,220,.3) 12%,rgba(77,24,117,.66) 48%,#000 76%); border-color:rgba(255,139,227,.55); animation:gate-orb-two 9s ease-in-out infinite; }
 .urf-gate__close { position:absolute; top:18px; right:18px; width:44px; aspect-ratio:1; border:1px solid #38404a; border-radius:50%; background:#050505; color:#aeb7bf; font-size:28px; cursor:pointer; }
 @keyframes gate-room-float { 50% { transform:rotateY(4deg) rotateX(-2deg); } }
 @keyframes gate-orb-one { 50% { transform:translate3d(20px,-24px,80px) rotateY(22deg); } }
 @keyframes gate-orb-two { 50% { transform:translate3d(-28px,18px,110px) rotateY(-28deg); } }
+@keyframes gate-orb-three { 50% { transform:translate3d(0,28px,95px) rotateY(25deg); } }
 @keyframes gate-drift { to { transform:rotateX(66deg) translate3d(0,80px,-240px); } }
+
+.hextrip-shell { position:fixed; inset:0; display:grid; grid-template-rows:48px 1fr; overflow:hidden; background:#050708; color:#dfffea; }
+.hextrip-shell__bar { z-index:2; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; padding:0 16px; border-bottom:1px solid rgba(129,255,133,.28); background:rgba(3,10,8,.96); font:800 9px/1 Arial,sans-serif; letter-spacing:.14em; }
+.hextrip-shell__bar a { color:#9dffa9; text-decoration:none; }
+.hextrip-shell__bar a:last-child { justify-self:end; }
+.hextrip-shell iframe { width:100%; height:100%; border:0; background:#050708; }
+.town-flight-hint { position:absolute; z-index:8; left:50%; bottom:14px; translate:-50% 0; margin:0; padding:8px 12px; border:1px solid rgba(105,248,255,.38); border-radius:999px; color:#c6fbff; background:rgba(4,16,25,.76); backdrop-filter:blur(8px); font:800 8px/1 Arial,sans-serif; letter-spacing:.09em; white-space:nowrap; pointer-events:none; }
+@media (max-width:700px) {
+  .urf-gate__orbits { width:94vw; height:72vh; }
+  .urf-gate__orb { width:clamp(104px,31vw,145px); }
+  .urf-gate__orb--one { left:1%; top:13%; }
+  .urf-gate__orb--two { top:42%; }
+  .urf-gate__orb--three { right:1%; bottom:2%; }
+  .hextrip-shell__bar { grid-template-columns:auto 1fr auto; gap:8px; padding:0 8px; letter-spacing:.06em; }
+  .hextrip-shell__bar strong { text-align:center; font-size:7px; }
+  .town-flight-hint { bottom:8px; max-width:calc(100vw - 18px); overflow:hidden; text-overflow:ellipsis; font-size:6px; }
+}
 
 /* Minimal header/footer: the world-select screen keeps on-screen text to a
  * single line, with control hints as icon-only tooltips instead of copy. */

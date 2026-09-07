@@ -201,7 +201,8 @@ export class Combat {
     slot.mesh.visible = false;
     slot.mesh = mesh;
     slot.alive = true;
-    slot.life = weapon === "ak" ? 1.6 : 2.2;
+    // Preserve the original muzzle speeds while letting cans cross the whole arena.
+    slot.life = weapon === "ak" ? 4.8 : 5.2;
     slot.dmg = dmg;
     mesh.visible = true;
     mesh.position.copy(origin);
