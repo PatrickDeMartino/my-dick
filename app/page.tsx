@@ -50,7 +50,7 @@ export default function LandingPage() {
           aria-label="Open the Planet Urf world selector"
           aria-haspopup="dialog"
           onClick={() => setShowUrf(true)}
-          style={{ transform:`translate3d(calc(-6.505% + ${globeTransform.x*62+2.9}px),${-globeTransform.y*56}px,0) scale(${globeTransform.scale*(1+globeTransform.z*.12)})` }}
+          style={{ transform:`translate3d(calc(-6.505% + ${globeTransform.x*90+2.9}px),${-globeTransform.y*78}px,0) scale(${globeTransform.scale*(1+globeTransform.z*.18)})` }}
         >
           <span className="choice-object-visual choice-object-visual--globe" aria-hidden="true">
             <HomeGlobe onActivate={() => setShowUrf(true)} />
@@ -87,14 +87,14 @@ export default function LandingPage() {
         <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
       </div>
       <aside className="home-cube-menu" aria-label="Home room spatial controls">
-        <header><b>⬛ CUBE</b><small>XYZ SPACE</small></header>
+        <header><b>⬛ CUBE</b><small>{homeEditTarget === "globe" ? "EASY PAN + ZOOM" : "XYZ SPACE"}</small></header>
         <div className="home-cube-menu__targets">
           {(["brain","globe"] as HomeObject[]).map(target=><button type="button" key={target} className={homeEditTarget===target?"is-active":""} onClick={()=>setHomeEditTarget(target)}>{target.toUpperCase()}</button>)}
         </div>
         {(["x","y","z","scale"] as (keyof Spatial)[]).map(axis=><label key={axis}><span>{axis==="scale"?"SIZE":axis.toUpperCase()}</span><input type="range" min={axis==="scale"?.55:-2.5} max={axis==="scale"?1.8:2.5} step={axis==="scale"?.05:.05} value={homeSpatial[homeEditTarget][axis]} onChange={event=>updateSpatial(axis,Number(event.target.value))}/><b>{homeSpatial[homeEditTarget][axis].toFixed(2)}</b></label>)}
         <button type="button" className="home-cube-menu__reset" onClick={()=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...HOME_DEFAULTS[homeEditTarget]}}))}>RESET {homeEditTarget.toUpperCase()}</button>
       </aside>
-      <p className="home-camera-hint">DRAG THE ROOM · MOVE CAMERA</p>
+      <p className="home-camera-hint">CAMERA LOCKED · PONGO: WASD MOVE · SPACE JUMP / GRAB VINE</p>
 
       <a
         className="choice-kicker"

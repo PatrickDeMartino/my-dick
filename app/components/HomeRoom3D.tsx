@@ -17,6 +17,14 @@ type CanBody = {
 type PongoBody = {
   mesh: THREE.Group;
   velocity: THREE.Vector3;
+  swing: { vine: JungleVine; angle: number; angularVelocity: number } | null;
+};
+
+type JungleVine = {
+  mesh: THREE.Mesh;
+  anchor: THREE.Vector3;
+  length: number;
+  phase: number;
 };
 
 const CAN_EVENT = "trip-spawn-can";
@@ -55,39 +63,60 @@ function canTexture(label: CanLabel) {
 function makeBrain() {
   const root = new THREE.Group();
   const matter = new THREE.MeshPhysicalMaterial({
-    color: 0xec4ecb,
-    emissive: 0x5d064d,
-    emissiveIntensity: .72,
-    roughness: .38,
-    metalness: .08,
-    clearcoat: .65,
-    clearcoatRoughness: .28,
+    color: 0xe45ac6,
+    emissive: 0x4e073f,
+    emissiveIntensity: .46,
+    roughness: .5,
+    metalness: .02,
+    clearcoat: .48,
+    clearcoatRoughness: .42,
   });
-  const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .18, blending: THREE.AdditiveBlending });
+  const sulcus = new THREE.MeshStandardMaterial({ color: 0x74105f, emissive: 0x26031f, emissiveIntensity: .3, roughness: .72 });
+  const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .1, blending: THREE.AdditiveBlending, depthWrite: false });
   const wrinkles: THREE.Mesh[] = [];
+
+  // Two softly overlapping hemispheres make the silhouette read as a brain
+  // before the animated gyri are added.
   for (let hemisphere = -1; hemisphere <= 1; hemisphere += 2) {
-    for (let i = 0; i < 72; i += 1) {
+    const lobe = new THREE.Mesh(new THREE.SphereGeometry(1.2, 44, 32), matter.clone());
+    lobe.position.x = hemisphere * .5;
+    lobe.scale.set(.82, 1.12, .86);
+    lobe.castShadow = true;
+    root.add(lobe);
+    for (let i = 0; i < 22; i += 1) {
       const points: THREE.Vector3[] = [];
-      const row = i % 18;
-      const layer = Math.floor(i / 18);
-      const baseY = -1.28 + row * .15;
-      const baseZ = -.72 + layer * .48;
-      for (let s = 0; s <= 28; s += 1) {
-        const t = s / 28;
-        const y = baseY + (t - .5) * .08 + Math.sin(t * Math.PI * (2 + i % 4) + i) * .12;
-        const z = baseZ + Math.sin(t * Math.PI * (3 + i % 5) + i * .7) * .16;
-        const shell = Math.sqrt(Math.max(.05, 1 - Math.pow(y / 1.42, 2) - Math.pow(z / 1.08, 2)));
-        const x = hemisphere * (.1 + shell * (1.02 + (i % 3) * .035));
+      const latitude = -1.12 + (i % 11) * .225;
+      const band = Math.floor(i / 11);
+      for (let s = 0; s <= 34; s += 1) {
+        const t = s / 34;
+        const y = latitude + Math.sin(t * Math.PI * (3 + i % 3) + i * .73) * .105;
+        const z = -.82 + t * 1.64 + Math.sin(t * Math.PI * (4 + i % 4) + i) * .13;
+        const shell = Math.sqrt(Math.max(.04, 1 - (y * y) / 1.55 - (z * z) / 1.02));
+        const x = hemisphere * (.48 + shell * .53) + Math.sin(t * Math.PI * 5 + i) * .045;
         points.push(new THREE.Vector3(x, y, z));
       }
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .09 + (i % 4) * .012, 7, false), matter.clone());
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, .055 + band * .008, 8, false), sulcus.clone());
       tube.userData.phase = i * .43 + hemisphere;
-      tube.userData.baseScale = .92 + (i % 4) * .025;
+      tube.userData.baseScale = .985 + (i % 3) * .006;
       tube.castShadow = true;
       wrinkles.push(tube);
       root.add(tube);
     }
   }
+  const fissure = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 1.18, -.72), new THREE.Vector3(.015, .6, -.94),
+    new THREE.Vector3(-.02, 0, -1.02), new THREE.Vector3(.02, -.62, -.88),
+    new THREE.Vector3(0, -1.15, -.55),
+  ]), 48, .075, 9, false), sulcus);
+  root.add(fissure);
+  const cerebellum = new THREE.Mesh(new THREE.SphereGeometry(.66, 30, 22), matter.clone());
+  cerebellum.position.set(0, -.9, .48);
+  cerebellum.scale.set(1.18, .56, .72);
+  root.add(cerebellum);
+  const stem = new THREE.Mesh(new THREE.CapsuleGeometry(.2, .6, 8, 14), matter.clone());
+  stem.position.set(.08, -1.43, .38);
+  stem.rotation.z = -.15;
+  root.add(stem);
   const hitMaterial = new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
   const core = new THREE.Mesh(new THREE.SphereGeometry(1.28, 28, 22), hitMaterial);
   core.scale.set(1.12, 1.04, .82);
@@ -100,6 +129,74 @@ function makeBrain() {
   root.userData.wrinkles = wrinkles;
   root.userData.aura = aura;
   return root;
+}
+
+function makeCrystalCluster(index: number) {
+  const group = new THREE.Group();
+  const hue = (index * .137 + .48) % 1;
+  for (let shard = 0; shard < 3 + (index % 3); shard += 1) {
+    const color = new THREE.Color().setHSL((hue + shard * .075) % 1, .92, .62);
+    const material = new THREE.MeshPhysicalMaterial({
+      color,
+      emissive: color.clone().multiplyScalar(.25),
+      emissiveIntensity: .65,
+      roughness: .06,
+      metalness: .08,
+      transmission: .72,
+      thickness: .5,
+      transparent: true,
+      opacity: .84,
+      clearcoat: 1,
+      clearcoatRoughness: .08,
+      ior: 1.72,
+      side: THREE.DoubleSide,
+    });
+    const height = .72 + ((index * 17 + shard * 11) % 13) * .1;
+    const crystal = new THREE.Mesh(new THREE.ConeGeometry(.16 + shard * .025, height, 6), material);
+    crystal.position.set((shard - 1.5) * .16, height * .5, (shard % 2) * .13);
+    crystal.rotation.z = (shard - 1.5) * .12;
+    crystal.rotation.y = shard * 1.7;
+    crystal.castShadow = true;
+    group.add(crystal);
+  }
+  const glow = new THREE.PointLight(new THREE.Color().setHSL(hue, .95, .65), 3.2, 3.5, 1.8);
+  glow.position.y = .42;
+  group.add(glow);
+  return group;
+}
+
+function makeJungleTree(index: number) {
+  const tree = new THREE.Group();
+  const bark = new THREE.MeshStandardMaterial({ color: index % 2 ? 0x3e2518 : 0x56301d, roughness: .95 });
+  const leafColors = [0x0b4e2b, 0x116f38, 0x188c47, 0x2aa95a];
+  const leafMat = new THREE.MeshStandardMaterial({ color: leafColors[index % leafColors.length], roughness: .78, side: THREE.DoubleSide });
+  const height = 5.8 + (index % 3) * .65;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.18, .42, height, 10), bark);
+  trunk.position.y = height * .5;
+  trunk.rotation.z = (index % 2 ? 1 : -1) * .045;
+  trunk.castShadow = true;
+  tree.add(trunk);
+  for (let crown = 0; crown < 3; crown += 1) {
+    const hub = new THREE.Vector3((crown - 1) * .28, height - .2 + crown * .25, 0);
+    for (let leaf = 0; leaf < 9; leaf += 1) {
+      const blade = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), leafMat.clone());
+      const angle = leaf / 9 * Math.PI * 2 + crown * .7;
+      blade.position.copy(hub).add(new THREE.Vector3(Math.cos(angle) * 1.15, Math.sin(angle * 2) * .22, Math.sin(angle) * .85));
+      blade.scale.set(1.2, .16, .42);
+      blade.rotation.set(Math.sin(angle) * .35, -angle, Math.cos(angle) * .22);
+      blade.castShadow = true;
+      tree.add(blade);
+    }
+  }
+  return tree;
+}
+
+function aimVine(vine: JungleVine, end: THREE.Vector3) {
+  const direction = end.clone().sub(vine.anchor);
+  const length = direction.length();
+  vine.mesh.position.copy(vine.anchor).add(end).multiplyScalar(.5);
+  vine.mesh.scale.set(1, length, 1);
+  vine.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
 }
 
 function makeCan(label: CanLabel, texture: THREE.Texture, metalColor = 0xc7cbd3) {
@@ -126,15 +223,18 @@ export default function HomeRoom3D() {
     const mount = mountRef.current;
     if (!mount) return;
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x13051f, .036);
+    scene.fog = new THREE.FogExp2(0x07180f, .03);
     const camera = new THREE.PerspectiveCamera(47, 1, .1, 80);
-    camera.position.set(0, 1.8, 11.5);
+    camera.position.set(0, 2.4, 12.6);
+    camera.lookAt(0, -.15, -1.25);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
-    renderer.setClearColor(0x090311);
+    renderer.setClearColor(0x03100a);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.16;
     mount.appendChild(renderer.domElement);
 
     scene.add(new THREE.HemisphereLight(0x8feeff, 0x310517, 1.5));
@@ -148,13 +248,13 @@ export default function HomeRoom3D() {
 
     const room = new THREE.Group();
     scene.add(room);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x35113c, roughness: .82, metalness: .08 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x142d1b, roughness: .96, metalness: .02 });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 18, 20, 20), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -3;
     floor.receiveShadow = true;
     room.add(floor);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a0a29, roughness: .9, side: THREE.DoubleSide });
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x082015, roughness: .96, side: THREE.DoubleSide });
     const back = new THREE.Mesh(new THREE.PlaneGeometry(24, 14, 12, 8), wallMat);
     back.position.set(0, 3, -5);
     back.receiveShadow = true;
@@ -165,35 +265,50 @@ export default function HomeRoom3D() {
       wall.rotation.y = side * -Math.PI / 2;
       room.add(wall);
     });
-    for (let i = 0; i < 32; i += 1) {
-      const crystal = new THREE.Mesh(
-        new THREE.ConeGeometry(.09 + Math.random() * .16, .6 + Math.random() * 1.7, 5),
-        new THREE.MeshStandardMaterial({ color: i % 2 ? 0x9a36ff : 0x35ffe0, emissive: i % 2 ? 0x3c096d : 0x07594c, emissiveIntensity: .8, roughness: .28 }),
-      );
-      crystal.position.set(-9 + Math.random() * 18, -2.7, -4.6 + Math.random() * 2.1);
-      crystal.rotation.z = (Math.random() - .5) * .35;
-      room.add(crystal);
+    const crystals: THREE.Group[] = [];
+    for (let i = 0; i < 18; i += 1) {
+      const cluster = makeCrystalCluster(i);
+      cluster.position.set(-8.8 + (i % 9) * 2.15, -3, -4.4 + Math.floor(i / 9) * 1.22);
+      cluster.rotation.y = i * .83;
+      cluster.scale.setScalar(.7 + (i % 4) * .12);
+      crystals.push(cluster);
+      room.add(cluster);
     }
 
-    const psychedelic = new THREE.Group();
-    const tripMaterials: THREE.MeshStandardMaterial[] = [];
-    for (let i=0;i<9;i+=1) {
-      const mat=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(i/9,.92,.55),emissive:new THREE.Color().setHSL((i/9+.08)%1,.95,.25),emissiveIntensity:1.25,roughness:.3,metalness:.18,transparent:true,opacity:.72});
-      tripMaterials.push(mat);
-      const swirl=new THREE.Mesh(new THREE.TorusKnotGeometry(.72+i*.28,.035+i*.005,96,7,2+i%3,3+i%2),mat);
-      swirl.position.set(-5.6+i*1.42,1.4+Math.sin(i)*1.7,-4.68);
-      swirl.scale.y=.72;
-      psychedelic.add(swirl);
+    // The former wall squiggles are now a layered tropical canopy.
+    const jungle = new THREE.Group();
+    const treePositions: [number, number, number][] = [
+      [-8.6, -3, -4.45], [-6.5, -3, -4.65], [-4.3, -3, -4.7], [-1.9, -3, -4.72],
+      [1, -3, -4.72], [3.8, -3, -4.7], [6.4, -3, -4.65], [8.6, -3, -4.45],
+      [-9.15, -3, -.9], [9.15, -3, -.7],
+    ];
+    treePositions.forEach((position, index) => {
+      const tree = makeJungleTree(index);
+      tree.position.set(...position);
+      tree.scale.setScalar(.82 + (index % 3) * .09);
+      jungle.add(tree);
+    });
+    const canopyMat = new THREE.MeshStandardMaterial({ color: 0x07552c, roughness: .82 });
+    for (let i = 0; i < 24; i += 1) {
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(.82 + (i % 4) * .12, 1), canopyMat.clone());
+      (crown.material as THREE.MeshStandardMaterial).color.offsetHSL((i % 5) * .012, 0, (i % 3) * .025);
+      crown.position.set(-10 + (i % 12) * 1.8, 5.4 + (i % 4) * .34, -4.6 + Math.floor(i / 12) * 1.2);
+      crown.scale.set(1.45, .72, 1.05);
+      crown.castShadow = true;
+      jungle.add(crown);
     }
-    for (let i=0;i<30;i+=1) {
-      const mat=tripMaterials[i%tripMaterials.length];
-      const drip=new THREE.Mesh(new THREE.CapsuleGeometry(.07+Math.random()*.08,.45+Math.random()*1.7,5,8),mat);
-      drip.position.set(-9+Math.random()*18,5.3+Math.random()*1.6,-4.55+Math.random()*.12);
-      drip.scale.y=.8+Math.random()*1.5;
-      drip.userData.phase=Math.random()*Math.PI*2;
-      psychedelic.add(drip);
-    }
-    room.add(psychedelic);
+    room.add(jungle);
+
+    const vineMaterial = new THREE.MeshPhysicalMaterial({ color: 0x123e1e, roughness: .68, clearcoat: .28 });
+    const vines: JungleVine[] = [-6.2, -3.3, -.2, 3.05, 6.25].map((x, index) => {
+      const length = 4.1 + (index % 3) * .42;
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(.055, .075, 1, 10), vineMaterial.clone());
+      mesh.castShadow = true;
+      const vine = { mesh, anchor: new THREE.Vector3(x, 5.8 + (index % 2) * .22, -2.15 - (index % 3) * .55), length, phase: index * 1.37 };
+      aimVine(vine, vine.anchor.clone().add(new THREE.Vector3(0, -length, 0)));
+      room.add(mesh);
+      return vine;
+    });
 
     const brain = makeBrain();
     brain.position.set(4.25, -.05, -.2);
@@ -239,7 +354,7 @@ export default function HomeRoom3D() {
       mesh.position.set((Math.random() - .5) * 2, 4.5, 1.5);
       mesh.rotation.y = Math.PI;
       scene.add(mesh);
-      const pongo = { mesh, velocity: new THREE.Vector3((Math.random() - .5) * 1.4, 0, 0) };
+      const pongo: PongoBody = { mesh, velocity: new THREE.Vector3((Math.random() - .5) * 1.4, 0, 0), swing: null };
       pongos.push(pongo);
       if (activate) { selectedPongo = pongo; pongoMode = true; }
       if (pongos.length > 5) scene.remove(pongos.shift()!.mesh);
@@ -249,30 +364,15 @@ export default function HomeRoom3D() {
     spawnCan("MONSTER");
     spawnPongo(false);
 
-    let dragging = false;
-    let lastX = 0;
-    let lastY = 0;
-    let yaw = 0;
-    let pitch = 0;
-    let pointerTravel=0;
     const raycaster=new THREE.Raycaster();
     const pointer=new THREE.Vector2();
-    const onDown = (event: PointerEvent) => { dragging = true; pointerTravel=0; lastX = event.clientX; lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); };
-    const onMove = (event: PointerEvent) => {
-      if (!dragging) return;
-      pointerTravel+=Math.hypot(event.clientX-lastX,event.clientY-lastY);
-      yaw += (event.clientX - lastX) * .0045;
-      pitch = THREE.MathUtils.clamp(pitch + (event.clientY - lastY) * .003, -.24, .22);
-      lastX = event.clientX; lastY = event.clientY;
-    };
     const onUp = (event:PointerEvent) => {
-      dragging = false;
-      if(pointerTravel<6){const rect=renderer.domElement.getBoundingClientRect();pointer.set(((event.clientX-rect.left)/rect.width)*2-1,-((event.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);if(raycaster.intersectObject(brain,true).length)window.location.assign("/brain-room");}
+      const rect=renderer.domElement.getBoundingClientRect();
+      pointer.set(((event.clientX-rect.left)/rect.width)*2-1,-((event.clientY-rect.top)/rect.height)*2+1);
+      raycaster.setFromCamera(pointer,camera);
+      if(raycaster.intersectObject(brain,true).length)window.location.assign("/brain-room");
     };
-    renderer.domElement.addEventListener("pointerdown", onDown);
-    renderer.domElement.addEventListener("pointermove", onMove);
     renderer.domElement.addEventListener("pointerup", onUp);
-    renderer.domElement.addEventListener("pointercancel", onUp);
     const onSpawn = (event: Event) => {
       const item = (event as CustomEvent).detail as SpawnItem;
       if (item === "PONGO") {
@@ -285,7 +385,19 @@ export default function HomeRoom3D() {
     window.addEventListener(SPATIAL_EVENT,onSpatial);
     const onKeyDown = (event: KeyboardEvent) => {
       keys.add(event.code);
-      if (selectedPongo && event.code === "Space" && selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
+      if (selectedPongo && event.code === "Space" && !event.repeat) {
+        if (selectedPongo.swing) {
+          const { vine, angle, angularVelocity } = selectedPongo.swing;
+          selectedPongo.velocity.set(angularVelocity * vine.length * Math.cos(angle), angularVelocity * vine.length * Math.sin(angle), 0);
+          selectedPongo.swing = null;
+        } else {
+          const shoulder = selectedPongo.mesh.position.clone().add(new THREE.Vector3(0, 2.25, 0));
+          const nearest = vines.map(vine=>({vine,distance:shoulder.distanceTo(vine.anchor.clone().add(new THREE.Vector3(0,-vine.length,0)))})).sort((a,b)=>a.distance-b.distance)[0];
+          if (nearest && nearest.distance < 2.2) {
+            selectedPongo.swing = { vine: nearest.vine, angle: (selectedPongo.mesh.position.x-nearest.vine.anchor.x)/nearest.vine.length, angularVelocity: selectedPongo.velocity.x/nearest.vine.length };
+          } else if (selectedPongo.mesh.position.y <= -2.98) selectedPongo.velocity.y = 6.4;
+        }
+      }
       if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault();
     };
     const onKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
@@ -308,15 +420,6 @@ export default function HomeRoom3D() {
       frame = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), .033);
       const time = clock.elapsedTime;
-      const focus=selectedPongo?.mesh.position??new THREE.Vector3(0,-1,-1);
-      const facing=selectedPongo?.mesh.rotation.y??0;
-      if(!dragging)yaw*=Math.max(0,1-dt*.38);
-      const orbit=facing+yaw;
-      const distance=6.4;
-      camera.position.x += (focus.x+Math.sin(orbit)*distance-camera.position.x) * .075;
-      camera.position.y += (focus.y+5.4-pitch*6-camera.position.y) * .075;
-      camera.position.z += (focus.z+Math.cos(orbit)*distance-camera.position.z) * .075;
-      camera.lookAt(focus.x,focus.y+1.15,focus.z);
       brain.rotation.y = -.28 + Math.sin(time * .38) * .18;
       brain.position.set(4.25+brainSpatial.x*1.45,-.05+brainSpatial.y*1.15+Math.sin(time*.72)*.12,-.2+brainSpatial.z*1.2);
       brain.scale.setScalar(1.34*brainSpatial.scale);
@@ -324,10 +427,14 @@ export default function HomeRoom3D() {
       wrinkles.forEach((wrinkle, index) => {
         const pulse = wrinkle.userData.baseScale + Math.sin(time * 2.1 + wrinkle.userData.phase) * .055;
         wrinkle.scale.set(pulse, pulse * (1 + Math.sin(time * 2.7 + index) * .035), pulse);
-        (wrinkle.material as THREE.MeshPhysicalMaterial).emissiveIntensity = .55 + Math.sin(time * 2 + index) * .18;
+        (wrinkle.material as THREE.MeshStandardMaterial).emissiveIntensity = .28 + Math.sin(time * 2 + index) * .08;
       });
       (brain.userData.aura as THREE.Mesh).scale.setScalar(1 + Math.sin(time * 1.5) * .035);
-      psychedelic.children.forEach((child,index)=>{child.rotation.z+=dt*(index%2?.09:-.07);const mat=(child as THREE.Mesh).material as THREE.MeshStandardMaterial;if(mat?.color){const hue=(time*.025+index/psychedelic.children.length)%1;mat.color.setHSL(hue,.9,.52);mat.emissive.setHSL((hue+.08)%1,.96,.24);mat.emissiveIntensity=.9+Math.sin(time*1.3+index)*.48;}if(child.userData.phase!==undefined)child.scale.y=.9+Math.sin(time*1.7+child.userData.phase)*.28;});
+      crystals.forEach((cluster,index)=>{cluster.rotation.y+=dt*(index%2?.08:-.06);});
+      vines.forEach(vine=>{
+        const swinger=pongos.find(pongo=>pongo.swing?.vine===vine);
+        if(!swinger) aimVine(vine,vine.anchor.clone().add(new THREE.Vector3(Math.sin(time*.65+vine.phase)*.13,-vine.length,Math.cos(time*.54+vine.phase)*.08)));
+      });
       for (const can of cans) {
         if(can===heldCan)continue;
         can.velocity.y -= 8.5 * dt;
@@ -351,17 +458,29 @@ export default function HomeRoom3D() {
           if (keys.has("KeyW") || keys.has("ArrowUp")) mz -= 1;
           if (keys.has("KeyS") || keys.has("ArrowDown")) mz += 1;
         }
-        const length = Math.hypot(mx, mz) || 1;
-        mx /= length; mz /= length;
-        pongo.velocity.x += (mx * 3.6 - pongo.velocity.x) * Math.min(1, dt * 8);
-        pongo.velocity.z += (mz * 3.6 - pongo.velocity.z) * Math.min(1, dt * 8);
-        pongo.velocity.y -= 12 * dt;
-        pongo.mesh.position.addScaledVector(pongo.velocity, dt);
+        const movementLength = Math.hypot(mx, mz) || 1;
+        mx /= movementLength; mz /= movementLength;
+        if (pongo.swing) {
+          pongo.swing.angularVelocity += (-9.8 / pongo.swing.vine.length * Math.sin(pongo.swing.angle) + mx * 1.05) * dt;
+          pongo.swing.angularVelocity *= Math.max(0, 1-dt*.075);
+          pongo.swing.angle = THREE.MathUtils.clamp(pongo.swing.angle + pongo.swing.angularVelocity * dt, -1.16, 1.16);
+          const hand = pongo.swing.vine.anchor.clone().add(new THREE.Vector3(Math.sin(pongo.swing.angle)*pongo.swing.vine.length,-Math.cos(pongo.swing.angle)*pongo.swing.vine.length,mz*.35));
+          pongo.mesh.position.copy(hand).add(new THREE.Vector3(0,-2.15,0));
+          pongo.mesh.rotation.z = -pongo.swing.angle * .28;
+          (pongo.mesh.userData.limbs as THREE.Group[]).slice(0,4).forEach(limb=>limb.rotation.x=Math.PI*.78);
+          aimVine(pongo.swing.vine,hand);
+        } else {
+          pongo.mesh.rotation.z += (0-pongo.mesh.rotation.z)*.15;
+          pongo.velocity.x += (mx * 3.6 - pongo.velocity.x) * Math.min(1, dt * 8);
+          pongo.velocity.z += (mz * 3.6 - pongo.velocity.z) * Math.min(1, dt * 8);
+          pongo.velocity.y -= 12 * dt;
+          pongo.mesh.position.addScaledVector(pongo.velocity, dt);
+        }
         if (pongo.mesh.position.y < -3) { pongo.mesh.position.y = -3; pongo.velocity.y = 0; }
         pongo.mesh.position.x = THREE.MathUtils.clamp(pongo.mesh.position.x, -8.7, 8.7);
         pongo.mesh.position.z = THREE.MathUtils.clamp(pongo.mesh.position.z, -4.2, 5.2);
         const moving = Math.abs(mx) + Math.abs(mz) > .1;
-        if (moving) {
+        if (moving && !pongo.swing) {
           pongo.mesh.rotation.y = Math.atan2(mx, mz);
           pongo.mesh.userData.walk += dt * 8;
           (pongo.mesh.userData.limbs as THREE.Group[]).forEach((limb, index) => { limb.rotation.x = Math.sin(pongo.mesh.userData.walk + index * Math.PI / 2) * .52; });
@@ -382,8 +501,6 @@ export default function HomeRoom3D() {
       window.removeEventListener(SPATIAL_EVENT,onSpatial);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      renderer.domElement.removeEventListener("pointerdown", onDown);
-      renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerup", onUp);
       renderer.dispose();
       Object.values(canTextures).flat().forEach((texture) => texture.dispose());
@@ -391,7 +508,7 @@ export default function HomeRoom3D() {
     };
   }, []);
 
-  return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D home room. Drag to move the camera." />;
+  return <div ref={mountRef} className="home-room-3d" aria-label="Interactive 3D jungle brain room with a stationary camera. Use Pongo mode to explore and swing from vines." />;
 }
 
 export function spawnHomeCan(label: SpawnItem) {

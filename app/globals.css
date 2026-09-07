@@ -881,8 +881,7 @@ button, input { font: inherit; }
 }
 
 .home-room-3d { position:absolute; inset:0; z-index:0; }
-.home-room-3d canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
-.home-room-3d canvas:active { cursor:grabbing; }
+.home-room-3d canvas { display:block; width:100%; height:100%; touch-action:none; cursor:default; }
 .home-camera-hint { position:absolute; z-index:3; left:50%; bottom:18px; margin:0; transform:translateX(-50%); color:rgba(212,255,247,.7); font:800 9px/1 var(--font-geist-mono),monospace; letter-spacing:.18em; pointer-events:none; text-shadow:0 2px 8px #000; }
 .home-room-tools { position:absolute; z-index:8; left:18px; top:calc(var(--trip-banner-height) + 18px); display:flex; align-items:center; flex-wrap:wrap; max-width:min(640px,calc(100vw - 36px)); gap:7px; padding:7px; border:1px solid rgba(100,255,225,.38); border-radius:14px; background:rgba(10,3,22,.76); backdrop-filter:blur(12px); box-shadow:0 12px 32px rgba(0,0,0,.45); }
 .home-room-tools > span { padding:0 7px; color:#75f7e0; font:900 8px/1 var(--font-geist-mono),monospace; letter-spacing:.14em; }
@@ -897,7 +896,7 @@ button, input { font: inherit; }
 .home-cube-menu button { min-height:30px; border:1px solid rgba(183,129,246,.4); border-radius:8px; color:#eee0ff; background:rgba(43,12,67,.78); font:900 10px/1 var(--font-geist-mono),monospace; letter-spacing:.08em; cursor:pointer; }
 .home-cube-menu button.is-active { color:#160d20; background:#9effeb; border-color:#fff; }
 .home-cube-menu label { display:grid; grid-template-columns:34px 1fr 42px; align-items:center; gap:7px; color:#d9b6ff; font:800 9px/1 var(--font-geist-mono),monospace; }
-.home-cube-menu label input { width:100%; accent-color:#a855f7; }
+.home-cube-menu label input { width:100%; min-height:22px; accent-color:#a855f7; cursor:ew-resize; }
 .home-cube-menu label b { text-align:right; font-size:9px; }
 .home-cube-menu .home-cube-menu__reset { color:#ffdff8; border-color:rgba(255,119,215,.5); }
 
