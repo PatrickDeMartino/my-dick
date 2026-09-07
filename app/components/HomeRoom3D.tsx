@@ -66,19 +66,21 @@ function makeBrain() {
   const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .18, blending: THREE.AdditiveBlending });
   const wrinkles: THREE.Mesh[] = [];
   for (let hemisphere = -1; hemisphere <= 1; hemisphere += 2) {
-    for (let i = 0; i < 52; i += 1) {
+    for (let i = 0; i < 72; i += 1) {
       const points: THREE.Vector3[] = [];
-      const baseY = -1.18 + (i % 13) * .205;
-      const baseZ = -.72 + Math.floor(i / 13) * .47;
+      const row = i % 18;
+      const layer = Math.floor(i / 18);
+      const baseY = -1.28 + row * .15;
+      const baseZ = -.72 + layer * .48;
       for (let s = 0; s <= 28; s += 1) {
         const t = s / 28;
-        const latitudeTaper = Math.max(.42,1-Math.pow(baseY/1.55,2)*.62);
-        const x = hemisphere * (.08 + Math.sin(t * Math.PI) * (1.2 * latitudeTaper + (i % 3) * .035));
-        const y = baseY + t * .15 + Math.sin(t * Math.PI * (3 + i % 5) + i) * .14;
-        const z = baseZ + Math.cos(t * Math.PI * (4 + i % 4) + i * .7) * .17;
+        const y = baseY + (t - .5) * .08 + Math.sin(t * Math.PI * (2 + i % 4) + i) * .12;
+        const z = baseZ + Math.sin(t * Math.PI * (3 + i % 5) + i * .7) * .16;
+        const shell = Math.sqrt(Math.max(.05, 1 - Math.pow(y / 1.42, 2) - Math.pow(z / 1.08, 2)));
+        const x = hemisphere * (.1 + shell * (1.02 + (i % 3) * .035));
         points.push(new THREE.Vector3(x, y, z));
       }
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .105, 7, false), matter.clone());
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .09 + (i % 4) * .012, 7, false), matter.clone());
       tube.userData.phase = i * .43 + hemisphere;
       tube.userData.baseScale = .92 + (i % 4) * .025;
       tube.castShadow = true;
@@ -212,6 +214,7 @@ export default function HomeRoom3D() {
     const cans: CanBody[] = [];
     const pongos: PongoBody[] = [];
     let selectedPongo: PongoBody | null = null;
+    let pongoMode = false;
     let heldCan: CanBody | null = null;
     let heldTime = 0;
     const keys = new Set<string>();
@@ -231,19 +234,20 @@ export default function HomeRoom3D() {
       cans.push({ mesh, velocity: new THREE.Vector3((Math.random() - .5) * 2.6, 1 + Math.random() * 1.7, (Math.random() - .5) * 1.8), spin: new THREE.Vector3(Math.random() * 5, Math.random() * 5, Math.random() * 5), radius: .47 });
       if (cans.length > 28) scene.remove(cans.shift()!.mesh);
     };
-    const spawnPongo = () => {
+    const spawnPongo = (activate = true) => {
       const mesh = makeBrainCreature("pongo");
       mesh.position.set((Math.random() - .5) * 2, 4.5, 1.5);
       mesh.rotation.y = Math.PI;
       scene.add(mesh);
-      selectedPongo = { mesh, velocity: new THREE.Vector3((Math.random() - .5) * 1.4, 0, 0) };
-      pongos.push(selectedPongo);
+      const pongo = { mesh, velocity: new THREE.Vector3((Math.random() - .5) * 1.4, 0, 0) };
+      pongos.push(pongo);
+      if (activate) { selectedPongo = pongo; pongoMode = true; }
       if (pongos.length > 5) scene.remove(pongos.shift()!.mesh);
     };
     spawnCan("YOOHOO");
     spawnCan("PEPSI");
     spawnCan("MONSTER");
-    spawnPongo();
+    spawnPongo(false);
 
     let dragging = false;
     let lastX = 0;
@@ -271,7 +275,10 @@ export default function HomeRoom3D() {
     renderer.domElement.addEventListener("pointercancel", onUp);
     const onSpawn = (event: Event) => {
       const item = (event as CustomEvent).detail as SpawnItem;
-      if (item === "PONGO") spawnPongo(); else spawnCan(item);
+      if (item === "PONGO") {
+        if (pongos.length === 0) spawnPongo(true);
+        else { pongoMode = !pongoMode; selectedPongo = pongoMode ? pongos[pongos.length - 1] : null; }
+      } else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
     const onSpatial=(event:Event)=>{const detail=(event as CustomEvent<{target:"brain";value:{x:number;y:number;z:number;scale:number}}>).detail;if(detail.target==="brain")brainSpatial={...detail.value};};

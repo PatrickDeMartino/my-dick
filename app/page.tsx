@@ -60,7 +60,6 @@ export default function LandingPage() {
           </span>
           <span className="choice-object-label">
             <strong>Planet Urf</strong>
-            <small>reality phisico</small>
           </span>
         </button>
 
@@ -85,7 +84,7 @@ export default function LandingPage() {
         <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
         <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
         <button type="button" onClick={() => spawnHomeCan("RAT MEAT")}>RAT MEAT</button>
-        <button type="button" className="is-pongo" onClick={() => spawnHomeCan("PONGO")}>PONGO</button>
+        <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
       </div>
       <aside className="home-cube-menu" aria-label="Home room spatial controls">
         <header><b>⬛ CUBE</b><small>XYZ SPACE</small></header>
