@@ -1,4 +1,5 @@
 @import "tailwindcss";
+html[data-urf-phase="playing"] [data-urf-title] { display: none !important; }
 
 @theme {
   --color-void: #14051f;

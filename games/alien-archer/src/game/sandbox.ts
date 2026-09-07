@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { makeAK47, makeRevolver } from "./weapons";
 
-export type SpawnKind = "vehicle" | "jetpack" | "ak47" | "revolver" | "bow" | "arrow" | "pepsi" | "yoohoo" | "biplane" | "penguin" | "bongo";
+export type SpawnKind = "vehicle" | "jetpack" | "ak47" | "revolver" | "bow" | "arrow" | "pepsi" | "yoohoo" | "monster" | "rat-meat" | "biplane" | "penguin" | "bongo";
 
 const mat = (color: number, metalness = .05, emissive = 0) => new THREE.MeshStandardMaterial({ color, roughness: .48, metalness, emissive, emissiveIntensity: emissive ? .35 : 0, flatShading: true });
 const mesh = (root: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, x=0, y=0, z=0, rx=0, ry=0, rz=0) => {
@@ -9,13 +9,13 @@ const mesh = (root: THREE.Group, geometry: THREE.BufferGeometry, material: THREE
   item.position.set(x,y,z); item.rotation.set(rx,ry,rz); item.castShadow=true; root.add(item); return item;
 };
 
-function can(label: "PEPSI" | "YOO-HOO") {
+function can(label: "PEPSI" | "YOO-HOO" | "MONSTER" | "RAT MEAT") {
   const root = new THREE.Group();
-  const body = label === "PEPSI" ? mat(0x1454c8,.55) : mat(0x6b2d16,.42);
+  const body = label === "PEPSI" ? mat(0x1454c8,.55) : label === "MONSTER" ? mat(0x101815,.7,0x184a24) : label === "RAT MEAT" ? mat(0xb9c1ca,.75) : mat(0x6b2d16,.42);
   mesh(root,new THREE.CylinderGeometry(.28,.28,.72,18),body);
   mesh(root,new THREE.TorusGeometry(.25,.025,6,20),mat(0xd7e1e8,.85),0,.35,0,Math.PI/2);
   mesh(root,new THREE.TorusGeometry(.25,.025,6,20),mat(0xd7e1e8,.85),0,-.35,0,Math.PI/2);
-  const badge=mesh(root,new THREE.BoxGeometry(.44,.2,.025),mat(label==="PEPSI"?0xf3f5ff:0xf1d45b),0,0,.275);
+  const badge=mesh(root,new THREE.BoxGeometry(.44,.2,.025),mat(label==="PEPSI"?0xf3f5ff:label==="MONSTER"?0x65ff48:label==="RAT MEAT"?0xe34f68:0xf1d45b),0,0,.275);
   badge.userData.label=label;
   return root;
 }
@@ -51,6 +51,8 @@ export function makeSandboxProp(kind: SpawnKind) {
   if(kind==="revolver") return makeRevolver().root;
   if(kind==="pepsi") return can("PEPSI");
   if(kind==="yoohoo") return can("YOO-HOO");
+  if(kind==="monster") return can("MONSTER");
+  if(kind==="rat-meat") return can("RAT MEAT");
   if(kind==="biplane") return biplane();
   if(kind==="penguin") return penguin();
   if(kind==="bongo") return bongo();

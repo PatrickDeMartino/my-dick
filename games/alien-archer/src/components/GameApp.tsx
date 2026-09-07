@@ -5,6 +5,17 @@ import { CHARACTERS, CHARACTER_LIST, type AlienId, type AmmoCan } from "@/game/c
 import { Game } from "@/game/engine";
 
 let pageGame: Game | null = null;
+const PLAYER_KEY = "triptotropic.player.v1";
+
+function rememberPlayer(id: AlienId) {
+  try { localStorage.setItem(PLAYER_KEY, id); } catch { /* storage is optional */ }
+}
+
+function enterWorld(game: Game, id: AlienId) {
+  document.documentElement.dataset.urfPhase = "playing";
+  game.start();
+  game.play(id);
+}
 
 export function GameApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,7 +35,30 @@ export function GameApp() {
         game.start();
       }
       gameRef.current = game;
+      try {
+        const saved = localStorage.getItem(PLAYER_KEY) as AlienId | null;
+        if (saved && CHARACTER_LIST.includes(saved)) {
+          applyCharacter(saved);
+          game.setCharacter(saved);
+        }
+      } catch { /* storage is optional */ }
       setBooting(false);
+      const launch = (event: Event) => {
+        const target = event.target as Element | null;
+        if (!target?.closest("[data-urf-start]")) return;
+        event.preventDefault();
+        const liveGame = gameRef.current ?? pageGame;
+        if (liveGame) {
+          enterWorld(liveGame, useGameStore.getState().character);
+        }
+      };
+      document.addEventListener("pointerup", launch, true);
+      window.setTimeout(() => {
+        const liveGame = gameRef.current ?? pageGame;
+        if (liveGame && useGameStore.getState().phase === "attract") {
+          enterWorld(liveGame, useGameStore.getState().character);
+        }
+      }, 1600);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Failed to open the rift");
       setBooting(false);
@@ -59,14 +93,13 @@ export function GameApp() {
 
 function Overlay({ gameRef }: { gameRef: RefObject<Game | null> }) {
   const phase = useGameStore((s) => s.phase);
-  const ready = useGameStore((s) => s.ready);
   const togglePause = () => gameRef.current?.pauseToggle();
 
   return (
     <div className="pointer-events-none absolute inset-0 z-10">
       {phase !== "attract" && <Hud />}
       {phase === "playing" && <PlayingChrome onPause={togglePause} />}
-      {phase === "attract" && <TitleScreen gameRef={gameRef} ready={ready} />}
+      {phase === "attract" && <TitleScreen gameRef={gameRef} />}
       {phase === "paused" && <PauseScreen onResume={togglePause} onRestart={() => gameRef.current?.play()} gameRef={gameRef} />}
       {phase === "dead" && <DeadScreen onRestart={() => gameRef.current?.play()} />}
       {phase === "playing" && <MobileControls gameRef={gameRef} />}
@@ -74,12 +107,13 @@ function Overlay({ gameRef }: { gameRef: RefObject<Game | null> }) {
   );
 }
 
-function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; ready: boolean }) {
+function TitleScreen({ gameRef }: { gameRef: RefObject<Game | null> }) {
   const high = useGameStore((s) => s.highScore);
   const selected = useGameStore((s) => s.character);
   const ammoCan = useGameStore((s) => s.ammoCan);
   const pick = (id: AlienId) => {
     applyCharacter(id);
+    rememberPlayer(id);
     (gameRef.current ?? pageGame)?.setCharacter(id);
   };
   const raid = () => {
@@ -93,11 +127,12 @@ function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; read
         game.start();
       }
     }
-    game?.play(selected);
+    if (!game) return;
+    enterWorld(game, selected);
   };
 
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-between bg-gradient-to-t from-void-deep/85 via-transparent to-void-deep/45 px-4 py-6 sm:px-6 sm:py-8">
+    <div data-urf-title className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-between bg-gradient-to-t from-void-deep/85 via-transparent to-void-deep/45 px-4 py-6 sm:px-6 sm:py-8">
       <div className="w-full max-w-3xl text-center">
         <p className="font-display text-[11px] tracking-[0.38em] text-magenta">VOID RAID</p>
         <h1 className="mt-1 font-display text-4xl leading-none tracking-wide text-fg text-balance drop-shadow-[0_4px_24px_rgba(8,0,20,0.85)] sm:text-6xl">
@@ -127,9 +162,10 @@ function TitleScreen({ gameRef, ready }: { gameRef: RefObject<Game | null>; read
           )}
           <button
             type="button"
+            data-urf-start
+            onPointerDown={(event) => { event.preventDefault(); raid(); }}
             onClick={raid}
-            disabled={!ready}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-lime text-void-deep font-display text-sm tracking-[0.22em] transition-transform duration-150 hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-lime text-void-deep font-display text-sm tracking-[0.22em] transition-transform duration-150 hover:brightness-110 active:scale-[0.98]"
           >
             <Play className="size-4" strokeWidth={2.4} />
             RAID THE ISLES

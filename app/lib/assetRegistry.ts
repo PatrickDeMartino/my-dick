@@ -8,7 +8,7 @@ export type SiteAsset = {
   source: string;
   character?: "zix" | "pip" | "vex" | "pongo";
   prop?: "rat-meat" | "rat-meat-gold" | "yoohoo" | "banana" | "oil-drum" | "penguin";
-  sandbox?: "vehicle" | "jetpack" | "ak47" | "revolver" | "bow" | "arrow" | "pepsi" | "yoohoo" | "biplane" | "penguin" | "bongo";
+  sandbox?: "vehicle" | "jetpack" | "ak47" | "revolver" | "bow" | "arrow" | "pepsi" | "yoohoo" | "monster" | "rat-meat" | "biplane" | "penguin" | "bongo";
   scale?: number;
 };
 
@@ -26,6 +26,7 @@ export const SITE_ASSETS: SiteAsset[] = [
   { id:"rat-meat-gold", label:"Gold Rat Meat", category:"COLLECTIBLES", builder:"shared-prop", prop:"rat-meat-gold", source:"Site Economy" },
   { id:"yoohoo", label:"Yoo-hoo", category:"COLLECTIBLES", builder:"shared-prop", prop:"yoohoo", source:"Yoo-hoo Room" },
   { id:"pepsi", label:"Pepsi Ammo", category:"COLLECTIBLES", builder:"sandbox", sandbox:"pepsi", source:"Alien Game" },
+  { id:"monster", label:"Monster Can", category:"COLLECTIBLES", builder:"sandbox", sandbox:"monster", source:"Alien Game" },
   { id:"banana", label:"Banana", category:"COLLECTIBLES", builder:"shared-prop", prop:"banana", source:"Bongo Lab" },
   { id:"revolver", label:"Revolver", category:"WEAPONS", builder:"sandbox", sandbox:"revolver", source:"Alien Game", scale:1.4 },
   { id:"ak47", label:"AK-47", category:"WEAPONS", builder:"sandbox", sandbox:"ak47", source:"Alien Game", scale:1.25 },
