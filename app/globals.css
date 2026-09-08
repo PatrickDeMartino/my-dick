@@ -1072,6 +1072,109 @@ button, input { font: inherit; }
   .brain-room__dpad { bottom:14px; left:12px; }
 }
 
+/* The real 3D Brain Room — replaces the old CSS-perspective illusion above
+ * (kept for other pages that still reference the .brain-room__* classes)
+ * with an actual Three.js playable interior. */
+.brain-room3d { position: relative; width: 100%; height: 100svh; overflow: hidden; background: #0a0209; isolation: isolate; }
+.brain-room3d__stage { position: absolute; inset: 0; }
+.brain-room3d__canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.brain-room3d__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffc1dd;
+  font: 900 12px/1 var(--font-geist-mono);
+  letter-spacing: .18em;
+  background: radial-gradient(circle at 50% 50%, #2a0a1e, #0a0209);
+}
+.brain-room3d__characters {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(18, 4, 21, .78);
+  border: 1px solid rgba(255, 194, 218, .35);
+  backdrop-filter: blur(12px);
+}
+.brain-room3d__characters button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #e8cbdc;
+  background: transparent;
+  font: 800 8px/1 var(--font-geist-mono);
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+.brain-room3d__characters button span { font-size: 16px; }
+.brain-room3d__characters button[aria-pressed="true"] {
+  color: #1b1025;
+  background: #ffe468;
+  border-color: #ffe468;
+}
+.brain-room3d__stick {
+  position: absolute;
+  z-index: 20;
+  left: 24px;
+  bottom: 96px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 194, 218, .4);
+  background: radial-gradient(circle, rgba(80, 20, 60, .55), rgba(10, 2, 9, .5));
+  touch-action: none;
+}
+.brain-room3d__stick i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  background: rgba(255, 194, 218, .8);
+  box-shadow: 0 0 14px rgba(255, 133, 199, .6);
+  transition: transform .05s linear;
+}
+.brain-room3d__interact {
+  position: absolute;
+  z-index: 20;
+  right: 24px;
+  bottom: 96px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 232, 118, .7);
+  color: #1b1025;
+  background: #ffe468;
+  font: 900 9px/1 var(--font-geist-mono);
+  letter-spacing: .06em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+.brain-room3d__interact:disabled {
+  color: #cbb9c6;
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .2);
+  cursor: default;
+}
+@media (max-width: 700px) {
+  .brain-room3d__characters { gap: 4px; padding: 6px; bottom: 14px; }
+  .brain-room3d__characters button { padding: 7px 8px; }
+  .brain-room3d__characters button span { font-size: 14px; }
+  .brain-room3d__stick { left: 14px; bottom: 84px; width: 72px; height: 72px; }
+  .brain-room3d__interact { right: 14px; bottom: 84px; width: 62px; height: 62px; }
+}
+
 .choice-object {
   --portal-glow: rgba(177, 70, 255, .86);
   position: absolute;
