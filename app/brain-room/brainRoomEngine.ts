@@ -437,6 +437,85 @@ function buildCow(THREE: typeof THREE_NS): THREE_NS.Group {
   return group;
 }
 
+/** A small pink pig — round body, flat disc snout, curly wire tail. */
+function buildPig(THREE: typeof THREE_NS): THREE_NS.Group {
+  const skin = new THREE.MeshStandardMaterial({ color: 0xf0acb0, roughness: 0.7 });
+  const snoutMat = new THREE.MeshStandardMaterial({ color: 0xe38a91, roughness: 0.6 });
+  const hoof = new THREE.MeshStandardMaterial({ color: 0x4a3a3a, roughness: 0.6 });
+
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), skin);
+  body.scale.set(1, 0.82, 1.25);
+  body.position.y = 0.5;
+  group.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), skin);
+  head.position.set(0, 0.55, 0.55);
+  group.add(head);
+  const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 12), snoutMat);
+  snout.rotation.x = Math.PI / 2;
+  snout.position.set(0, 0.5, 0.76);
+  group.add(snout);
+  [-1, 1].forEach((side) => {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.14, 6), skin);
+    ear.position.set(side * 0.13, 0.72, 0.55);
+    ear.rotation.z = side * 0.5;
+    ear.rotation.x = -0.3;
+    group.add(ear);
+  });
+  [-1, 1].forEach((sx) =>
+    [-1, 1].forEach((sz) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.32, 8), skin);
+      leg.position.set(sx * 0.24, 0.16, sz * 0.38);
+      group.add(leg);
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.05, 8), hoof);
+      foot.position.set(sx * 0.24, 0.01, sz * 0.38);
+      group.add(foot);
+    }),
+  );
+  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 10, Math.PI * 1.5), skin);
+  tail.position.set(0, 0.6, -0.62);
+  tail.rotation.y = Math.PI / 2;
+  group.add(tail);
+  return group;
+}
+
+/** A woolly sheep — a cluster of puffy spheres for the fleece over a black
+ * face and legs, so it reads distinctly from the cow/pig's smooth hides. */
+function buildSheep(THREE: typeof THREE_NS): THREE_NS.Group {
+  const wool = new THREE.MeshStandardMaterial({ color: 0xf5f2e8, roughness: 0.98 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2b2622, roughness: 0.7 });
+
+  const group = new THREE.Group();
+  const puffSpots: [number, number, number, number][] = [
+    [0, 0.58, 0, 0.3], [-0.22, 0.55, 0.15, 0.22], [0.22, 0.55, 0.15, 0.22],
+    [-0.2, 0.55, -0.25, 0.22], [0.2, 0.55, -0.25, 0.22], [0, 0.68, -0.1, 0.24],
+    [0, 0.5, 0.35, 0.2],
+  ];
+  puffSpots.forEach(([x, y, z, r]) => {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), wool);
+    puff.position.set(x, y, z);
+    group.add(puff);
+  });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), dark);
+  head.position.set(0, 0.56, 0.52);
+  head.scale.set(0.85, 0.9, 1);
+  group.add(head);
+  [-1, 1].forEach((side) => {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), dark);
+    ear.scale.set(1.6, 0.6, 0.8);
+    ear.position.set(side * 0.16, 0.58, 0.42);
+    group.add(ear);
+  });
+  [-1, 1].forEach((sx) =>
+    [-1, 1].forEach((sz) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.36, 8), dark);
+      leg.position.set(sx * 0.2, 0.18, sz * 0.32);
+      group.add(leg);
+    }),
+  );
+  return group;
+}
+
 export async function createBrainRoom(
   canvas: HTMLCanvasElement,
   events: BrainRoomEvents,
@@ -635,13 +714,17 @@ export async function createBrainRoom(
   field.rotation.x = -Math.PI / 2;
   exterior.add(field);
 
-  const cowSpots: [number, number][] = [[4, -6], [-6, -3], [7, 3], [-3, 8], [2, -12]];
-  cowSpots.forEach(([x, z]) => {
-    const cow = buildCow(THREE);
-    cow.position.set(x, 0, z);
-    cow.rotation.y = Math.random() * Math.PI * 2;
-    exterior.add(cow);
-  });
+  const spawnField = (builder: (t: typeof THREE_NS) => THREE_NS.Group, spots: [number, number][]) => {
+    spots.forEach(([x, z]) => {
+      const animal = builder(THREE);
+      animal.position.set(x, 0, z);
+      animal.rotation.y = Math.random() * Math.PI * 2;
+      exterior.add(animal);
+    });
+  };
+  spawnField(buildCow, [[4, -6], [-6, -3], [7, 3], [-3, 8], [2, -12]]);
+  spawnField(buildPig, [[-2, -5], [5, 6], [-8, 2]]);
+  spawnField(buildSheep, [[9, -2], [-4, 4], [1, 9], [-9, -7]]);
 
   // A glowing return portal back to the brain room.
   const portalMat = new THREE.MeshStandardMaterial({
