@@ -137,11 +137,11 @@ function buildBanana(THREE: Three) {
 
   // A curved banana swept along an arc.
   const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.44, -0.1, 0),
-    new THREE.Vector3(-0.24, 0.08, 0),
-    new THREE.Vector3(0.04, 0.14, 0),
-    new THREE.Vector3(0.3, 0.04, 0),
-    new THREE.Vector3(0.46, -0.12, 0),
+    new THREE.Vector3(-0.34, -0.16, 0),
+    new THREE.Vector3(-0.2, 0.12, 0),
+    new THREE.Vector3(0.04, 0.22, 0),
+    new THREE.Vector3(0.27, 0.06, 0),
+    new THREE.Vector3(0.35, -0.2, 0),
   ]);
   // A plain tube reads as a croissant, so the rings are tapered toward both
   // ends by hand — fat in the middle, pinched at the stem and the nub.
@@ -299,7 +299,7 @@ export const PROP_POSE: Record<PropName, { scale: number; tilt: number; spin: nu
   "rat-meat": { scale: 1, tilt: 0.24, spin: 0.5, mode: "spin" },
   "rat-meat-gold": { scale: 1, tilt: 0.24, spin: 0.62, mode: "spin" },
   yoohoo: { scale: 1, tilt: 0.24, spin: 0.5, mode: "spin" },
-  banana: { scale: 1.28, tilt: 0.22, spin: 0.65, mode: "spin" },
+  banana: { scale: 1.05, tilt: 0.3, spin: 0.65, mode: "spin" },
   "oil-drum": { scale: 0.98, tilt: 0.22, spin: 0.45, mode: "spin" },
   penguin: { scale: 1.06, tilt: 0.1, spin: 0.9, mode: "sway" },
 };

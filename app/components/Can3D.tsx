@@ -3,11 +3,10 @@
 import { useEffect, useRef } from "react";
 import type * as THREE from "three";
 
-export type CanKind = "rat-meat" | "rat-meat-silver" | "rat-meat-gold" | "yoohoo";
+export type CanKind = "rat-meat" | "rat-meat-gold" | "yoohoo";
 
 const LABEL: Record<CanKind, string> = {
   "rat-meat": "/media/rat-meat-label.jpg",
-  "rat-meat-silver": "/media/rat-meat-silver-label.jpg",
   "rat-meat-gold": "/media/rat-meat-gold-label.jpg",
   yoohoo: "/media/yoohoo-label.png",
 };
@@ -17,14 +16,12 @@ const LABEL: Record<CanKind, string> = {
 // and only swap the label texture.
 const MODEL: Record<CanKind, string> = {
   "rat-meat": "/models/urf-can-ratmeat.glb",
-  "rat-meat-silver": "/models/urf-can-ratmeat.glb",
   "rat-meat-gold": "/models/urf-can-ratmeat.glb",
   yoohoo: "/models/urf-can-yoohoo.glb",
 };
 
 const METAL_TINT: Record<CanKind, number> = {
   "rat-meat": 0xc3ccce,
-  "rat-meat-silver": 0xe3e7e8,
   "rat-meat-gold": 0xe0b84a,
   yoohoo: 0xd8dee4,
 };
@@ -74,9 +71,8 @@ export function Can3D({ kind = "rat-meat", size = 40 }: { kind?: CanKind; size?:
       scene.add(rim);
 
       const canGroup = new THREE.Group();
-      canGroup.rotation.z = (Math.random() - 0.5) * 0.34;
-      canGroup.rotation.x = (Math.random() - 0.5) * 0.2;
-      canGroup.rotation.y = Math.random() * Math.PI * 2;
+      canGroup.rotation.z = 0.1;
+      canGroup.rotation.y = 0.6;
       scene.add(canGroup);
 
       const label = new THREE.TextureLoader().load(LABEL[kind]);
@@ -130,41 +126,9 @@ export function Can3D({ kind = "rat-meat", size = 40 }: { kind?: CanKind; size?:
       });
 
       let localRaf = 0;
-      let spin = 0.012;
-      let tumble = 0;
-      let dragging = false;
-      let lastX = 0;
-      let lastY = 0;
-      const onDown = (event: PointerEvent) => {
-        dragging = true;
-        lastX = event.clientX;
-        lastY = event.clientY;
-        renderer.domElement.setPointerCapture(event.pointerId);
-      };
-      const onMove = (event: PointerEvent) => {
-        if (!dragging) return;
-        spin = (event.clientX - lastX) * 0.018;
-        tumble = (event.clientY - lastY) * 0.012;
-        lastX = event.clientX;
-        lastY = event.clientY;
-      };
-      const onUp = () => { dragging = false; };
-      renderer.domElement.style.cursor = "grab";
-      renderer.domElement.style.touchAction = "none";
-      renderer.domElement.addEventListener("pointerdown", onDown);
-      renderer.domElement.addEventListener("pointermove", onMove);
-      renderer.domElement.addEventListener("pointerup", onUp);
-      renderer.domElement.addEventListener("pointercancel", onUp);
       function animate() {
         localRaf = requestAnimationFrame(animate);
-        if (!reduceMotion) {
-          canGroup.rotation.y += spin;
-          canGroup.rotation.x += tumble;
-          if (!dragging) {
-            spin += (0.012 - spin) * 0.025;
-            tumble *= 0.94;
-          }
-        }
+        if (!reduceMotion) canGroup.rotation.y += 0.012;
         renderer.render(scene, camera);
       }
       animate();
@@ -184,10 +148,6 @@ export function Can3D({ kind = "rat-meat", size = 40 }: { kind?: CanKind; size?:
       cleanup = () => {
         resizeObserver.disconnect();
         cancelAnimationFrame(localRaf);
-        renderer.domElement.removeEventListener("pointerdown", onDown);
-        renderer.domElement.removeEventListener("pointermove", onMove);
-        renderer.domElement.removeEventListener("pointerup", onUp);
-        renderer.domElement.removeEventListener("pointercancel", onUp);
         renderer.dispose();
         disposables.forEach((d) => d.dispose());
         if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);

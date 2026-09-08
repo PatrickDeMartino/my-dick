@@ -298,7 +298,6 @@ export default function PenguinTownScreen() {
           <button type="button" onClick={onBack} aria-label="Return to world map">←</button>
           <div><small>ANTARCTIC COASTAL DISTRICT · DRAG TO LEAN THE CAMERA</small><h1>PENGUIN TOWN <em>V2</em></h1></div>
         </header>
-        <p className="town-flight-hint">CLICK A PENGUIN · WASD WALK · F BOARD / EXIT BIPLANE · SPACE UP · SHIFT DOWN</p>
 
         <aside className="town-district-status" aria-label="Town status" onPointerDown={(event) => event.stopPropagation()}>
           <span><i /> 7 SHADY LANDMARKS</span>

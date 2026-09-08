@@ -3,52 +3,62 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import HomeGlobe from "./components/HomeGlobe";
-import HomeRoom3D, { setHomeSpatial, spawnHomeCan } from "./components/HomeRoom3D";
 
 const smokePuffs = Array.from({ length: 7 }, (_, index) => index);
-type HomeObject = "globe" | "brain" | "camera";
-type Spatial = { x:number; y:number; z:number; scale:number };
-const HOME_DEFAULTS: Record<HomeObject,Spatial> = { globe:{x:0,y:0,z:0,scale:1}, brain:{x:0,y:0,z:0,scale:1}, camera:{x:0,y:.2,z:0,scale:1} };
 
 export default function LandingPage() {
-  const [homeEditTarget,setHomeEditTarget] = useState<HomeObject>("brain");
-  const [homeSpatial,setHomeSpatialState] = useState(HOME_DEFAULTS);
-  const [toolsOpen,setToolsOpen] = useState(true);
-  const [cubeOpen,setCubeOpen] = useState(false);
+  const [showUrf, setShowUrf] = useState(false);
 
-  useEffect(()=>{ setHomeSpatial("brain",homeSpatial.brain); },[homeSpatial.brain]);
-  useEffect(()=>{ setHomeSpatial("camera",homeSpatial.camera); },[homeSpatial.camera]);
-  const updateSpatial=(key:keyof Spatial,value:number)=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...current[homeEditTarget],[key]:value}}));
-  const globeTransform=homeSpatial.globe;
+  useEffect(() => {
+    const closeUrf = () => setShowUrf(false);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeUrf();
+    };
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin === window.location.origin && event.data === "trip-close-urf") closeUrf();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("message", handleMessage);
+    if (showUrf) document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("message", handleMessage);
+      document.body.style.overflow = "";
+    };
+  }, [showUrf]);
 
   return (
     <main className="choice-landing" aria-label="Choose where your journey begins">
-      <HomeRoom3D />
       <div className="choice-world-stage" aria-label="Choose between Planet Urf and Dr. Bongo">
         <button
           className="choice-object choice-object-earth"
           type="button"
           data-portal="earth"
-          aria-label="Enter Planet Urf"
-          onClick={() => window.location.assign("/urf-3d")}
-          style={{ transform:`translate3d(calc(-6.505% + ${globeTransform.x*90+2.9}px),${-globeTransform.y*78}px,0) scale(${globeTransform.scale*(1+globeTransform.z*.18)})` }}
+          aria-label="Open the Planet Urf world selector"
+          aria-haspopup="dialog"
+          onClick={() => setShowUrf(true)}
         >
           <span className="choice-object-visual choice-object-visual--globe" aria-hidden="true">
-            <HomeGlobe onActivate={() => window.location.assign("/urf-3d")} />
+            <HomeGlobe onActivate={() => setShowUrf(true)} />
           </span>
           <span className="choice-smoke" aria-hidden="true">
             {smokePuffs.map((puff) => <i key={puff} />)}
           </span>
           <span className="choice-object-label">
             <strong>Planet Urf</strong>
+            <small>reality phisico</small>
           </span>
         </button>
 
-        <div
+        <a
           className="choice-object choice-object-brain"
+          href="/brain-room"
           data-portal="brain"
-          aria-hidden="true"
+          aria-label="Open Dr. Bongo"
         >
+          <span className="choice-object-visual" aria-hidden="true" />
           <span className="choice-smoke" aria-hidden="true">
             {smokePuffs.map((puff) => <i key={puff} />)}
           </span>
@@ -56,29 +66,9 @@ export default function LandingPage() {
             <strong>that fucking other thing</strong>
             <small>Enter the unknown</small>
           </span>
-        </div>
+        </a>
       </div>
       <div className="choice-vignette" aria-hidden="true" />
-
-      {toolsOpen ? <div className="home-room-tools" aria-label="Spawn an interactive can">
-        <button type="button" className="menu-close" aria-label="Collapse spawn menu" onClick={()=>setToolsOpen(false)}>×</button>
-        <button type="button" onClick={() => spawnHomeCan("YOOHOO")}>YOOHOO</button>
-        <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
-        <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
-        <button type="button" onClick={() => spawnHomeCan("RAT MEAT")}>RAT MEAT</button>
-        <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
-        <button type="button" className="is-cube" aria-expanded={cubeOpen} onClick={()=>setCubeOpen(value=>!value)}>⬛ CUBE</button>
-      </div> : <button type="button" className="home-menu-reopen" onClick={()=>setToolsOpen(true)} aria-label="Open spawn menu">＋</button>}
-      {cubeOpen && <aside className="home-cube-menu" aria-label="Home room spatial controls">
-        <button type="button" className="menu-close" aria-label="Collapse cube controls" onClick={()=>setCubeOpen(false)}>×</button>
-        <header><b>⬛ CUBE</b><small>{homeEditTarget === "camera" ? "ORBIT · PAN · ZOOM" : homeEditTarget === "globe" ? "OBJECT SPACE" : "XYZ SPACE"}</small></header>
-        <div className="home-cube-menu__targets">
-          {(["brain","globe","camera"] as HomeObject[]).map(target=><button type="button" key={target} className={homeEditTarget===target?"is-active":""} onClick={()=>setHomeEditTarget(target)}>{target.toUpperCase()}</button>)}
-        </div>
-        {(["x","y","z","scale"] as (keyof Spatial)[]).map(axis=><label key={axis}><span>{homeEditTarget==="camera"?({x:"YAW",y:"PITCH",z:"ROLL",scale:"ZOOM"} as const)[axis]:axis==="scale"?"SIZE":axis.toUpperCase()}</span><input type="range" min={axis==="scale"?.55:homeEditTarget==="camera"&&axis==="y"?-1.1:-3.14} max={axis==="scale"?2.2:homeEditTarget==="camera"&&axis==="y"?1.1:3.14} step={axis==="scale"?.05:.05} value={homeSpatial[homeEditTarget][axis]} onChange={event=>updateSpatial(axis,Number(event.target.value))}/><b>{homeSpatial[homeEditTarget][axis].toFixed(2)}</b></label>)}
-        <button type="button" className="home-cube-menu__reset" onClick={()=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...HOME_DEFAULTS[homeEditTarget]}}))}>RESET {homeEditTarget.toUpperCase()}</button>
-      </aside>}
-      <p className="home-camera-hint">DRAG ROTATE · RIGHT-DRAG PAN · SCROLL ZOOM · PONGO: WASD + SPACE</p>
 
       <a
         className="choice-kicker"
@@ -96,6 +86,12 @@ export default function LandingPage() {
         <span className="guide-orb__face" aria-hidden="true">👽</span>
         <span className="guide-orb__label">ship&apos;s chart</span>
       </Link>
+
+      {showUrf && (
+        <section className="urf-modal-shell" role="dialog" aria-modal="true" aria-label="Planet Urf territory selector">
+          <iframe className="urf-modal-frame" src="/urf-3d" title="Planet Urf territory selector" />
+        </section>
+      )}
     </main>
   );
 }

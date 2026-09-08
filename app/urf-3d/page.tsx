@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import WorldGate from "./WorldGate";
+import WorldSelect from "./WorldSelect";
 
 export const metadata: Metadata = {
   title: "Planet Urf | Triptotropic",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Urf3DPage() {
-  return <WorldGate />;
+  return <WorldSelect />;
 }
