@@ -1,4 +1,4 @@
-CREATE TABLE `hex_claims` (
+CREATE TABLE IF NOT EXISTS `hex_claims` (
 	`id` text PRIMARY KEY NOT NULL,
 	`board_id` text NOT NULL,
 	`q` integer NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE `hex_claims` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `profiles` (
+CREATE TABLE IF NOT EXISTS `profiles` (
 	`id` text PRIMARY KEY NOT NULL,
 	`platform` text NOT NULL,
 	`handle` text NOT NULL,
