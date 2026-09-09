@@ -1113,6 +1113,9 @@ export default function PenguinTownScene3D({
     }
 
     let selectedPenguin: number | null = null;
+    let flyingPenguin: number | null = null;
+    const flightPlanePosition = new THREE.Vector3();
+    let flightHeading = 0;
     const selectRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.38, 0.045, 10, 32),
       new THREE.MeshBasicMaterial({ color: 0x69f8ff, transparent: true, opacity: 0.92 }),
@@ -1136,6 +1139,33 @@ export default function PenguinTownScene3D({
       if (penguin.mode === "walk" || penguin.mode === "idle") penguin.mode = "selected";
       selectRing.visible = true;
     }
+    const penguinKeys = new Set<string>();
+    const onPenguinKeyDown = (event: KeyboardEvent) => {
+      if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","ShiftLeft","ShiftRight","KeyF"].includes(event.code) && selectedPenguin !== null) event.preventDefault();
+      penguinKeys.add(event.code);
+      if (event.code === "KeyF" && !event.repeat && selectedPenguin !== null) {
+        const plane = buildingGroups.get("plane");
+        const penguin = penguins[selectedPenguin];
+        if (plane?.visible && penguin) {
+          if (flyingPenguin === selectedPenguin) {
+            flyingPenguin = null;
+            penguin.group.position.set(flightPlanePosition.x + 1.2, ISLAND_HEIGHT + .05, flightPlanePosition.z);
+          } else {
+            flyingPenguin = selectedPenguin;
+            flightPlanePosition.copy(plane.position);
+            flightPlanePosition.y = Math.max(ISLAND_HEIGHT + 1.1, flightPlanePosition.y);
+            flightHeading = plane.rotation.y;
+          }
+        }
+      }
+      if (event.code === "Space" && selectedPenguin !== null && flyingPenguin === null) {
+        const penguin = penguins[selectedPenguin];
+        if (penguin && penguin.mode === "selected" && penguin.group.position.y <= ISLAND_HEIGHT + .08) penguin.velocity.y = 5.8;
+      }
+    };
+    const onPenguinKeyUp = (event: KeyboardEvent) => penguinKeys.delete(event.code);
+    window.addEventListener("keydown", onPenguinKeyDown);
+    window.addEventListener("keyup", onPenguinKeyUp);
 
     // ---------------- Backdrop: distant mainland Antarctica ----------------
     // A close ring of real 3D peaks reads as solid geometry near the camera;
@@ -1296,6 +1326,11 @@ export default function PenguinTownScene3D({
     }
 
     let pointerDownAt: { x: number; y: number; time: number } | null = null;
+    let grabbedPenguin: number | null = null;
+    const grabPlane = new THREE.Plane();
+    const grabHit = new THREE.Vector3();
+    const grabNormal = new THREE.Vector3();
+    let lastGrab = { point: new THREE.Vector3(), time: 0 };
 
     function onPointerDown(event: PointerEvent) {
       pointerDownAt = { x: event.clientX, y: event.clientY, time: performance.now() };
@@ -1305,6 +1340,19 @@ export default function PenguinTownScene3D({
       // through to whatever's visually underneath at that screen position —
       // without this, tapping ROTATE could silently commit a placement.
       dom.setPointerCapture(event.pointerId);
+      if (!propsRef.current.placingBuildingId) {
+        setPointerFromEvent(event);
+        const penguinHits = raycaster.intersectObjects(penguinGroup.children, true);
+        const penguinIndex = penguinHits.length ? (penguinHits[0].object.userData.penguinIndex as number | undefined) : undefined;
+        if (typeof penguinIndex === "number") {
+          grabbedPenguin = penguinIndex;
+          selectPenguin(penguinIndex);
+          camera.getWorldDirection(grabNormal);
+          grabPlane.setFromNormalAndCoplanarPoint(grabNormal, penguins[penguinIndex].group.position);
+          lastGrab = { point: penguins[penguinIndex].group.position.clone(), time: performance.now() };
+          controls.enabled = false;
+        }
+      }
       if (propsRef.current.placingBuildingId) {
         // Placement mode: keep the camera still so a tap-to-place isn't
         // read as an orbit drag, and compute a preview immediately so a
@@ -1315,10 +1363,32 @@ export default function PenguinTownScene3D({
     }
 
     function onPointerMove(event: PointerEvent) {
+      if (grabbedPenguin !== null) {
+        setPointerFromEvent(event);
+        const penguin = penguins[grabbedPenguin];
+        if (penguin && raycaster.ray.intersectPlane(grabPlane, grabHit)) {
+          const now = performance.now();
+          const dt = Math.max(.008, (now - lastGrab.time) / 1000);
+          penguin.velocity.copy(grabHit).sub(lastGrab.point).divideScalar(dt).multiplyScalar(.7);
+          penguin.group.position.copy(grabHit);
+          penguin.group.position.y = Math.max(ISLAND_HEIGHT + .15, penguin.group.position.y);
+          penguin.mode = "selected";
+          lastGrab = { point: grabHit.clone(), time: now };
+        }
+        return;
+      }
       if (propsRef.current.placingBuildingId) updatePlacementPreview(event);
     }
 
     function onPointerUp(event: PointerEvent) {
+      if (grabbedPenguin !== null) {
+        const penguin = penguins[grabbedPenguin];
+        if (penguin) { penguin.mode = "ragdoll"; penguin.spin.set(Math.random()-.5,Math.random()-.5,Math.random()-.5); }
+        grabbedPenguin = null;
+        controls.enabled = true;
+        pointerDownAt = null;
+        return;
+      }
       const placingId = propsRef.current.placingBuildingId;
       const downAt = pointerDownAt;
       pointerDownAt = null;
@@ -1391,9 +1461,24 @@ export default function PenguinTownScene3D({
       const SWIM_SPEED = 1.3;
       for (const penguin of penguins) {
         const { group } = penguin;
+        if (flyingPenguin !== null && penguin === penguins[flyingPenguin]) continue;
         if (penguin.mode === "selected") {
-          group.rotation.z = Math.sin(elapsed * 3 + penguin.hopPhase) * .055;
-          group.position.y = ISLAND_HEIGHT + 0.05;
+          let mx = 0, mz = 0;
+          if (penguinKeys.has("KeyA") || penguinKeys.has("ArrowLeft")) mx -= 1;
+          if (penguinKeys.has("KeyD") || penguinKeys.has("ArrowRight")) mx += 1;
+          if (penguinKeys.has("KeyW") || penguinKeys.has("ArrowUp")) mz -= 1;
+          if (penguinKeys.has("KeyS") || penguinKeys.has("ArrowDown")) mz += 1;
+          const movement = Math.hypot(mx, mz);
+          if (movement > 0) {
+            mx /= movement; mz /= movement;
+            group.position.x = THREE.MathUtils.clamp(group.position.x + mx * frameDeltaSec * 2.6, -9.7, 9.7);
+            group.position.z = THREE.MathUtils.clamp(group.position.z + mz * frameDeltaSec * 2.6, -9.7, 9.7);
+            penguin.facing = Math.atan2(mx, mz); group.rotation.y = penguin.facing;
+          }
+          penguin.velocity.y -= 14 * frameDeltaSec;
+          group.position.y += penguin.velocity.y * frameDeltaSec;
+          if (group.position.y <= ISLAND_HEIGHT + .05) { group.position.y = ISLAND_HEIGHT + .05; penguin.velocity.y = 0; }
+          group.rotation.z = Math.sin(elapsed * 7 + penguin.hopPhase) * (movement ? .13 : .055);
           group.scale.set(1, 1, 1);
         } else if (penguin.mode === "idle" || penguin.mode === "walk") {
           penguin.timer -= frameDeltaSec;
@@ -1630,6 +1715,27 @@ export default function PenguinTownScene3D({
         group.scale.setScalar(isSelected ? 1.06 : 1);
       }
 
+      if (flyingPenguin !== null) {
+        const plane = buildingGroups.get("plane");
+        const pilot = penguins[flyingPenguin];
+        if (plane?.visible && pilot) {
+          const turning = (penguinKeys.has("KeyA") || penguinKeys.has("ArrowLeft") ? 1 : 0) - (penguinKeys.has("KeyD") || penguinKeys.has("ArrowRight") ? 1 : 0);
+          const throttle = (penguinKeys.has("KeyW") || penguinKeys.has("ArrowUp") ? 1 : 0) - (penguinKeys.has("KeyS") || penguinKeys.has("ArrowDown") ? 1 : 0);
+          flightHeading += turning * frameDeltaSec * 1.35;
+          flightPlanePosition.x -= Math.sin(flightHeading) * throttle * frameDeltaSec * 5.4;
+          flightPlanePosition.z -= Math.cos(flightHeading) * throttle * frameDeltaSec * 5.4;
+          if (penguinKeys.has("Space")) flightPlanePosition.y += frameDeltaSec * 2.8;
+          if (penguinKeys.has("ShiftLeft") || penguinKeys.has("ShiftRight")) flightPlanePosition.y -= frameDeltaSec * 2.8;
+          flightPlanePosition.y = THREE.MathUtils.clamp(flightPlanePosition.y, ISLAND_HEIGHT + .75, 8.5);
+          plane.position.copy(flightPlanePosition);
+          plane.rotation.y = flightHeading;
+          plane.rotation.z = -turning * .22;
+          pilot.group.position.copy(flightPlanePosition).add(new THREE.Vector3(0, .52, .05).applyAxisAngle(new THREE.Vector3(0,1,0), flightHeading));
+          pilot.group.rotation.set(0, flightHeading, 0);
+          selectRing.visible = false;
+        }
+      }
+
       controls.update();
       renderer.render(scene, camera);
     }
@@ -1650,6 +1756,8 @@ export default function PenguinTownScene3D({
       dom.removeEventListener("pointerdown", onPointerDown);
       dom.removeEventListener("pointermove", onPointerMove);
       dom.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("keydown", onPenguinKeyDown);
+      window.removeEventListener("keyup", onPenguinKeyUp);
       controls.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {

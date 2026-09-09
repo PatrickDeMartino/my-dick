@@ -2,6 +2,7 @@
 import type * as THREE_NS from "three";
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { territoryFromLonLat } from "../lib/territories";
+import { createAlien as createSharedAlien } from "../../games/alien-archer/src/game/alien";
 
 declare global {
   interface Window {
@@ -44,6 +45,7 @@ export type LandFeature = {
 };
 
 export type Territory = { name: string; center: Point; unlocked: boolean };
+export type AlienType = "original" | "doop" | "zorp";
 
 /** Bolt-on satellite upgrades. "beacon-warm" recolors the existing beacon
  * instead of adding geometry, so it's handled specially wherever this is
@@ -52,7 +54,7 @@ export type SatellitePartId = "thrusters" | "big-dish" | "extra-panels" | "beaco
 
 /** The objects the Cube panel's position editor can nudge along X/Y/Z and
  * lock in place. "ufo" moves both saucers' shared orbit centre together. */
-export type EditTargetId = "globe" | "alien" | "satellite" | "ufo" | "moon";
+export type EditTargetId = "globe" | "land" | "ocean" | "platform" | "alien" | "satellite" | "ufo" | "moon";
 export type EditOffset = { x: number; y: number; z: number; locked: boolean };
 
 export type ShotResult = {
@@ -70,8 +72,11 @@ export type Globe3DEvents = {
 };
 
 export type Globe3DHandle = {
+  setActive: (active: boolean) => void;
+  setAlienType: (type: AlienType) => void;
+  setAimMode: (active: boolean) => void;
   setView: (rotation: { lon: number; lat: number; roll: number }, zoom: number) => void;
-  setSize: (size: number) => void;
+  setSize: (width: number, height: number) => void;
   setTerritories: (territories: Territory[]) => void;
   /** Screen-space aim point, normalised to -1..1 with +y up. */
   setAim: (x: number, y: number) => void;
@@ -95,6 +100,11 @@ export type Globe3DHandle = {
   setEditOffset: (target: EditTargetId, axis: "x" | "y" | "z", value: number) => void;
   setEditLock: (target: EditTargetId, locked: boolean) => void;
   getEditOffsets: () => Record<EditTargetId, EditOffset>;
+  setSelectedTarget: (target: EditTargetId) => void;
+  setPlatformScale: (scale: number) => void;
+  setPlatformYaw: (degrees: number) => void;
+  hopAlien: () => void;
+  ragdollAlien: () => void;
   /** Arms (or disarms, with null) a raise/lower terrain brush; painting
    * happens by aiming (setAim) and calling paintTerrain while armed. */
   setTerrainBrush: (mode: "raise" | "lower" | null) => void;
@@ -128,15 +138,15 @@ const PHYSICS_STEP = 1 / 240;
 const IMPACT_RADIUS = GLOBE_RADIUS + 0.012;
 const STUCK_LIFETIME = 5;
 
-const ALIEN_SCALE = 0.8;
+const ALIEN_SCALE = 0.56;
 const WALK_SPEED = 0.42;
 /** The walkable slab is tilted toward the camera, so walking "back" also
  * walks up the screen — an isometric read that keeps depth legible under an
  * orthographic camera. */
 const SLAB_RISE = 0.22;
 const SLAB_DEPTH = 0.5;
-const SLAB_RADIUS = 0.42;
-const WALK_LIMIT_X = 0.22;
+const SLAB_RADIUS = 0.68;
+const WALK_LIMIT_X = 0.48;
 
 const LAND_STOPS: { at: number; rgb: [number, number, number] }[] = [
   { at: 0, rgb: [0x18, 0x3f, 0x43] },
@@ -388,8 +398,12 @@ type AlienRig = {
   frontLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
   backLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
   bowArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
-  drawArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
+  gunArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
   bow: THREE_NS.Group;
+  quiver: THREE_NS.Group;
+  revolver: THREE_NS.Group;
+  ak47: THREE_NS.Group;
+  muzzle: THREE_NS.Object3D;
   stringUpper: THREE_NS.Mesh;
   stringLower: THREE_NS.Mesh;
   nockedArrow: THREE_NS.Group;
@@ -409,10 +423,12 @@ const BOW_REACH = 0.34;
  * Every joint is a group so the animation code can pose it: two-bone arms and
  * legs, a torso that twists and leans into the shot, and a head that tracks.
  */
-function buildAlien(THREE: typeof THREE_NS): AlienRig {
-  const skin = new THREE.MeshStandardMaterial({ color: 0x7fd93f, flatShading: true, roughness: 0.62, metalness: 0.04 });
-  const skinShade = new THREE.MeshStandardMaterial({ color: 0x5fb62c, flatShading: true, roughness: 0.7 });
-  const band = new THREE.MeshStandardMaterial({ color: 0x7a3fc9, flatShading: true, roughness: 0.5, metalness: 0.15 });
+function buildLegacyAlien(THREE: typeof THREE_NS): AlienRig {
+  // Match the playable Alien World rig: brighter greentall skin, faceted
+  // geometry, violet wraps and the same oversized shooter-style skull.
+  const skin = new THREE.MeshStandardMaterial({ color: 0x7cff3a, emissive:0x164a08, emissiveIntensity:.2, flatShading: true, roughness: 0.46, metalness: 0.04 });
+  const skinShade = new THREE.MeshStandardMaterial({ color: 0x3aaa1c, flatShading: true, roughness: 0.58 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x6b2d9b, emissive:0x4a1060, emissiveIntensity:.25, flatShading: true, roughness: 0.5, metalness: 0.15 });
   const eye = new THREE.MeshStandardMaterial({ color: 0x0a0610, roughness: 0.12, metalness: 0.5 });
   const wood = new THREE.MeshStandardMaterial({ color: 0x8a5730, flatShading: true, roughness: 0.78 });
   const cord = new THREE.MeshStandardMaterial({ color: 0xf0e6cf, roughness: 0.45 });
@@ -437,7 +453,7 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   // A wide archer stance: front leg planted forward, back leg braced.
   const buildLeg = (forward: number) => {
     const hip = new THREE.Group();
-    hip.position.set(forward * 0.055, 0.5, forward * 0.15);
+    hip.position.set(forward * 0.13, 0.5, forward * 0.04);
     body.add(hip);
 
     hip.add(bone(0.28, 0.058, 0.05, skin));
@@ -457,6 +473,12 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
     const foot = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.16), skinShade);
     foot.position.set(0, -0.27, 0.04);
     knee.add(foot);
+    [-1, 0, 1].forEach((toe) => {
+      const digit = new THREE.Mesh(new THREE.ConeGeometry(.012, .07, 5), skinShade);
+      digit.rotation.x = Math.PI / 2;
+      digit.position.set(toe * .025, -.27, .145);
+      knee.add(digit);
+    });
 
     return { hip, knee };
   };
@@ -496,19 +518,32 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   head.add(neck);
 
   // The classic teardrop cranium: wide and tall up top, tapering to a chin.
-  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 1), skin);
-  skull.scale.set(1.05, 1.34, 1.16);
+  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.145, 2), skin);
+  skull.scale.set(.98, 1.38, 1.14);
   skull.position.y = 0.13;
   head.add(skull);
 
-  const jaw = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.13, 6), skin);
-  jaw.rotation.x = Math.PI;
-  jaw.position.y = 0.02;
+  const jaw = new THREE.Mesh(new THREE.SphereGeometry(.085,10,8), skinShade);
+  jaw.scale.set(.85,.68,.9);
+  jaw.position.set(0,0,.035);
   head.add(jaw);
 
   [-1, 1].forEach((side) => {
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(.006, .01, .16, 5), skinShade);
+    antenna.position.set(side * .055, .3, 0);
+    antenna.rotation.z = side * -.28;
+    head.add(antenna);
+    const antennaGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(.019, 7, 5),
+      new THREE.MeshStandardMaterial({ color: 0x8dff78, emissive: 0x39ff66, emissiveIntensity: 1.5 }),
+    );
+    antennaGlow.position.set(side * .077, .376, 0);
+    head.add(antennaGlow);
+  });
+
+  [-1, 1].forEach((side) => {
     const almond = new THREE.Mesh(new THREE.IcosahedronGeometry(0.062, 1), eye);
-    almond.scale.set(0.95, 1.28, 0.72);
+    almond.scale.set(1.28, 1.58, 0.86);
     almond.position.set(side * 0.062, 0.125, 0.108);
     almond.rotation.z = side * 0.22;
     almond.rotation.y = side * -0.18;
@@ -567,15 +602,16 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
     wrist.position.y = -0.19;
     elbow.add(wrist);
 
-    const hand = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 0), skinShade);
-    hand.scale.set(0.9, 1.1, 0.7);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.046, 8, 6), skinShade);
+    hand.scale.set(0.88, 1.22, 0.82);
     hand.position.y = -0.24;
     elbow.add(hand);
 
     return { shoulder, elbow };
   };
   const bowArm = buildArm(1);
-  const drawArm = buildArm(-1);
+  const gunArm = buildArm(-1);
+  gunArm.shoulder.visible = false;
 
   // ----------------------------------------------------------- bow ----
   // A recurve profile swept along a curve, so the limbs actually curl back at
@@ -626,7 +662,71 @@ function buildAlien(THREE: typeof THREE_NS): AlienRig {
   bow.position.set(0, -0.26, 0.02);
   bowArm.elbow.add(bow);
 
-  return { group, body, torso, head, frontLeg, backLeg, bowArm, drawArm, bow, stringUpper, stringLower, nockedArrow, nock };
+  // Guns are held at the very back/bottom of the stock so the complete arm
+  // and complete weapon remain visible with only the hand-tip touching.
+  const revolver = new THREE.Group();
+  const gunmetal = new THREE.MeshStandardMaterial({ color: 0x252733, flatShading: true, roughness: .28, metalness: .86 });
+  const gripMat = new THREE.MeshStandardMaterial({ color: 0x5a2719, flatShading: true, roughness: .78 });
+  const revBarrel = new THREE.Mesh(new THREE.CylinderGeometry(.026,.026,.36,8),gunmetal); revBarrel.rotation.x=Math.PI/2; revBarrel.position.z=.2; revolver.add(revBarrel);
+  const revCylinder = new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.1,10),gunmetal); revCylinder.rotation.z=Math.PI/2; revCylinder.position.z=.02; revolver.add(revCylinder);
+  const revGrip = new THREE.Mesh(new THREE.BoxGeometry(.075,.18,.07),gripMat); revGrip.position.set(0,-.09,-.035); revGrip.rotation.x=-.24; revolver.add(revGrip);
+  const ak47 = new THREE.Group();
+  const akBody = new THREE.Mesh(new THREE.BoxGeometry(.11,.11,.48),gunmetal); akBody.position.z=.22; ak47.add(akBody);
+  const akBarrel = new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.48,7),gunmetal); akBarrel.rotation.x=Math.PI/2; akBarrel.position.z=.7; ak47.add(akBarrel);
+  const akStock = new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.3),gripMat); akStock.position.set(0,-.02,-.2); akStock.rotation.x=.16; ak47.add(akStock);
+  const akMag = new THREE.Mesh(new THREE.BoxGeometry(.075,.22,.12),gripMat); akMag.position.set(0,-.15,.25); akMag.rotation.x=-.32; ak47.add(akMag);
+  revolver.visible = false; ak47.visible = false;
+  const weaponMount = new THREE.Group(); weaponMount.position.set(0,-.28,.02); weaponMount.rotation.x=-Math.PI/2; gunArm.elbow.add(weaponMount); weaponMount.add(revolver,ak47);
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0,0,.96); weaponMount.add(muzzle);
+
+  return { group, body, torso, head, frontLeg, backLeg, bowArm, gunArm, bow, quiver, revolver, ak47, muzzle, stringUpper, stringLower, nockedArrow, nock };
+}
+
+/**
+ * Compose the world selector archer from the exact Goopy rig used by the alien
+ * game, then mount the selector's existing bow, quiver and aiming anchors onto
+ * that shared skeleton. This keeps the globe-specific ballistics while making
+ * the character asset and articulated movement consistent across levels.
+ */
+function buildAlien(THREE: typeof THREE_NS): AlienRig {
+  const shared = createSharedAlien("zix");
+  const gear = buildLegacyAlien(THREE);
+
+  gear.bow.removeFromParent();
+  gear.bow.position.set(0, -0.05, 0.03);
+  shared.handR.add(gear.bow);
+
+  gear.quiver.removeFromParent();
+  gear.quiver.position.set(-0.05, 0.02, 0);
+  gear.quiver.rotation.set(0.18, 0, 0.36);
+  shared.backMount.add(gear.quiver);
+
+  shared.ak.root.visible = false;
+  shared.revolver.root.visible = false;
+  shared.jetpack.visible = false;
+  const muzzle = new THREE.Object3D();
+  muzzle.position.set(0, 0, 0.78);
+  shared.gunMount.add(muzzle);
+
+  return {
+    group: shared.root,
+    body: shared.hips,
+    torso: shared.torso,
+    head: shared.head,
+    frontLeg: { hip: shared.legR, knee: shared.shinR },
+    backLeg: { hip: shared.legL, knee: shared.shinL },
+    bowArm: { shoulder: shared.armR, elbow: shared.forearmR },
+    gunArm: { shoulder: shared.armR, elbow: shared.forearmR },
+    bow: gear.bow,
+    quiver: gear.quiver,
+    revolver: shared.revolver.root,
+    ak47: shared.ak.root,
+    muzzle,
+    stringUpper: gear.stringUpper,
+    stringLower: gear.stringLower,
+    nockedArrow: gear.nockedArrow,
+    nock: gear.nock,
+  };
 }
 
 function buildSatellite(THREE: typeof THREE_NS) {
@@ -666,18 +766,29 @@ function buildSatellite(THREE: typeof THREE_NS) {
 /** The floating slab the archer stands on, plus a little alien flora. */
 function buildPlatform(THREE: typeof THREE_NS) {
   const group = new THREE.Group();
-  const rock = new THREE.MeshStandardMaterial({ color: 0x6c2f8f, flatShading: true, roughness: 0.9 });
   const rockTop = new THREE.MeshStandardMaterial({ color: 0xb0459d, flatShading: true, roughness: 0.82 });
   const crystal = new THREE.MeshStandardMaterial({ color: 0x39e6d4, flatShading: true, roughness: 0.25, metalness: 0.3, emissive: 0x0d5f5a, emissiveIntensity: 0.5 });
   const cap = new THREE.MeshStandardMaterial({ color: 0xff7ad4, flatShading: true, roughness: 0.6 });
   const stalk = new THREE.MeshStandardMaterial({ color: 0x8f4fd8, flatShading: true, roughness: 0.7 });
+  const edgeMaterial = new THREE.MeshBasicMaterial({ color: 0x33dfff, transparent: true, opacity: 0.16 });
 
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.86, 0.07, 9), rockTop);
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.96, 0.055, 12), rockTop);
   group.add(deck);
 
-  const keel = new THREE.Mesh(new THREE.ConeGeometry(SLAB_RADIUS * 0.86, 0.72, 9), rock);
-  keel.position.y = -0.39;
-  group.add(keel);
+  const edge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.CylinderGeometry(SLAB_RADIUS * 1.02, SLAB_RADIUS * .96, .075, 12)),
+    edgeMaterial,
+  );
+  edge.position.y = .015;
+  group.add(edge);
+
+  const underglow = new THREE.Mesh(
+    new THREE.TorusGeometry(SLAB_RADIUS * .82, .018, 5, 42),
+    new THREE.MeshBasicMaterial({ color: 0x20cfff, transparent: true, opacity: .08 }),
+  );
+  underglow.rotation.x = Math.PI / 2;
+  underglow.position.y = -.08;
+  group.add(underglow);
 
   const decorations: { x: number; z: number; scale: number; kind: "crystal" | "shroom" }[] = [
     { x: -0.44, z: 0.16, scale: 0.62, kind: "crystal" },
@@ -706,7 +817,7 @@ function buildPlatform(THREE: typeof THREE_NS) {
     }
   });
 
-  return group;
+  return { group, edgeMaterial, underglow: underglow.material as THREE_NS.MeshBasicMaterial };
 }
 
 /** A bolt-on satellite part. Added into a dedicated upgrade slot on the
@@ -870,6 +981,7 @@ async function loadOptionalModel(THREE: typeof THREE_NS, file: string | null | u
 
 type Arrow = {
   mesh: THREE_NS.Group;
+  kind: "arrow" | "pepsi";
   velocity: THREE_NS.Vector3;
   age: number;
   stuck: boolean;
@@ -1066,13 +1178,17 @@ export async function createGlobe3D(
   let flyElevation = -0.28;
   let flyDepth = FLY_DEPTH;
   let flyHeading = 0;
+  let platformScale = 1;
+  let platformYaw = 0;
   let prevIslandX = 0;
   let prevIslandY = 0;
+  let selectedTarget: EditTargetId = "globe";
 
   const placeIsland = (elapsed: number) => {
-    const wiggleAz = flyAzimuth + Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05;
-    const wiggleEl = flyElevation + Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04;
-    const wiggleZ = flyDepth + Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18;
+    const hover = selectedTarget === "platform" ? 0 : 1;
+    const wiggleAz = flyAzimuth + hover * (Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05);
+    const wiggleEl = flyElevation + hover * (Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04);
+    const wiggleZ = flyDepth + hover * (Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18);
     const nextX = Math.sin(wiggleAz) * FLY_ORBIT;
     const nextY = Math.cos(wiggleAz) * FLY_ORBIT * 0.48 + wiggleEl * 0.8 - 0.22;
     islandRoot.position.set(nextX, nextY, wiggleZ);
@@ -1091,7 +1207,7 @@ export async function createGlobe3D(
     prevIslandX = nextX;
     prevIslandY = nextY;
 
-    islandRoot.rotation.y = flyHeading;
+    islandRoot.rotation.y = flyHeading + platformYaw;
     islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08 - flyHeading * 0.12;
     islandRoot.rotation.x = Math.cos(elapsed * 0.53) * 0.05;
     // The camera tracks the platform's flight much more now — roughly
@@ -1101,13 +1217,20 @@ export async function createGlobe3D(
     // toy drifting in front of it. It still looks straight at the globe's
     // center throughout: the aim math depends on that lookAt target and
     // can't be repointed at the island without redoing the shot geometry.
-    camera.position.set(
-      islandRoot.position.x * 0.42,
-      islandRoot.position.y * 0.32,
-      8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
-    );
     camera.up.set(0, 1, 0);
-    camera.lookAt(0, 0, 0);
+    if (selectedTarget === "platform") {
+      const front = new THREE.Vector3(0, 0.72, 2.55)
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), islandRoot.rotation.y);
+      camera.position.copy(islandRoot.position).add(front);
+      camera.lookAt(islandRoot.position.x, islandRoot.position.y + 0.3, islandRoot.position.z);
+    } else {
+      camera.position.set(
+        islandRoot.position.x * 0.42,
+        islandRoot.position.y * 0.32,
+        8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
+      );
+      camera.lookAt(0, 0, 0);
+    }
   };
 
   const islandRoot = new THREE.Group();
@@ -1115,9 +1238,9 @@ export async function createGlobe3D(
   scene.add(islandRoot);
 
   const platform = buildPlatform(THREE);
-  platform.rotation.x = Math.atan2(SLAB_RISE, SLAB_DEPTH);
-  platform.position.set(0, -0.05, 0);
-  islandRoot.add(platform);
+  platform.group.rotation.x = Math.atan2(SLAB_RISE, SLAB_DEPTH);
+  platform.group.position.set(0, -0.05, 0);
+  islandRoot.add(platform.group);
 
   const alien = buildAlien(THREE);
   alien.group.scale.setScalar(ALIEN_SCALE);
@@ -1136,7 +1259,7 @@ export async function createGlobe3D(
     }
     if (propsModel) {
       propsModel.scale.setScalar(0.5);
-      platform.add(propsModel);
+      platform.group.add(propsModel);
     }
   });
 
@@ -1178,10 +1301,33 @@ export async function createGlobe3D(
     return group;
   };
 
+  const makePepsiProjectile = () => {
+    const group = new THREE.Group();
+    const label = new THREE.MeshStandardMaterial({ color: 0x1757d7, emissive: 0x071c59, emissiveIntensity: .35, roughness: .34, metalness: .42 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0xd8e0eb, roughness: .2, metalness: .92 });
+    const can = new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.16,14),label); can.rotation.x=Math.PI/2; group.add(can);
+    [-.08,.08].forEach((z)=>{const rim=new THREE.Mesh(new THREE.TorusGeometry(.05,.008,5,14),metal);rim.position.z=z;group.add(rim)});
+    const stripe = new THREE.Mesh(new THREE.TorusGeometry(.056,.012,6,16),new THREE.MeshBasicMaterial({color:0xef253c})); stripe.rotation.x=Math.PI/2; group.add(stripe);
+    group.scale.setScalar(2);
+    return group;
+  };
+
+  const guideMaterial = new THREE.LineBasicMaterial({ color:0x7cfff0, transparent:true, opacity:.52, blending:THREE.AdditiveBlending, depthWrite:false });
+  const guideGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  const aimLaser = new THREE.Line(guideGeometry,guideMaterial);
+  const landingX = new THREE.Group();
+  const xShape = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-.09,-.09,0),new THREE.Vector3(.09,.09,0),
+    new THREE.Vector3(.09,-.09,0),new THREE.Vector3(-.09,.09,0),
+  ]);
+  landingX.add(new THREE.LineSegments(xShape,new THREE.LineBasicMaterial({color:0xff527d,transparent:true,opacity:.82,depthWrite:false})));
+  const aimGuide = new THREE.Group(); aimGuide.visible=false; aimGuide.add(aimLaser,landingX); scene.add(aimGuide);
+
   // ---------------------------------------------------------------- state --
 
   let activeTerritories = territories;
-  let size = canvas.clientWidth || 640;
+  let width = canvas.clientWidth || 640;
+  let height = canvas.clientHeight || width;
   let zoom = 1;
   let disposed = false;
 
@@ -1193,7 +1339,7 @@ export async function createGlobe3D(
     orbitLeft: false, orbitRight: false, tiltUp: false, tiltDown: false,
     zipIn: false, zipOut: false,
   };
-  const walker = { x: 0, z: 0.3, facing: 0, stride: 0 };
+  const walker = { x: 0, z: 0.3, vx: 0, vz: 0, y: 0, vy: 0, facing: 0, stride: 0, ragdoll: 0, spin: 0 };
 
   // Cube edit mode: tumbles the entire enclosed universe (box included) as
   // one rigid whole, and lets each object be nudged along X/Y/Z within it
@@ -1205,6 +1351,9 @@ export async function createGlobe3D(
   const boxQuaternion = new THREE.Quaternion();
   const editOffsets: Record<EditTargetId, { x: number; y: number; z: number; locked: boolean }> = {
     globe: { x: 0, y: 0, z: 0, locked: false },
+    land: { x: 0, y: 0, z: 0, locked: false },
+    ocean: { x: 0, y: 0, z: 0, locked: false },
+    platform: { x: 0, y: 0, z: 0, locked: false },
     alien: { x: 0, y: 0, z: 0, locked: false },
     satellite: { x: 0, y: 0, z: 0, locked: false },
     ufo: { x: 0, y: 0, z: 0, locked: false },
@@ -1213,6 +1362,8 @@ export async function createGlobe3D(
   let terrainBrush: "raise" | "lower" | null = null;
 
   let drawing = false;
+  let alienType: AlienType = "original";
+  let aimMode = false;
   let drawStartedAt = 0;
   let charge = 0;
   let quiver = QUIVER_MAX;
@@ -1272,8 +1423,9 @@ export async function createGlobe3D(
 
   const applyView = () => {
     const half = 0.5 / (0.43 * zoom);
-    camera.left = -half;
-    camera.right = half;
+    const aspect = width / Math.max(height, 1);
+    camera.left = -half * aspect;
+    camera.right = half * aspect;
     camera.top = half;
     camera.bottom = -half;
     camera.updateProjectionMatrix();
@@ -1287,7 +1439,7 @@ export async function createGlobe3D(
   };
 
   const applySize = () => {
-    renderer.setSize(size, size, false);
+    renderer.setSize(width, height, false);
   };
 
   /**
@@ -1297,7 +1449,7 @@ export async function createGlobe3D(
    */
   const worldFromScreen = (nx: number, ny: number) => {
     const half = 0.5 / (0.43 * zoom);
-    const x = nx * half;
+    const x = nx * half * (width / Math.max(height, 1));
     const y = ny * half;
     const radial = x * x + y * y;
     if (radial >= 0.97) return aimTarget.set(x, y, 0.12);
@@ -1326,8 +1478,9 @@ export async function createGlobe3D(
     if (quiver <= 0) return;
     quiver -= 1;
 
-    const arrow = makeArrow();
-    alien.nock.getWorldPosition(bowWorld);
+    const projectileKind = alienType === "original" ? "arrow" : "pepsi";
+    const arrow = projectileKind === "arrow" ? makeArrow() : makePepsiProjectile();
+    (projectileKind === "arrow" ? alien.nock : alien.muzzle).getWorldPosition(bowWorld);
     arrow.position.copy(bowWorld);
 
     // Loose a real lofted shot: solve for the launch velocity that puts the
@@ -1337,15 +1490,15 @@ export async function createGlobe3D(
     // and the only way to reach the far north of a sphere from below it.
     const toTarget = worldFromScreen(aim.x, aim.y).clone().sub(bowWorld);
     const distance = Math.max(toTarget.length(), 0.4);
-    const speed = ARROW_MIN_SPEED + (ARROW_MAX_SPEED - ARROW_MIN_SPEED) * charge;
-    const flight = (distance / speed) * (1.6 - 0.3 * charge);
+    const speed = ARROW_MIN_SPEED + (ARROW_MAX_SPEED - ARROW_MIN_SPEED) * (projectileKind === "pepsi" ? 1 : charge);
+    const flight = projectileKind === "pepsi" ? distance / (speed * 2.35) : (distance / speed) * (1.6 - 0.3 * charge);
     const velocity = toTarget.divideScalar(flight);
     velocity.y += 0.5 * Math.abs(GRAVITY) * flight;
     // Drag will shave a little off the way, so lean into the shot slightly.
     velocity.multiplyScalar(1 + AIR_DRAG * flight * 0.55);
 
     scene.add(arrow);
-    arrows.push({ mesh: arrow, velocity, age: 0, stuck: false, stuckAge: 0 });
+    arrows.push({ mesh: arrow, kind: projectileKind, velocity, age: 0, stuck: false, stuckAge: 0 });
   };
 
   const beginDraw = () => {
@@ -1444,7 +1597,7 @@ export async function createGlobe3D(
         continue;
       }
 
-      if (arrow.age > ARROW_LIFETIME || arrow.mesh.position.length() > 12) {
+      if (arrow.age > (arrow.kind === "pepsi" ? ARROW_LIFETIME * 3.2 : ARROW_LIFETIME) || arrow.mesh.position.length() > (arrow.kind === "pepsi" ? 58 : 12)) {
         scene.remove(arrow.mesh);
         arrows.splice(index, 1);
       }
@@ -1494,12 +1647,36 @@ export async function createGlobe3D(
   const stepAlien = (delta: number, elapsed: number) => {
     const inputX = clamp(move.x + (keys.right ? 1 : 0) - (keys.left ? 1 : 0), -1, 1);
     const inputZ = clamp(move.y + (keys.up ? 1 : 0) - (keys.down ? 1 : 0), -1, 1);
-    const moving = Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05;
+    const acceleration = walker.y > .001 ? 2.4 : 5.8;
+    walker.vx += (inputX * WALK_SPEED - walker.vx) * Math.min(1, delta * acceleration);
+    walker.vz += (inputZ * WALK_SPEED - walker.vz) * Math.min(1, delta * acceleration);
+    if (Math.abs(inputX) < .05) walker.vx *= Math.max(0, 1 - delta * 8.5);
+    if (Math.abs(inputZ) < .05) walker.vz *= Math.max(0, 1 - delta * 8.5);
+    const walkLimitX = WALK_LIMIT_X * platformScale;
+    const walkLimitZ = platformScale;
+    walker.x = clamp(walker.x + walker.vx * delta, -walkLimitX, walkLimitX);
+    walker.z = clamp(walker.z + walker.vz * delta, 0, walkLimitZ);
+    if (Math.abs(walker.x) >= walkLimitX) walker.vx *= -.22;
+    if (walker.z <= 0 || walker.z >= walkLimitZ) walker.vz *= -.22;
+    walker.vy -= 2.8 * delta;
+    walker.y += walker.vy * delta;
+    if (walker.y < 0) {
+      walker.y = 0;
+      walker.vy = Math.abs(walker.vy) > .55 ? -walker.vy * .18 : 0;
+    }
+    walker.ragdoll = Math.max(0, walker.ragdoll - delta);
+    walker.spin += walker.ragdoll > 0 ? delta * 8 : 0;
+    const moving = Math.hypot(walker.vx, walker.vz) > .035;
 
-    walker.x = clamp(walker.x + inputX * WALK_SPEED * delta, -WALK_LIMIT_X, WALK_LIMIT_X);
-    walker.z = clamp(walker.z + inputZ * WALK_SPEED * delta, 0, 1);
-
-    alien.group.position.set(walker.x, walker.z * SLAB_RISE, -walker.z * SLAB_DEPTH);
+    alien.group.position.set(
+      walker.x + editOffsets.alien.x,
+      walker.z * SLAB_RISE + walker.y + editOffsets.alien.y,
+      -walker.z * SLAB_DEPTH + editOffsets.alien.z,
+    );
+    // Local X/Z remain zero when standing, which keeps every character
+    // perpendicular to the platform even while the whole island rotates.
+    alien.group.rotation.x = walker.ragdoll > 0 ? Math.sin(walker.spin * .8) * 1.1 : 0;
+    alien.group.rotation.z = walker.ragdoll > 0 ? walker.spin : 0;
 
     // Aim: from the archer toward wherever the player is pointing on the globe.
     const target = worldFromScreen(aim.x, aim.y);
@@ -1508,6 +1685,20 @@ export async function createGlobe3D(
     aimDirection.y += 0.12;
     if (aimDirection.lengthSq() < 0.0001) aimDirection.set(0, 0.3, -1);
     aimDirection.normalize();
+
+    const shotSource = alienType === "original" ? alien.nock : alien.muzzle;
+    shotSource.getWorldPosition(bowWorld);
+    const guideTarget = worldFromScreen(aim.x, aim.y).clone();
+    const guidePoints = Array.from({length:25},(_,index)=>{
+      const t=index/24;
+      const point=bowWorld.clone().lerp(guideTarget,t);
+      point.y += Math.sin(t*Math.PI) * (alienType === "original" ? .62 : .08);
+      return point;
+    });
+    guideGeometry.setFromPoints(guidePoints);
+    landingX.position.copy(guideTarget).multiplyScalar(1.012);
+    landingX.lookAt(camera.position);
+    aimGuide.visible = aimMode && archerActive;
 
     // The whole body turns to face the shot, so the arms only ever have to
     // pose along the body's own forward axis. That keeps the draw readable
@@ -1519,7 +1710,7 @@ export async function createGlobe3D(
     // sharply side-on when the shot itself is far off to one side.
     const mixed = facing * 0.35 + toCamera * 0.65;
     walker.facing += ((mixed - walker.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, delta * 9);
-    alien.group.rotation.y = walker.facing;
+    alien.group.rotation.y = walker.facing + (walker.ragdoll > 0 ? walker.spin * .35 : 0);
 
     const pitch = Math.asin(clamp(aimDirection.y, -1, 1));
 
@@ -1547,8 +1738,13 @@ export async function createGlobe3D(
     // true line of the shot, the archer just doesn't hold it over their face.
     ikDirection.y -= 0.26;
     ikDirection.normalize();
-    alien.bowArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
-    alien.bowArm.elbow.rotation.set(0.1 - charge * 0.08, 0, 0);
+    if (alienType === "original") {
+      alien.bowArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
+      alien.bowArm.elbow.rotation.set(0.1 - charge * 0.08, 0, 0);
+    } else {
+      alien.gunArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
+      alien.gunArm.elbow.rotation.set(.04,0,0);
+    }
     // The bow hangs off the hand with its arrow axis running down the arm and
     // its limbs standing upright across it.
     alien.bow.rotation.set(-Math.PI / 2, 0, 0);
@@ -1561,15 +1757,9 @@ export async function createGlobe3D(
     spanCord(alien.stringUpper, bowTipUpper, nockPoint);
     spanCord(alien.stringLower, bowTipLower, nockPoint);
     alien.nock.position.copy(nockPoint);
-    alien.nockedArrow.visible = charge > 0.02;
+    alien.nockedArrow.visible = alienType === "original" && charge > 0.02;
     alien.nockedArrow.position.set(0, 0, nockPoint.z - 0.3);
     alien.nockedArrow.rotation.set(0, Math.PI, 0);
-
-    // Draw arm: solved so the hand actually holds the string where it is,
-    // instead of miming near it. Two bones, one hinge, closed form.
-    alien.nock.updateWorldMatrix(true, false);
-    alien.nock.getWorldPosition(ikTarget);
-    solveArm(alien.drawArm, ikTarget, 0.23, 0.24);
 
     if (moving) {
       // Walk cycle: hips swing, knees bend on the back stroke.
@@ -1598,7 +1788,10 @@ export async function createGlobe3D(
 
   // ---------------------------------------------------------------- input --
 
+  let archerActive = false;
+
   const onKeyDown = (event: KeyboardEvent) => {
+    if (!archerActive) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = true;
     else if (code === "KeyS" || code === "ArrowDown") keys.down = true;
@@ -1610,6 +1803,14 @@ export async function createGlobe3D(
     else if (code === "KeyF") keys.tiltDown = true;
     else if (code === "KeyZ") keys.zipIn = true;
     else if (code === "KeyX") keys.zipOut = true;
+    else if (code === "KeyC") {
+      if (walker.y <= .001) walker.vy = 1.18;
+    }
+    else if (code === "KeyG") {
+      walker.ragdoll = 1.15;
+      walker.vy = Math.max(walker.vy, .75);
+      walker.spin = 0;
+    }
     else if (code === "Space") {
       if (!drawing) beginDraw();
       event.preventDefault();
@@ -1619,6 +1820,7 @@ export async function createGlobe3D(
   };
 
   const onKeyUp = (event: KeyboardEvent) => {
+    if (!archerActive) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = false;
     else if (code === "KeyS" || code === "ArrowDown") keys.down = false;
@@ -1692,7 +1894,11 @@ export async function createGlobe3D(
     // it's recomputed here rather than only when the view state changes.
     updateBoxQuaternion();
     syncPlanetQuaternion();
-    planet.position.set(editOffsets.globe.x, editOffsets.globe.y, editOffsets.globe.z).applyQuaternion(boxQuaternion);
+    planet.position.set(
+      editOffsets.globe.x + editOffsets.land.x,
+      editOffsets.globe.y + editOffsets.land.y,
+      editOffsets.globe.z + editOffsets.land.z,
+    ).applyQuaternion(boxQuaternion);
     universeEdges.quaternion.copy(boxQuaternion);
     universeFloor.position.set(0, -UNIVERSE_SIZE / 2, 0).applyQuaternion(boxQuaternion);
     universeFloor.quaternion.copy(boxQuaternion);
@@ -1719,16 +1925,23 @@ export async function createGlobe3D(
     // Zippier than the old slow orbit: faster azimuth/elevation response, plus
     // a push/pull depth axis so the platform can close in or peel away in
     // full 3D space instead of only sliding around the planet's face.
-    flyAzimuth += (orbitInput * 1.6 + (orbitInput === 0 ? 0.07 : 0)) * delta;
-    flyElevation = clamp(flyElevation + tiltInput * 1.15 * delta, -0.85, 0.85);
-    flyDepth = clamp(flyDepth + zipInput * 1.4 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
+    const platformFrozen = selectedTarget === "platform" && editOffsets.platform.locked;
+    if (!platformFrozen) {
+      flyAzimuth += orbitInput * 1.75 * delta;
+      flyElevation = clamp(flyElevation + tiltInput * 1.25 * delta, -0.85, 0.85);
+      flyDepth = clamp(flyDepth + zipInput * 1.55 * delta, FLY_DEPTH_MIN, FLY_DEPTH_MAX);
+    }
     placeIsland(elapsed);
+    platform.group.scale.set(platformScale, 1, platformScale);
     // The island's own position is set inside placeIsland relative to its
     // un-boxed frame; add the edit offset there, then rotate the whole thing
     // (position and facing alike) into the tumbled box.
-    islandRoot.position.add(editOffsets.alien);
+    islandRoot.position.add(editOffsets.platform);
     islandRoot.position.applyQuaternion(boxQuaternion);
     islandRoot.quaternion.premultiply(boxQuaternion);
+    const platformSelected = selectedTarget === "platform";
+    platform.edgeMaterial.opacity = platformSelected ? .95 : .16;
+    platform.underglow.opacity = platformSelected ? .7 + Math.sin(elapsed * 5) * .18 : .08;
 
     const orbit = elapsed * 0.32;
     satellite.group.position.set(
@@ -1803,6 +2016,24 @@ export async function createGlobe3D(
   frame = window.requestAnimationFrame(tick);
 
   return {
+    setActive: (active) => {
+      archerActive = active;
+      if (!active) { Object.keys(keys).forEach((key) => { keys[key as keyof typeof keys] = false; }); drawing = false; charge = 0; }
+    },
+    setAlienType: (type) => {
+      alienType = type;
+      const archer = type === "original";
+      alien.bow.visible = archer;
+      alien.quiver.visible = archer;
+      alien.revolver.visible = type === "doop";
+      alien.ak47.visible = type === "zorp";
+      drawing = false;
+      charge = 0;
+    },
+    setAimMode: (active) => {
+      aimMode = active;
+      if (!active) aimGuide.visible = false;
+    },
     setView: (nextRotation, nextZoom) => {
       rotation.lon = nextRotation.lon;
       rotation.lat = nextRotation.lat;
@@ -1810,8 +2041,9 @@ export async function createGlobe3D(
       zoom = nextZoom;
       applyView();
     },
-    setSize: (nextSize) => {
-      size = nextSize;
+    setSize: (nextWidth, nextHeight) => {
+      width = nextWidth;
+      height = nextHeight;
       applySize();
     },
     setTerritories: (next) => {
@@ -1822,10 +2054,12 @@ export async function createGlobe3D(
       aim.y = clamp(y, -1.4, 1.4);
     },
     setMove: (x, y) => {
+      if (!archerActive) return;
       move.x = clamp(x, -1, 1);
       move.y = clamp(y, -1, 1);
     },
     setDrawing: (next) => {
+      if (!archerActive) return;
       if (next) {
         if (!drawing) beginDraw();
         return;
@@ -1839,6 +2073,11 @@ export async function createGlobe3D(
     setLandColor: (hex) => {
       const material = landMesh.material as THREE_NS.MeshStandardMaterial;
       material.color.setHex(hex);
+      const isGold = hex === 0xf1c86e;
+      material.metalness = isGold ? 0.96 : 0.04;
+      material.roughness = isGold ? 0.1 : 0.88;
+      material.emissive.setHex(isGold ? 0x5b2f00 : 0x000000);
+      material.emissiveIntensity = isGold ? 0.28 : 0;
     },
     setLandFlagMode: (enabled) => {
       flagModeActive = enabled;
@@ -1870,6 +2109,23 @@ export async function createGlobe3D(
       editOffsets[target].locked = locked;
     },
     getEditOffsets: () => JSON.parse(JSON.stringify(editOffsets)) as Record<EditTargetId, EditOffset>,
+    setSelectedTarget: (target) => {
+      selectedTarget = target;
+    },
+    setPlatformScale: (scale) => {
+      platformScale = clamp(scale, 0.55, 2.25);
+    },
+    setPlatformYaw: (degrees) => {
+      platformYaw = THREE.MathUtils.degToRad(degrees);
+    },
+    hopAlien: () => {
+      if (walker.y <= .001) walker.vy = 1.18;
+    },
+    ragdollAlien: () => {
+      walker.ragdoll = 1.15;
+      walker.vy = Math.max(walker.vy, .75);
+      walker.spin = 0;
+    },
     setTerrainBrush: (mode) => {
       terrainBrush = mode;
     },

@@ -59,7 +59,9 @@ export default function Prop3D({ prop, className, children }: { prop: PropName; 
         const pose = PROP_POSE[prop];
         const model = buildProp(THREE, prop);
         model.scale.setScalar(pose.scale);
-        model.rotation.x = pose.tilt;
+        model.rotation.x = pose.tilt + (Math.random() - 0.5) * 0.3;
+        model.rotation.z = (Math.random() - 0.5) * 0.65;
+        const initialYaw = Math.random() * Math.PI * 2;
         scene.add(model);
 
         const start = performance.now();
@@ -70,7 +72,7 @@ export default function Prop3D({ prop, className, children }: { prop: PropName; 
           const elapsed = (now - start) / 1000;
           model.rotation.y = pose.mode === "sway"
             ? Math.sin(elapsed * pose.spin) * 0.55
-            : elapsed * pose.spin;
+            : initialYaw + elapsed * pose.spin;
           model.position.y = Math.sin(elapsed * 1.6) * 0.03;
           renderer.render(scene, camera);
         };

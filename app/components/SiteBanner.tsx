@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Can3D } from "./Can3D";
+import { Can3D, type CanKind } from "./Can3D";
 import { OilGauge } from "./OilGauge";
 import Prop3D from "./Prop3D";
 
@@ -40,11 +40,14 @@ export default function SiteBanner() {
   const [yoohoo, setYoohoo] = useState(69);
   const [visible, setVisible] = useState(true);
   const [earned, setEarned] = useState(false);
+  const [ratCanKind, setRatCanKind] = useState<CanKind>("rat-meat");
   const [bongoMenuOpen, setBongoMenuOpen] = useState(false);
   const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bongoMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const roll = Math.random();
+    setRatCanKind(roll < 0.7 ? "rat-meat" : roll < 0.92 ? "rat-meat-silver" : "rat-meat-gold");
     const embedded = window.self !== window.top;
 
     if (embedded) {
@@ -146,7 +149,7 @@ export default function SiteBanner() {
         <div className="trip-banner__wallet">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">
-            <Can3D kind={earned ? "rat-meat-gold" : "rat-meat"} size={44} />
+            <Can3D kind={earned ? "rat-meat-gold" : ratCanKind} size={52} />
           </span>
           <strong>Rat Meat</strong>
           <span className="trip-banner__amount" aria-live="polite" aria-atomic="true">
