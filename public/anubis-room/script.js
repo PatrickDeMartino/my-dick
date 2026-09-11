@@ -166,7 +166,7 @@ window.onYouTubeIframeAPIReady = function onYouTubeIframeAPIReady() {
     },
     events: {
       onReady(event) {
-        event.target.mute();
+        if (tvMuted) event.target.mute(); else { event.target.unMute(); event.target.setVolume(70); }
         playNextRandomShort();
       },
       onStateChange(event) {
@@ -183,6 +183,7 @@ soundButton.addEventListener("click", () => {
   if (!shortsPlayer || typeof shortsPlayer.unMute !== "function") return;
 
   tvMuted = !tvMuted;
+  window.dispatchEvent(new CustomEvent("trip-youtube-audio", {detail:!tvMuted}));
   if (tvMuted) {
     shortsPlayer.mute();
     soundButton.setAttribute("aria-label", "Turn television sound on");
@@ -191,6 +192,12 @@ soundButton.addEventListener("click", () => {
     shortsPlayer.setVolume(70);
     soundButton.setAttribute("aria-label", "Turn television sound off");
   }
+});
+window.addEventListener('trip-tv-audio', event => {
+  tvMuted = event.detail !== 'youtube';
+  if (!shortsPlayer || typeof shortsPlayer.mute !== 'function') return;
+  if (tvMuted) shortsPlayer.mute(); else { shortsPlayer.unMute(); shortsPlayer.setVolume(70); }
+  soundButton.setAttribute('aria-label', tvMuted ? 'Turn television sound on' : 'Turn television sound off');
 });
 soundKnob.addEventListener("click", () => soundButton.click());
 nextKnob.addEventListener("click", () => playNextRandomShort());
@@ -203,6 +210,7 @@ const sectorViews = {
 document.querySelectorAll(".room-sector").forEach((button) => button.addEventListener("click", () => {
   const view = sectorViews[button.dataset.sector];
   scene.dataset.focus = button.dataset.sector;
+  window.dispatchEvent(new CustomEvent("trip-sector-change",{detail:button.dataset.sector}));
   sectorZoom.style.backgroundPosition = view.position;
   sectorZoom.style.backgroundSize = view.size;
   sectorTitle.textContent = view.title;
@@ -218,6 +226,7 @@ function closeSector() {
   focusTvScreen.setAttribute("aria-hidden", "true");
   sectorOverlay.hidden = true;
   delete scene.dataset.focus;
+  window.dispatchEvent(new CustomEvent("trip-sector-change",{detail:""}));
 }
 sectorClose.addEventListener("click", closeSector);
 sectorOverlay.addEventListener("click", (event) => { if (event.target === sectorOverlay) closeSector(); });

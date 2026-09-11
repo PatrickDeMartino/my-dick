@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useScreenMode } from "./lib/useScreenMode";
 import HomeGlobe from "./components/HomeGlobe";
 import HomeRoom3D, { setHomeSpatial, spawnHomeCan } from "./components/HomeRoom3D";
 
@@ -16,6 +17,9 @@ export default function LandingPage() {
   const [toolsOpen,setToolsOpen] = useState(true);
   const [cubeOpen,setCubeOpen] = useState(false);
 
+  const [pongoActive,setPongoActive] = useState(false);
+  useEffect(() => { const onMode = (event: Event) => setPongoActive((event as CustomEvent).detail); window.addEventListener("trip-pongo-mode",onMode); return () => window.removeEventListener("trip-pongo-mode",onMode); },[]);
+  useScreenMode((pongoActive ? "a" : "") + (cubeOpen ? "b" + ({brain:1,globe:2,camera:3}[homeEditTarget]) : ""));
   useEffect(()=>{ setHomeSpatial("brain",homeSpatial.brain); },[homeSpatial.brain]);
   useEffect(()=>{ setHomeSpatial("camera",homeSpatial.camera); },[homeSpatial.camera]);
   const updateSpatial=(key:keyof Spatial,value:number)=>setHomeSpatialState(current=>({...current,[homeEditTarget]:{...current[homeEditTarget],[key]:value}}));
@@ -85,7 +89,7 @@ export default function LandingPage() {
         href="/anubis"
         aria-label="Enter the Anubis television room"
       >
-        <span>I&apos;m genuinely skitzofrenic</span>
+        <span>youtube bot farm</span>
       </a>
 
       <Link

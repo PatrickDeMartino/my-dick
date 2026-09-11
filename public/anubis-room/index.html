@@ -9,7 +9,9 @@
   </head>
   <body>
     <main class="room" aria-label="Anubis television room">
+      <button type="button" id="boost-metrics" class="boost-metrics" aria-pressed="false">boost<br>metrics</button>
       <div class="scene" id="scene">
+        <section id="social-stack" class="social-stack" aria-label="Social television stack" hidden></section>
         <img
           class="scene-media room-source"
           id="room-source"
@@ -55,9 +57,11 @@
           <p id="sector-title"></p>
         </div>
       </div>
+    <nav id="social-audio" class="social-audio" aria-label="Choose one audio source" hidden><span>SOUND</span><button type="button" data-audio="none" aria-pressed="true">mute all</button><button type="button" data-audio="youtube" aria-pressed="false">YouTube</button><button type="button" data-audio="tiktok" aria-pressed="false">TikTok</button><button type="button" data-audio="instagram" aria-pressed="false">Instagram</button><button type="button" data-audio="x" aria-pressed="false">X</button></nav>
     </main>
+    <script type="module" src="./social-tvs.js"></script>
     <script src="./script.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
-  </body>
+  <script src="/screen-reference.js" data-screen="4"></script></body>
 </html>
 

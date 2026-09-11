@@ -3,6 +3,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { makeHomeBrain } from "../lib/homeBrain";
 import { makeBrainCreature } from "../brain-room/BrainWorld3D";
 
 type CanLabel = "YOOHOO" | "PEPSI" | "MONSTER" | "RAT MEAT";
@@ -62,105 +63,6 @@ function canTexture(label: CanLabel) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;
   return texture;
-}
-
-function makeBrain() {
-  const root = new THREE.Group();
-  const matter = new THREE.MeshPhysicalMaterial({
-    color: 0xf08fc9,
-    emissive: 0x4b102f,
-    emissiveIntensity: .26,
-    roughness: .58,
-    metalness: .02,
-    clearcoat: .64,
-    clearcoatRoughness: .34,
-  });
-  const gyrus = new THREE.MeshPhysicalMaterial({ color: 0xffa6d8, emissive: 0x5d153f, emissiveIntensity: .32, roughness: .48, clearcoat: .55 });
-  const sulcus = new THREE.MeshStandardMaterial({ color: 0x641044, emissive: 0x220218, emissiveIntensity: .28, roughness: .8 });
-  const glow = new THREE.MeshBasicMaterial({ color: 0x67ffe8, transparent: true, opacity: .1, blending: THREE.AdditiveBlending, depthWrite: false });
-  const wrinkles: THREE.Mesh[] = [];
-  const worms: THREE.Group[] = [];
-
-  // Distinct hemispheres, temporal lobes, cerebellum and stem establish a
-  // readable human-brain silhouette before the cortical folds are applied.
-  for (let hemisphere = -1; hemisphere <= 1; hemisphere += 2) {
-    const cerebrum = new THREE.Mesh(new THREE.SphereGeometry(1.18, 64, 46), matter.clone());
-    cerebrum.position.set(hemisphere * .52, .12, -.04);
-    cerebrum.scale.set(.82, 1.02, 1.18);
-    cerebrum.castShadow = true;
-    root.add(cerebrum);
-    const temporal = new THREE.Mesh(new THREE.SphereGeometry(.7, 42, 30), matter.clone());
-    temporal.position.set(hemisphere * .72, -.48, .3);
-    temporal.scale.set(.78, .62, 1.02);
-    temporal.castShadow = true;
-    root.add(temporal);
-    for (let i = 0; i < 19; i += 1) {
-      const points: THREE.Vector3[] = [];
-      const latitude = -.82 + (i % 10) * .19;
-      for (let s = 0; s <= 40; s += 1) {
-        const t = s / 40;
-        const z = -1.02 + t * 2.03 + Math.sin(t * Math.PI * (3 + i % 3) + i * .91) * .11;
-        const y = latitude + Math.sin(t * Math.PI * (2 + i % 4) + i * .63) * .09;
-        const shell = Math.sqrt(Math.max(.055, 1 - (y * y) / 1.18 - (z * z) / 1.45));
-        const x = hemisphere * (.53 + shell * .53) + Math.sin(t * Math.PI * 4 + i) * .026;
-        points.push(new THREE.Vector3(x, y, z));
-      }
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 84, .075, 12, false), gyrus.clone());
-      tube.userData.phase = i * .43 + hemisphere;
-      tube.userData.baseScale = .99 + (i % 3) * .004;
-      tube.castShadow = true;
-      wrinkles.push(tube);
-      root.add(tube);
-    }
-    // Lateral fissure: the strong horizontal landmark above each temporal lobe.
-    const lateral = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-      new THREE.Vector3(hemisphere * .82, -.18, .82), new THREE.Vector3(hemisphere * 1.03, -.28, .35),
-      new THREE.Vector3(hemisphere * 1.02, -.22, -.18), new THREE.Vector3(hemisphere * .83, -.08, -.68),
-    ]), 42, .045, 10, false), sulcus.clone());
-    root.add(lateral);
-  }
-  const fissure = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 1.18, -1.02), new THREE.Vector3(.012, .7, -1.24),
-    new THREE.Vector3(-.012, .15, -1.31), new THREE.Vector3(.012, -.36, -1.12),
-  ]), 64, .06, 12, false), sulcus);
-  root.add(fissure);
-  const cerebellum = new THREE.Mesh(new THREE.SphereGeometry(.7, 46, 34), matter.clone());
-  cerebellum.position.set(0, -.88, -.72);
-  cerebellum.scale.set(1.14, .58, .68);
-  root.add(cerebellum);
-  for (let i=0;i<8;i++) {
-    const band=new THREE.Mesh(new THREE.TorusGeometry(.46-i*.018,.035,8,28,Math.PI*1.45),gyrus.clone());
-    band.position.set(0,-.69-i*.07,-.9); band.rotation.set(Math.PI/2,0,.75); root.add(band);
-  }
-  const stem = new THREE.Mesh(new THREE.CapsuleGeometry(.19, .72, 12, 20), matter.clone());
-  stem.position.set(.06, -1.42, -.46);
-  stem.rotation.z = -.11;
-  root.add(stem);
-  // Bright, smiling cortical worms orbit and burrow around the folds.
-  const wormColors=[0x78ffe4,0xffed69,0x9bff67,0xff7ecb,0x83a8ff];
-  for(let i=0;i<9;i++){
-    const worm=new THREE.Group();
-    const segments:THREE.Mesh[]=[];
-    const color=wormColors[i%wormColors.length];
-    const wormMat=new THREE.MeshPhysicalMaterial({color,emissive:color,emissiveIntensity:.32,roughness:.38,clearcoat:.7});
-    for(let j=0;j<7;j++){const bead=new THREE.Mesh(new THREE.SphereGeometry(.075-j*.003,14,10),wormMat);segments.push(bead);worm.add(bead);}
-    const eyeMat=new THREE.MeshBasicMaterial({color:0x16051b});
-    for(const side of [-1,1]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.014,8,6),eyeMat);eye.position.set(side*.028,.025,.071);segments[0].add(eye);}
-    worm.userData={segments,phase:i*.79,hemisphere:i%2?-1:1}; worms.push(worm); root.add(worm);
-  }
-  const hitMaterial = new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false});
-  const core = new THREE.Mesh(new THREE.SphereGeometry(1.28, 28, 22), hitMaterial);
-  core.scale.set(1.12, 1.04, .82);
-  core.castShadow = true;
-  root.add(core);
-  const aura = new THREE.Mesh(new THREE.SphereGeometry(1.48, 24, 18), glow);
-  aura.scale.set(1.13, 1.03, .82);
-  root.add(aura);
-  root.rotation.z = -.08;
-  root.userData.wrinkles = wrinkles;
-  root.userData.worms = worms;
-  root.userData.aura = aura;
-  return root;
 }
 
 function makeCrystalCluster(index: number) {
@@ -379,7 +281,8 @@ export default function HomeRoom3D() {
       return vine;
     });
 
-    const brain = makeBrain();
+    const brainLife = makeHomeBrain(() => { document.documentElement.dataset.monkeyReady = "true"; });
+    const brain = brainLife.root;
     brain.position.set(4.25, -.05, -.2);
     brain.scale.setScalar(1.34);
     room.add(brain);
@@ -446,6 +349,7 @@ export default function HomeRoom3D() {
           pongos.forEach((pongo)=>scene.remove(pongo.mesh));
           pongos.length=0; selectedPongo=null; pongoMode=false;
         }
+        window.dispatchEvent(new CustomEvent("trip-pongo-mode",{detail:pongoMode}));
       } else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
@@ -508,24 +412,7 @@ export default function HomeRoom3D() {
       brain.rotation.y = -.28 + Math.sin(time * .38) * .18;
       brain.position.set(4.25+brainSpatial.x*1.45,-.05+brainSpatial.y*1.15+Math.sin(time*.72)*.12,-.2+brainSpatial.z*1.2);
       brain.scale.setScalar(1.34*brainSpatial.scale);
-      const wrinkles = brain.userData.wrinkles as THREE.Mesh[];
-      wrinkles.forEach((wrinkle, index) => {
-        const pulse = wrinkle.userData.baseScale + Math.sin(time * 2.1 + wrinkle.userData.phase) * .055;
-        wrinkle.scale.set(pulse, pulse * (1 + Math.sin(time * 2.7 + index) * .035), pulse);
-        (wrinkle.material as THREE.MeshStandardMaterial).emissiveIntensity = .28 + Math.sin(time * 2 + index) * .08;
-      });
-      (brain.userData.aura as THREE.Mesh).scale.setScalar(1 + Math.sin(time * 1.5) * .035);
-      (brain.userData.worms as THREE.Group[]).forEach((worm,index)=>{
-        const phase=time*(.72+(index%3)*.1)+worm.userData.phase;
-        const hemisphere=worm.userData.hemisphere as number;
-        const center=new THREE.Vector3(hemisphere*(.78+.18*Math.sin(phase*.7)),.78*Math.sin(phase*.83),.9*Math.cos(phase*.67));
-        (worm.userData.segments as THREE.Mesh[]).forEach((segment,j)=>{
-          const trail=phase-j*.16;
-          segment.position.set(center.x+Math.sin(trail*2.1)*.13,center.y+Math.sin(trail*1.7+j*.3)*.12,center.z+Math.cos(trail*1.9)*.13);
-          segment.scale.setScalar(1+Math.sin(trail*3)*.08);
-        });
-        worm.rotation.y=Math.sin(phase*.41)*.24;
-      });
+      brainLife.update(dt);
       crystals.forEach((cluster,index)=>{cluster.rotation.y+=dt*(index%2?.08:-.06);});
       vines.forEach(vine=>{
         const swinger=pongos.find(pongo=>pongo.swing?.vine===vine);
@@ -610,6 +497,7 @@ export default function HomeRoom3D() {
       renderer.render(scene, camera);
     };
     animate();
+    document.documentElement.dataset.homeReady = "true";
 
     return () => {
       cancelAnimationFrame(frame);
@@ -620,9 +508,21 @@ export default function HomeRoom3D() {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener(CONTROL_EVENT,onControl);
       renderer.domElement.removeEventListener("pointerup", onUp);
+      brainLife.dispose();
+      delete document.documentElement.dataset.homeReady;
+      delete document.documentElement.dataset.monkeyReady;
       controls.dispose();
       renderer.dispose();
       Object.values(canTextures).flat().forEach((texture) => texture.dispose());
+      const geometries = new Set<THREE.BufferGeometry>();
+      const materials = new Set<THREE.Material>();
+      scene.traverse(object => {
+        if (!(object instanceof THREE.Mesh) && !(object instanceof THREE.LineSegments)) return;
+        geometries.add(object.geometry);
+        (Array.isArray(object.material) ? object.material : [object.material]).forEach(material => materials.add(material));
+      });
+      geometries.forEach(geometry => geometry.dispose());
+      materials.forEach(material => material.dispose());
       mount.removeChild(renderer.domElement);
     };
   }, []);

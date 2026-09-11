@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SiteBanner from "./components/SiteBanner";
+import SiteLoading from "./components/SiteLoading";
 import AssetsRoomDoor from "./components/AssetsRoomDoor";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SiteLoading />
         <SiteBanner />
         <AssetsRoomDoor />
         {children}

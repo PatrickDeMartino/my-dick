@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Can3D, type CanKind } from "./Can3D";
 import { OilGauge } from "./OilGauge";
+import ScreenReference from "./ScreenReference";
 import Prop3D from "./Prop3D";
 
 const STORAGE_KEY = "trip.rat-meat.v1";
@@ -146,6 +147,7 @@ export default function SiteBanner() {
   return (
     <header className={`trip-banner${earned ? " trip-banner--earned" : ""}${isBongo ? " trip-banner--bongo" : ""}`}>
       <div className="trip-banner__inner">
+        <ScreenReference />
         <div className="trip-banner__wallet">
         <div className="trip-banner__currency" aria-label={`${amount} cans of Rat Meat`}>
           <span className="trip-banner__can" aria-hidden="true">

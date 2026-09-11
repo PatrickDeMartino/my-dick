@@ -1,0 +1,10 @@
+{
+  "tiktok": { "handle": "patrick.demartino", "profile": "https://www.tiktok.com/@patrick.demartino", "posts": [] },
+  "instagram": { "handle": "patrick_allan_demartino", "profile": "https://www.instagram.com/patrick_allan_demartino/", "posts": [
+    { "type": "video", "url": "https://www.instagram.com/reel/DdGw3GVR1Gm/" },
+    { "type": "video", "url": "https://www.instagram.com/reel/DbD3xzGtumI/" }
+  ] },
+  "x": { "handle": "dose_the_online", "profile": "https://x.com/dose_the_online", "posts": [
+    { "type": "video", "url": "https://x.com/dose_the_online/status/2085119895465861439", "text": "#travel", "thumbnail": "https://pbs.twimg.com/amplify_video_thumb/2085119780864839680/img/_WZiaWYwWsSxeYke.jpg", "media": "https://video.twimg.com/amplify_video/2085119780864839680/vid/avc1/480x852/Hts9hrr_DpErCYSn.mp4" }
+  ] }
+}

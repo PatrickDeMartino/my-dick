@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,6 +42,7 @@ export default function PenguinTownScreen() {
   const [showDogFightGame, setShowDogFightGame] = useState(false);
   const [purchases, setPurchases] = useState<string[]>([]);
   const [farmCooldown, setFarmCooldown] = useState(0);
+  useScreenMode(showDogFightGame ? "a1" : placingBuildingId ? "b" : selectedBuilding ? "c" + ((["plane","telescope","magic","sweatshop","arena","flipper","igloo","docks"].indexOf(selectedBuilding.id) + 1) || 9) : "");
   const isSweatshop = selectedBuilding?.id === "sweatshop";
   const isDogFighter = selectedBuilding?.id === "arena";
   const isFlipper = selectedBuilding?.id === "flipper";

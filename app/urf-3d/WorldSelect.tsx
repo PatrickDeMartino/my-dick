@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
@@ -102,6 +103,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const boxRotationRef = useRef({ lon: 0, lat: 0 });
   const [usaFlagMode, setUsaFlagMode] = useState(false);
   const [loginGateTerritory, setLoginGateTerritory] = useState<string | null>(null);
+  useScreenMode((archerActive ? "a" : cubeMode ? "b" : terrainOpen ? "c" : selector ? "d" : "") + (archerActive && aimMode ? "1" : cubeMode ? String(["globe","alien","dart","platform"].indexOf(editTarget) + 2) : "") + (loginGateTerritory ? (archerActive || cubeMode || terrainOpen || selector ? "2" : "e") : ""));
   const { profile, save: saveProfile } = useProfile();
   const router = useRouter();
 

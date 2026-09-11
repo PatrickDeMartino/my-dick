@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { useCallback, useMemo, useState } from "react";
 import AssetRoom3D, { type AssetMode } from "./AssetRoom3D";
@@ -11,6 +12,7 @@ const emit=(name:string,detail?:unknown)=>window.dispatchEvent(new CustomEvent(n
 
 export default function AssetsRoomPage(){
  const [open,setOpen]=useState(true),[category,setCategory]=useState<Catalog>("ALL"),[chosen,setChosen]=useState("goopy"),[count,setCount]=useState(0),[active,setActive]=useState("NONE"),[entity,setEntity]=useState<SelectedEntity>(null),[scale,setScale]=useState(1),[ammo,setAmmo]=useState("pepsi");
+ useScreenMode(entity ? ({display:"a",ragdoll:"b",function:"c"}[entity.mode]) : "");
  const assets=useMemo(()=>SITE_ASSETS.filter(a=>category==="ALL"||a.category===category).sort((a,b)=>a.label.localeCompare(b.label)),[category]);
  const item=SITE_ASSETS.find(a=>a.id===chosen)??SITE_ASSETS[0];const onCount=useCallback((n:number)=>setCount(n),[]),onActive=useCallback((s:string)=>setActive(s),[]),onSelected=useCallback((s:SelectedEntity)=>{setEntity(s);if(s)setScale(Number(s.scale.toFixed(2)))},[]);
  const setMode=(mode:AssetMode)=>emit("asset-room:set-mode",{mode});const setEntityScale=(value:number)=>{setScale(value);emit("asset-room:set-scale",{scale:value})};

@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
 import { useProfile, type Profile } from "../lib/useProfile";
@@ -45,6 +46,7 @@ export default function HexBoard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSocialPopup, setShowSocialPopup] = useState(false);
+  useScreenMode(selected ? "a" + (showSocialPopup ? "1" : "") : showSocialPopup ? "b" : "");
 
   useEffect(() => {
     if (!selected) return;

@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import BrainWorld3D from "./BrainWorld3D";
@@ -21,6 +22,7 @@ export default function BrainRoom() {
   const [messages, setMessages] = useState<Message[]>([opening]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  useScreenMode((subject === "pongo" ? "a" : subject === "rat" ? "b" : "") + (pov ? (subject ? "1" : "c") : "") + (consoleOpen ? (subject ? (pov ? "a" : "2") : "d") : ""));
 
   const chooseSubject = (next: Subject) => {
     setSubject((current) => current === next ? null : next);

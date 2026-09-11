@@ -1,4 +1,5 @@
 "use client";
+import { useScreenMode } from "../lib/useScreenMode";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
@@ -1102,6 +1103,7 @@ function PenguinTown({ onBack }: { onBack: () => void }) {
 
 export default function Home() {
   const [screen, setScreen] = useState<"world" | "town">("world");
+  useScreenMode(screen === "town" ? "a" : "");
 
   const closeSelector = () => {
     if (window.parent !== window) {
