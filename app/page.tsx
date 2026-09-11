@@ -70,6 +70,7 @@ export default function LandingPage() {
         <button type="button" onClick={() => spawnHomeCan("PEPSI")}>PEPSI</button>
         <button type="button" onClick={() => spawnHomeCan("MONSTER")}>MONSTER</button>
         <button type="button" onClick={() => spawnHomeCan("RAT MEAT")}>RAT MEAT</button>
+        <button type="button" className="is-worms" onClick={() => spawnHomeCan("WORMS")}>WORMS</button>
         <button type="button" className="is-pongo" aria-label="Toggle Pongo mode" onClick={() => spawnHomeCan("PONGO")}>PONGO MODE</button>
         <button type="button" className="is-cube" aria-expanded={cubeOpen} onClick={()=>setCubeOpen(value=>!value)}>⬛ CUBE</button>
       </div> : <button type="button" className="home-menu-reopen" onClick={()=>setToolsOpen(true)} aria-label="Open spawn menu">＋</button>}

@@ -66,10 +66,12 @@ function createChannel(key, feed) {
     if (!current) { fallback(null,'Open the latest posts'); nextButton.disabled = true; return; }
     const ownGeneration = generation;
     if (current.type === 'video' && safeMedia(current.media)) {
-      const video = document.createElement('video'); media = video; video.playsInline = true; video.autoplay = true; video.muted = key !== audio; video.preload = 'metadata';
+      const video = document.createElement('video'); media = video; video.playsInline = true; video.setAttribute('playsinline',''); video.autoplay = true; video.setAttribute('autoplay',''); video.muted = key !== audio; video.defaultMuted = true; video.setAttribute('muted',''); video.preload = 'auto'; video.controls = false; video.disablePictureInPicture = true; video.referrerPolicy = 'no-referrer';
       video.src = current.media; video.addEventListener('ended',showNext); video.addEventListener('error',()=>{if(ownGeneration===generation)fallback(current,'Open this video');});
       video.addEventListener('playing',()=>clearTimeout(timer));
-      screen.append(video); schedule(20000); video.play().catch(()=>fallback(current,'Tap to watch this video'));
+      screen.append(video); schedule(20000);
+      const tryPlay = () => { if (ownGeneration !== generation) return; video.play().catch(() => {}); };
+      video.addEventListener('canplay', tryPlay, { once: true }); requestAnimationFrame(tryPlay);
     } else if (current.type === 'image' && safeMedia(current.media)) {
       const img=document.createElement('img');img.src=current.media;img.alt=current.text || 'Post by @'+feed.handle;
       img.onload=()=>{if(ownGeneration===generation)schedule(5000);};img.onerror=()=>{if(ownGeneration===generation)fallback(current,'Open this image');};screen.append(img);schedule(20000);

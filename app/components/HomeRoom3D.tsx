@@ -7,7 +7,7 @@ import { makeHomeBrain } from "../lib/homeBrain";
 import { makeBrainCreature } from "../brain-room/BrainWorld3D";
 
 type CanLabel = "YOOHOO" | "PEPSI" | "MONSTER" | "RAT MEAT";
-type SpawnItem = CanLabel | "PONGO";
+type SpawnItem = CanLabel | "PONGO" | "WORMS";
 type HomeSpatialTarget = "brain" | "camera";
 
 type CanBody = {
@@ -342,7 +342,9 @@ export default function HomeRoom3D() {
     renderer.domElement.addEventListener("pointerup", onUp);
     const onSpawn = (event: Event) => {
       const item = (event as CustomEvent).detail as SpawnItem;
-      if (item === "PONGO") {
+      if (item === "WORMS") {
+        brainLife.spawnWorm();
+      } else if (item === "PONGO") {
         if (!pongoMode) spawnPongo(true);
         else {
           if (heldCan) { heldCan = null; heldTime = 0; }
