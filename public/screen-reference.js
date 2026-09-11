@@ -8,7 +8,10 @@
   const reference = document.createElement('span');
   const home = document.createElement('a');home.href='/';home.textContent='← home';home.style.cssText='color:#f7ddff;pointer-events:auto;text-decoration:none';
   banner.append(reference,home);
-  if (parent === window) document.body.append(banner);
+  const attach = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (parent === window && !banner.isConnected) document.body.append(banner);
+  }));
+  if (document.readyState === 'complete') attach(); else window.addEventListener('load', attach, {once:true});
   function update(next) {
     if (!/^(?:[a-z]+(?:[0-9]+[a-z]*)*)?$/.test(next)) return;
     mode=next;reference.textContent=number+mode;
