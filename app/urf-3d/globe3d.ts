@@ -1,3 +1,4 @@
+import {organicTerrain,loadElevation,retroLandMaterial,makeCityLights,type Elevation} from './organic-terrain';
 import { buildLaunchIsland, cosmicOcean } from "./launch-island";
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {launchVelocity,predictFlight,sphereContact,PLANET_CENTER} from "./archery";
@@ -76,6 +77,8 @@ export type Globe3DHandle = {
   /** Multiply the extruded land vertex colours (0xffffff = original palette). */
   setLandColor: (hex: number) => void;
   setOceanStyle: (style: number) => void;
+  setLandRetro: (enabled:boolean)=>void;
+  setCityLights: (enabled:boolean)=>void;
   setTerrainFinish: (finish: 'stone' | 'gloss' | 'crystal') => void;
   /** Swaps every land vertex to a red/white/blue "Old Glory" banding (baked
    * at build time, so this is a cheap attribute swap, not a rebuild). */
@@ -268,116 +271,8 @@ function buildLandMask(landFeatures: LandFeature[]): LandMask | null {
  * Builds the landmasses as real geometry: a raised plate per land cell plus a
  * cliff wall wherever land meets water, so coastlines have visible thickness.
  */
-function buildLandGeometry(
-  THREE: typeof THREE_NS,
-  mask: LandMask,
-  heightOverride?: Float32Array,
-): { geometry: THREE_NS.BufferGeometry; flagColors: Float32Array } {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const flagColors: number[] = [];
-  const deltaLon = 360 / LON_CELLS;
-  const deltaLat = 180 / LAT_CELLS;
-
-  const pushVertex = (
-    lon: number,
-    lat: number,
-    radius: number,
-    rgb: [number, number, number],
-    flagRgb: [number, number, number],
-  ) => {
-    const [x, y, z] = directionFor(lon, lat);
-    positions.push(x * radius, y * radius, z * radius);
-    colors.push(srgbToLinear(rgb[0]), srgbToLinear(rgb[1]), srgbToLinear(rgb[2]));
-    flagColors.push(srgbToLinear(flagRgb[0]), srgbToLinear(flagRgb[1]), srgbToLinear(flagRgb[2]));
-  };
-
-  const pushQuad = (
-    corners: [number, number][],
-    radii: [number, number, number, number],
-    rgb: [number, number, number],
-    flagRgb: [number, number, number],
-  ) => {
-    const [a, b, c, d] = corners;
-    pushVertex(a[0], a[1], radii[0], rgb, flagRgb);
-    pushVertex(b[0], b[1], radii[1], rgb, flagRgb);
-    pushVertex(c[0], c[1], radii[2], rgb, flagRgb);
-    pushVertex(a[0], a[1], radii[0], rgb, flagRgb);
-    pushVertex(c[0], c[1], radii[2], rgb, flagRgb);
-    pushVertex(d[0], d[1], radii[3], rgb, flagRgb);
-  };
-
-  for (let row = 0; row < LAT_CELLS; row += 1) {
-    const latTop = 90 - row * deltaLat;
-    const latBottom = latTop - deltaLat;
-    const latCenter = latTop - deltaLat / 2;
-
-    for (let column = 0; column < LON_CELLS; column += 1) {
-      const lonLeft = -180 + column * deltaLon;
-      const lonRight = lonLeft + deltaLon;
-      const lonCenter = lonLeft + deltaLon / 2;
-
-      if (!mask.isLand(lonCenter, latCenter)) continue;
-
-      const ice = mask.isIce(lonCenter, latCenter);
-      const warp = heightOverride ? heightOverride[row * LON_CELLS + column] ?? 0 : 0;
-      const height = (ice ? ICE_HEIGHT : LAND_HEIGHT) + warp;
-      const top = GLOBE_RADIUS + height;
-      const jitter = hashNoise(column, row);
-      const rgb: [number, number, number] = ice
-        ? [ICE_RGB[0] - jitter * 14, ICE_RGB[1] - jitter * 10, ICE_RGB[2] - jitter * 6]
-        : landTint(latCenter, jitter);
-      const flagRgb = flagTint(latCenter, lonCenter);
-
-      // Plate top.
-      pushQuad(
-        [
-          [lonLeft, latTop],
-          [lonRight, latTop],
-          [lonRight, latBottom],
-          [lonLeft, latBottom],
-        ],
-        [top, top, top, top],
-        rgb,
-        flagRgb,
-      );
-
-      // Cliff walls wherever this cell touches water — or, once terrain has
-      // been warped, wherever it steps down to a shorter land neighbour, so
-      // raised/lowered cells still read as solid blocks rather than a gap
-      // you can see straight through into the globe.
-      const cliff: [number, number, number] = [rgb[0] * 0.62, rgb[1] * 0.62, rgb[2] * 0.66];
-      const flagCliff: [number, number, number] = [flagRgb[0] * 0.62, flagRgb[1] * 0.62, flagRgb[2] * 0.66];
-      const neighbours: { lon: number; lat: number; row: number; column: number; edge: [number, number][] }[] = [
-        { lon: lonCenter, lat: latCenter + deltaLat, row: row - 1, column, edge: [[lonLeft, latTop], [lonRight, latTop]] },
-        { lon: lonCenter, lat: latCenter - deltaLat, row: row + 1, column, edge: [[lonRight, latBottom], [lonLeft, latBottom]] },
-        { lon: lonCenter - deltaLon, lat: latCenter, row, column: (column - 1 + LON_CELLS) % LON_CELLS, edge: [[lonLeft, latBottom], [lonLeft, latTop]] },
-        { lon: lonCenter + deltaLon, lat: latCenter, row, column: (column + 1) % LON_CELLS, edge: [[lonRight, latTop], [lonRight, latBottom]] },
-      ];
-
-      neighbours.forEach((neighbour) => {
-        const outside = neighbour.lat > 90 || neighbour.lat < -90;
-        const [start, end] = neighbour.edge;
-        if (outside || !mask.isLand(neighbour.lon, neighbour.lat)) {
-          pushQuad([start, end, end, start], [top, top, GLOBE_RADIUS, GLOBE_RADIUS], cliff, flagCliff);
-          return;
-        }
-        if (!heightOverride) return;
-        const neighbourIce = mask.isIce(neighbour.lon, neighbour.lat);
-        const neighbourWarp = heightOverride[neighbour.row * LON_CELLS + neighbour.column] ?? 0;
-        const neighbourTop = GLOBE_RADIUS + (neighbourIce ? ICE_HEIGHT : LAND_HEIGHT) + neighbourWarp;
-        if (neighbourTop < top - 0.0005) {
-          pushQuad([start, end, end, start], [top, top, neighbourTop, neighbourTop], cliff, flagCliff);
-        }
-      });
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  geometry.computeVertexNormals();
-  return { geometry, flagColors: new Float32Array(flagColors) };
+function buildLandGeometry(THREE: typeof THREE_NS,mask:LandMask,heightOverride:Float32Array|undefined,elevation:Elevation){
+ const {geometry,coords}=organicTerrain(mask,elevation,GLOBE_RADIUS,heightOverride);const flags:number[]=[];for(let i=0;i<coords.length;i+=2){const rgb=flagTint(coords[i+1],coords[i]);flags.push(...rgb.map(srgbToLinear));}return {geometry,flagColors:new Float32Array(flags)};
 }
 
 type AlienRig = {
@@ -634,6 +529,8 @@ export async function createGlobe3D(
   const THREE = await import("three");
 
   const mask = buildLandMask(landFeatures);
+  const elevation=await loadElevation();
+  const cities=await fetch("/urf-data/cities.json").then(r=>r.ok?r.json():[]).catch(()=>[]);
   if (!mask) return null;
 
   let renderer: THREE_NS.WebGLRenderer;
@@ -721,7 +618,7 @@ export async function createGlobe3D(
   // Zero-filled by default, so it changes nothing until the player sculpts.
   const terrainHeights = new Float32Array(LAT_CELLS * LON_CELLS);
 
-  let { geometry: landGeometry, flagColors } = buildLandGeometry(THREE, mask, terrainHeights);
+  let { geometry: landGeometry, flagColors } = buildLandGeometry(THREE, mask, terrainHeights, elevation);
   let landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
   let flagModeActive = false;
   const landMesh = new THREE.Mesh(
@@ -736,15 +633,19 @@ export async function createGlobe3D(
   );
   landMesh.renderOrder = 1;
   planet.add(landMesh);
+  const retroMaterial=retroLandMaterial(GLOBE_RADIUS);
+  const retroMesh=new THREE.Mesh(landGeometry,retroMaterial);retroMesh.visible=false;planet.add(retroMesh);
+  const cityLights=makeCityLights(cities,elevation,GLOBE_RADIUS);cityLights.visible=false;planet.add(cityLights);
 
   /** Rebuilds the land mesh from scratch against the current terrainHeights
    * warp. Not cheap (the full 480x240 grid), so callers throttle this during
    * a drag and only need to call it once more on release. */
   const rebuildLandGeometry = () => {
-    const rebuilt = buildLandGeometry(THREE, mask, terrainHeights);
+    const rebuilt = buildLandGeometry(THREE, mask, terrainHeights, elevation);
     landMesh.geometry.dispose();
     landMesh.geometry = rebuilt.geometry;
     landGeometry = rebuilt.geometry;
+    retroMesh.geometry=landGeometry;
     flagColors = rebuilt.flagColors;
     landBaseColors = (landGeometry.getAttribute("color") as THREE_NS.BufferAttribute).array.slice() as Float32Array;
     if (flagModeActive) {
@@ -1390,7 +1291,7 @@ export async function createGlobe3D(
       PLANET_CENTER.y + editOffsets.globe.y + editOffsets.land.y,
       PLANET_CENTER.z + editOffsets.globe.z + editOffsets.land.z,
     ).applyQuaternion(boxQuaternion);
-    nebulaMaterial.uniforms.time.value=elapsed;
+    nebulaMaterial.uniforms.time.value=elapsed;retroMaterial.uniforms.time.value=elapsed;
     worldSpin.position.copy(planet.position);
     worldSpin.scale.setScalar(1.28);
     (occluder.material as THREE_NS.ShaderMaterial).uniforms.time.value=elapsed;
@@ -1566,7 +1467,9 @@ export async function createGlobe3D(
     setLandColor: (hex) => {
       landHex = hex; applyLandFinish();
     },
-    setOceanStyle: (style) => { (occluder.material as THREE_NS.ShaderMaterial).uniforms.style.value = clamp(Math.round(style),0,3); },
+    setOceanStyle: (style) => { (occluder.material as THREE_NS.ShaderMaterial).uniforms.style.value = clamp(Math.round(style),0,4); },
+    setLandRetro: (enabled)=>{retroMesh.visible=enabled;landMesh.visible=!enabled;cityLights.material.uniforms.retro.value=enabled?1:0;},
+    setCityLights: (enabled)=>{cityLights.visible=enabled;},
     setTerrainFinish: (finish) => { terrainFinish = finish; applyLandFinish(); },
     setLandFlagMode: (enabled) => {
       flagModeActive = enabled;

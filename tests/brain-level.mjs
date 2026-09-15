@@ -4,15 +4,10 @@ import ts from 'typescript';
 import * as T from 'three';
 import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 
-await fs.mkdir(new URL('../work/brain-check/',import.meta.url),{recursive:true});
-for(const name of ['surface','cows','level','creatures','ragdoll']){
-  const source=await fs.readFile(new URL(`../app/brain-room/lib/${name}.ts`,import.meta.url),'utf8');
-  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/from '\.\/(level|surface|cows)'/g, "from './$1.mjs'");
-  await fs.writeFile(new URL(`../work/brain-check/${name}.mjs`,import.meta.url),output);
-}
-const {makeLevel,collide}=await import('../work/brain-check/level.mjs');
-const {makeBrainCreature}=await import('../work/brain-check/creatures.mjs');
-const {Ragdoll}=await import('../work/brain-check/ragdoll.mjs');
+await import('./compile-expansion.mjs');
+const {makeLevel,collide}=await import('../work/expansion-check/brain-room/lib/level.mjs');
+const {makeBrainCreature}=await import('../work/expansion-check/brain-room/lib/creatures.mjs');
+const {Ragdoll}=await import('../work/expansion-check/brain-room/lib/ragdoll.mjs');
 const level=makeLevel();
 assert.equal(level.cows.length,8);
 assert(level.solids.length>15);
@@ -22,7 +17,7 @@ collide(open,.3,level.solids);assert.equal(open.x,-6,'window must be physically 
 const floor=new T.Vector3(0,2.96,0),velocity=new T.Vector3(0,-4,0);
 assert(collide(floor,.3,level.solids,velocity));assert(floor.y>=3.29);assert(velocity.y>=0);
 
-for(const kind of ['pongo','rat']){
+for(const kind of ['pongo','rat','bongo']){
   const creature=makeBrainCreature(kind);const bounds=new T.Box3().setFromObject(creature);const height=bounds.max.y-bounds.min.y;
   // Simulate the actual capsule falling and jumping from the room through the arch.
   const p=new T.Vector3(-4.6,3.301,0),v=new T.Vector3(-3.4,7.8,0);let crossed=false;

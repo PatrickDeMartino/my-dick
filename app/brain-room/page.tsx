@@ -1,28 +1,32 @@
-"use client";
-import {useEffect,useState} from 'react';
+'use client';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import BrainWorld3D from './BrainWorld3D';
+import BongoConsole from './BongoConsole';
 import {useScreenMode} from '../lib/useScreenMode';
+import type {BrainSubject} from './lib/creatures';
 import './room.css';
+function Joystick(){
+ const center=useRef({x:0,y:0,id:-1});const [stick,setStick]=useState({x:0,y:0});
+ const clear=()=>{center.current.id=-1;setStick({x:0,y:0});window.dispatchEvent(new CustomEvent('brain-stick',{detail:{x:0,z:0}}));};
+ const move=(x:number,y:number)=>{let dx=(x-center.current.x)/42,dy=(y-center.current.y)/42;const length=Math.hypot(dx,dy);if(length>1){dx/=length;dy/=length;}setStick({x:dx*35,y:dy*35});window.dispatchEvent(new CustomEvent('brain-stick',{detail:{x:Math.abs(dx)>.1?dx:0,z:Math.abs(dy)>.1?dy:0}}));};
+ return <div className="brain-joystick" role="group" aria-label="Movement joystick" onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);const b=e.currentTarget.getBoundingClientRect();center.current={x:b.left+b.width/2,y:b.top+b.height/2,id:e.pointerId};move(e.clientX,e.clientY);}} onPointerMove={e=>{if(center.current.id===e.pointerId)move(e.clientX,e.clientY);}} onPointerUp={clear} onPointerCancel={clear} onLostPointerCapture={clear}><i style={{transform:`translate(${stick.x}px,${stick.y}px)`}}/><span>MOVE</span></div>;
+}
 export default function BrainRoom(){
-  const [subject,setSubject]=useState<'pongo'|'rat'>('pongo');
-  const [pov,setPov]=useState(false),[ragdoll,setRagdoll]=useState(false),[reset,setReset]=useState(0);
-  useScreenMode(subject==='pongo'?'a':'b');
-  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.repeat||(e.target as HTMLElement)?.closest('input,textarea,select'))return;if(e.code==='KeyR')setRagdoll(v=>!v);if(e.code==='KeyV')setPov(v=>!v);if(e.code==='KeyH'){setRagdoll(false);setReset(v=>v+1);}if(e.code==='Digit1'){setSubject('pongo');setRagdoll(false);}if(e.code==='Digit2'){setSubject('rat');setRagdoll(false);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
-  const touch=(code:string,pressed:boolean)=>window.dispatchEvent(new CustomEvent('brain-input',{detail:{code,pressed}}));
-  const choose=(s:'pongo'|'rat')=>{setSubject(s);setRagdoll(false);};
-  return <main className="brain-room cortex-game">
-    <BrainWorld3D subject={subject} walkMode={pov} ragdoll={ragdoll} reset={reset}/>
-    <div className="cortex-vignette" aria-hidden="true"/>
-    <header className="cortex-header"><a href="/" className="cortex-home">↖ HOME</a><div><p>TRIPTOTROPIC / A LIVING PLACE</p><h1>The brain room<span> & the meadow</span></h1></div><a href="/bongo" className="cortex-lab">BONGO LAB ↗</a></header>
-    <aside className="cortex-note"><span>01 / THROUGH THE WINDOW</span><p>There’s a whole world<br/>outside your head.</p><small>Jump through the arch into the cow field.<br/>Take the wooden steps to come back.</small></aside>
-    <footer className="cortex-dock">
-      <div className="cortex-subjects" aria-label="Playable characters">
-        <button aria-pressed={subject==='pongo'} onClick={()=>choose('pongo')}><img src="/media/dr-bongo-model-icon-v1.png" alt=""/><span><small>01 / PRIMATE</small><b>Pongo</b></span></button>
-        <button aria-pressed={subject==='rat'} onClick={()=>choose('rat')}><img src="/media/lab-rat-ragdoll-v2.png" alt=""/><span><small>02 / RODENT</small><b>Lab rat</b></span></button>
-      </div>
-      <div className="cortex-actions"><button aria-pressed={ragdoll} onClick={()=>setRagdoll(v=>!v)}>{ragdoll?'Stand up':'Ragdoll'} <kbd>R</kbd></button><button aria-pressed={pov} onClick={()=>setPov(v=>!v)}>{pov?'Follow camera':'First person'} <kbd>V</kbd></button><button onClick={()=>{setRagdoll(false);setReset(v=>v+1);}}>Back to room <kbd>H</kbd></button></div>
-      <p className="cortex-keys">{ragdoll?'Drag the body to lift it. Release to throw.':'WASD / arrows · Move     Shift · Run     Space · Jump     Drag · Look'}</p>
-    </footer>
-    <div className="cortex-touch" aria-label="Touch movement">{[['KeyW','↑'],['KeyA','←'],['KeyS','↓'],['KeyD','→'],['Space','Jump']].map(([code,label])=><button key={code} aria-label={label==='Jump'?'Jump':`Move ${label}`} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);touch(code,true);}} onPointerUp={()=>touch(code,false)} onPointerCancel={()=>touch(code,false)}>{label}</button>)}</div>
-  </main>;
+ const [subject,setSubject]=useState<BrainSubject>('pongo'),[pov,setPov]=useState(false),[ragdoll,setRagdoll]=useState(false),[reset,setReset]=useState(0),[spawn,setSpawn]=useState<'room'|'lab'>('room');
+ const [menu,setMenu]=useState(false),[consoleOpen,setConsoleOpen]=useState(false),[nearComputer,setNearComputer]=useState(false),[bongoUnlocked,setBongoUnlocked]=useState(false);
+ useScreenMode(consoleOpen?'c':subject==='bongo'?'d':subject==='pongo'?'a':'b');
+ useEffect(()=>{if(new URLSearchParams(window.location.search).get('arrival')==='lab')setSpawn('lab');},[]);
+ const choose=useCallback((s:BrainSubject)=>{setSubject(s);setRagdoll(false);},[]);
+ const close=useCallback(()=>setConsoleOpen(false),[]);
+ const upload=useCallback(()=>{setBongoUnlocked(true);setSubject('bongo');setRagdoll(false);setConsoleOpen(false);},[]);
+ const interact=useCallback(()=>setConsoleOpen(true),[]);
+ const home=useCallback(()=>{setRagdoll(false);setSpawn('room');setReset(v=>v+1);},[]);
+ useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.repeat||consoleOpen||(e.target as HTMLElement)?.closest('input,textarea,select'))return;if(e.code==='KeyR')setRagdoll(v=>!v);if(e.code==='KeyV')setPov(v=>!v);if(e.code==='KeyH')home();if(e.code==='Digit1')choose('pongo');if(e.code==='Digit2')choose('rat');if(e.code==='Digit3'&&bongoUnlocked)choose('bongo');if(e.code==='Escape')setMenu(v=>!v);};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[consoleOpen,bongoUnlocked,choose,home]);
+ const touch=(pressed:boolean)=>window.dispatchEvent(new CustomEvent('brain-input',{detail:{code:'Space',pressed}}));
+ const bongoAction=(action:'feed'|'beat')=>window.dispatchEvent(new CustomEvent('trip-bongo-action',{detail:{action}}));
+ return <main className="brain-room cortex-game"><BrainWorld3D subject={subject} walkMode={pov} ragdoll={ragdoll} reset={reset} spawn={spawn} paused={consoleOpen} onInteract={interact} onNearComputer={setNearComputer}/><div className="cortex-vignette" aria-hidden="true"/>
+ <nav className="brain-ribbon" aria-label="Brain world controls"><a href="/">↖ HOME</a><h1>Brain room <span>· Meadow · Bongo’s lab</span></h1><button className="brain-menu-toggle" aria-expanded={menu} aria-controls="brain-options" onClick={()=>setMenu(v=>!v)}>{menu?'Close menu ×':'Menu ☰'}</button>
+ {menu&&<div id="brain-options" className="brain-options"><section><b>PLAY AS</b><div><button aria-pressed={subject==='pongo'} onClick={()=>choose('pongo')}>Pongo <kbd>1</kbd></button><button aria-pressed={subject==='rat'} onClick={()=>choose('rat')}>Lab rat <kbd>2</kbd></button>{bongoUnlocked&&<button aria-pressed={subject==='bongo'} onClick={()=>choose('bongo')}>Dr. Bongo <kbd>3</kbd></button>}</div></section><section><b>BODY & CAMERA</b><div><button aria-pressed={ragdoll} onClick={()=>setRagdoll(v=>!v)}>{ragdoll?'Stand up':'Ragdoll'} <kbd>R</kbd></button><button aria-pressed={pov} onClick={()=>setPov(v=>!v)}>{pov?'Follow camera':'First person'} <kbd>V</kbd></button><button onClick={home}>Back to room <kbd>H</kbd></button><a href="/assets-room">Assets room</a></div></section><section><b>BONGO</b><div><button disabled={!nearComputer} onClick={interact}>Use computer <kbd>E</kbd></button><button onClick={()=>bongoAction('feed')}>Feed banana</button><button onClick={()=>bongoAction('beat')}>Bonk Bongo</button></div><small>Walk through the pasture’s north gate to the laboratory.</small></section><p>WASD / arrows move · Space jumps · Shift runs · Drag to look. Ragdolls can be grabbed and thrown.</p></div>}</nav>
+ <div className="brain-mobile-controls"><Joystick/><button className="brain-jump" onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);touch(true);}} onPointerUp={()=>touch(false)} onPointerCancel={()=>touch(false)} onLostPointerCapture={()=>touch(false)}>↑<span>JUMP</span></button></div>
+ {nearComputer&&!consoleOpen&&<button className="brain-interact" onClick={interact}>Use Bongo’s computer <kbd>E</kbd></button>}{consoleOpen&&<BongoConsole onClose={close} onUpload={upload}/>}</main>;
 }

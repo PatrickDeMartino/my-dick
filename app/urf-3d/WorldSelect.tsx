@@ -93,6 +93,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [selector, setSelector] = useState<{ name: string; unlocked: boolean; lon: number; lat: number } | null>(null);
   const [landPreset, setLandPreset] = useState("original");
   const [oceanStyle,setOceanStyle]=useState(0);
+  const [cityLights,setCityLights]=useState(false);
   const [terrainFinish,setTerrainFinish]=useState<'stone'|'gloss'|'crystal'>('stone');
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
@@ -264,12 +265,14 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   useEffect(() => {
     const preset = LAND_COLOR_PRESETS.find((entry) => entry.id === landPreset);
     if (preset) worldRef.current?.setLandColor(preset.hex);
+    worldRef.current?.setLandRetro(landPreset==="retro");
   }, [landPreset, world3d]);
 
   useEffect(() => {
     worldRef.current?.setSatelliteLoadout(satelliteParts);
   }, [satelliteParts, world3d]);
 
+  useEffect(()=>{worldRef.current?.setCityLights(cityLights);},[cityLights,world3d]);
   useEffect(()=>{worldRef.current?.setOceanStyle(oceanStyle);},[oceanStyle,world3d]);
   useEffect(()=>{worldRef.current?.setTerrainFinish(terrainFinish);},[terrainFinish,world3d]);
 
@@ -745,9 +748,10 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                 </button>
               ))}
               <span>LAND FINISH</span>
+              <button type="button" className={cityLights?"is-active":""} aria-pressed={cityLights} onClick={()=>setCityLights(!cityLights)}>CITY LIGHTS {cityLights?"ON":"OFF"}</button>
               {(['stone','gloss','crystal'] as const).map(finish=><button key={finish} type="button" className={terrainFinish===finish?'is-active':''} aria-pressed={terrainFinish===finish} onClick={()=>setTerrainFinish(finish)}>{finish.toUpperCase()}</button>)}
               <span>OCEAN</span>
-              {['COSMIC INK','LIQUID RAINBOW','NEON CELLS','ACID RIPPLES'].map((name,i)=><button key={name} type="button" className={oceanStyle===i?'is-active':''} aria-pressed={oceanStyle===i} onClick={()=>setOceanStyle(i)}>{name}</button>)}
+              {['COSMIC INK','LIQUID RAINBOW','NEON CELLS','ACID RIPPLES','RETRO'].map((name,i)=><button key={name} type="button" className={oceanStyle===i?'is-active':''} aria-pressed={oceanStyle===i} onClick={()=>setOceanStyle(i)}>{name}</button>)}
               <span>SATELLITE</span>
               {SATELLITE_PARTS.map((part) => (
                 <button

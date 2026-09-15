@@ -38,13 +38,15 @@ export function buildLaunchIsland(){
 }
 
 export function cosmicOcean(){
-  return new T.ShaderMaterial({uniforms:{time:{value:0},style:{value:0}},vertexShader:`varying vec3 p;varying vec3 n;void main(){p=normalize(position);n=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader:`varying vec3 p;varying vec3 n;uniform float time;uniform float style;
+  const retro=typeof document!=='undefined'?new T.TextureLoader().load('/media/psychedelic-earth-texture-v1.png'):new T.DataTexture(new Uint8Array([90,20,150,255]),1,1);retro.wrapS=retro.wrapT=T.RepeatWrapping;retro.needsUpdate=true;
+  return new T.ShaderMaterial({uniforms:{retro:{value:retro},time:{value:0},style:{value:0}},vertexShader:`varying vec3 p;varying vec3 n;void main(){p=normalize(position);n=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`varying vec3 p;varying vec3 n;uniform float time;uniform float style;uniform sampler2D retro;
     vec3 rainbow(float x){return .5+.5*cos(6.28318*(vec3(0.,.33,.67)+x));}
     void main(){float t=time*.13;float w=sin(p.x*13.+sin(p.y*12.+t)*2.8+p.z*5.);float bands=sin(w*3.+p.y*19.+t)*.5+.5;
       vec3 color=mix(vec3(.12,.025,.28),vec3(.1,.45,.56),smoothstep(.15,.65,bands));color=mix(color,vec3(.68,.09,.47),smoothstep(.55,.94,bands));
       if(style>.5&&style<1.5){float flow=sin(p.x*8.+sin(p.z*10.-t)*2.)+sin(p.y*9.+cos(p.x*7.+t)*2.);color=rainbow(flow*.3+t*.09)*(.65+.35*sin(flow*4.));}
       if(style>1.5&&style<2.5){float cells=sin(p.x*18.+t)*sin(p.y*16.-t)+sin(p.z*19.+t*.7);float edges=pow(1.-abs(sin(cells*3.)),7.);color=mix(vec3(.025,.03,.13),rainbow(cells*.2+t*.04),edges);color+=vec3(.04,.2,.23)*(.5+.5*sin(cells*7.));}
       if(style>2.5){float ripple=sin(length(p.xy+vec2(sin(t)*.25,cos(t*.7)*.3))*36.-t*3.+sin(p.z*11.)*2.);color=mix(vec3(.23,.015,.31),vec3(1.,.36,.08),smoothstep(-.6,.6,ripple));color=mix(color,vec3(.12,.85,.67),pow(max(0.,ripple),8.));}
+      if(style>3.5){vec2 uv=vec2(atan(p.x,p.z)/6.28318+.5,asin(clamp(p.y,-1.,1.))/3.14159+.5);gl_FragColor=texture2D(retro,uv+vec2(time*.003,sin(time*.07)*.025));return;}
       float light=.55+.45*max(0.,dot(normalize(n),normalize(vec3(-2.,2.,3.))));gl_FragColor=vec4(color*light,1.);}`});
 }

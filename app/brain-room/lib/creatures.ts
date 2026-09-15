@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {furMaterial} from './surface';
-export type BrainSubject='pongo'|'rat'|null;
+import {makeDrBongo} from './bongo';
+export type BrainSubject='pongo'|'rat'|'bongo'|null;
 function ellipsoid(parent:T.Object3D,mat:T.Material,p:number[],s:number[]){const o=new T.Mesh(new T.SphereGeometry(1,28,20),mat);o.position.set(p[0],p[1],p[2]);o.scale.set(s[0],s[1],s[2]);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
 function joint(parent:T.Object3D,p:number[],name:string){const o=new T.Group();o.name=name;o.position.set(p[0],p[1],p[2]);parent.add(o);return o;}
 function tube(parent:T.Object3D,mat:T.Material,points:T.Vector3[],radius:number){const o=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),24,radius,7,false),mat);parent.add(o);return o;}
@@ -27,32 +28,37 @@ function makeRat(){
   root.scale.setScalar(2.4);root.userData={kind:'rat',torso,head,limbs,tail,ears,walk:0,vy:0};return root;
 }
 export function makeBrainCreature(kind:Exclude<BrainSubject,null>){
-  if(kind==='rat')return makeRat();
-  const root=new T.Group();root.name='Pongo — peanut orangutan';
-  const fur=furMaterial(0xb55a27),skin=new T.MeshStandardMaterial({color:0x875342,roughness:.82}),face=new T.MeshStandardMaterial({color:0xbf9070,roughness:.8}),dark=new T.MeshPhysicalMaterial({color:0x23130f,roughness:.2,clearcoat:.55}),white=new T.MeshStandardMaterial({color:0xffe9cd});
-  const torso=ellipsoid(root,fur,[0,1.19,0],[.59,1.02,.46]);ellipsoid(root,fur,[0,.81,.035],[.61,.56,.49]);ellipsoid(root,skin,[0,1.13,.42],[.33,.64,.055]);
-  const head=joint(root,[0,2.03,.02],'Pill head');ellipsoid(head,fur,[0,0,0],[.49,.66,.43]);ellipsoid(head,face,[0,-.07,.335],[.38,.42,.12]);
-  for(const side of [-1,1]){
-    ellipsoid(head,skin,[side*.345,-.11,.31],[.16,.23,.14]);ellipsoid(head,white,[side*.163,.08,.437],[.105,.117,.038]);ellipsoid(head,dark,[side*.174,.066,.47],[.053,.065,.025]);ellipsoid(head,white,[side*.174-.018,.092,.49],[.015,.018,.007]);
-    ellipsoid(head,fur,[side*.165,.211,.414],[.145,.037,.049]).rotation.z=side*.12;ellipsoid(head,skin,[side*.45,.025,.03],[.082,.14,.075]);
-  }
-  ellipsoid(head,skin,[0,-.102,.469],[.144,.077,.09]);for(const side of [-1,1])ellipsoid(head,dark,[side*.052,-.114,.546],[.026,.014,.009]);
-  ellipsoid(head,dark,[0,-.259,.443],[.105,.08,.032]);ellipsoid(head,face,[0,-.28,.458],[.112,.029,.023]);for(const side of [-1,1])ellipsoid(head,white,[side*.035,-.219,.468],[.032,.028,.013]);
-  for(let i=0;i<7;i++)ellipsoid(head,fur,[(i-3)*.065,.58+Math.sin(i)*.02,-.005],[.046,.15,.045]).rotation.z=(i-3)*-.1;
-  const limbs:T.Group[]=[];
-  for(const side of [-1,1]){
-    const shoulder=joint(root,[side*.53,1.77,0],side<0?'Left shoulder':'Right shoulder');ellipsoid(shoulder,fur,[side*.05,-.4,0],[.17,.47,.17]);
-    const elbow=joint(shoulder,[side*.06,-.81,0],'Elbow');ellipsoid(elbow,fur,[0,-.35,.01],[.13,.4,.13]);ellipsoid(elbow,skin,[0,-.76,.05],[.16,.16,.13]);
-    for(let i=0;i<4;i++)ellipsoid(elbow,skin,[(i-1.5)*.058,-.85,.11],[.028,.105,.035]);
-    const hip=joint(root,[side*.29,.79,0],'Short leg hip');ellipsoid(hip,fur,[0,-.17,0],[.16,.22,.17]);
-    const knee=joint(hip,[0,-.34,0],'Knee');ellipsoid(knee,fur,[0,-.13,.012],[.115,.18,.12]);ellipsoid(knee,skin,[0,-.285,.105],[.15,.075,.225]);
-    for(let i=0;i<4;i++)ellipsoid(knee,skin,[(i-1.5)*.06,-.29,.29],[.031,.047,.069]);limbs.push(shoulder,elbow,hip,knee);
-  }
-  root.scale.setScalar(.62);root.userData={kind,torso,head,limbs,walk:0,vy:0};return root;
+ if(kind==='rat')return makeRat();if(kind==='bongo')return makeDrBongo();
+ const root=new T.Group();root.name='Pongo — lanky banana bean';
+ const fur=furMaterial(0xa65525),skin=new T.MeshStandardMaterial({color:0x9c7352,roughness:.86}),face=new T.MeshStandardMaterial({color:0xc49e71,roughness:.83}),dark=new T.MeshPhysicalMaterial({color:0x21150f,roughness:.2}),white=new T.MeshStandardMaterial({color:0xffe5b0});
+ const profile=[new T.Vector2(0,.28),new T.Vector2(.22,.35),new T.Vector2(.36,.65),new T.Vector2(.35,1.05),new T.Vector2(.31,1.5),new T.Vector2(.30,1.95),new T.Vector2(.29,2.26),new T.Vector2(.21,2.49),new T.Vector2(0,2.59)];
+ const geometry=new T.LatheGeometry(profile,36);const pos=geometry.getAttribute('position');for(let i=0;i<pos.count;i++){const y=pos.getY(i);pos.setZ(i,pos.getZ(i)*.86+.12*Math.sin(y*1.2));}geometry.computeVertexNormals();
+ const torso=new T.Mesh(geometry,fur);torso.castShadow=torso.receiveShadow=true;root.add(torso);
+ ellipsoid(root,skin,[0,1.29,.345],[.2,.67,.035]);
+ const head=joint(root,[0,2.15,.05],'Dopey face');ellipsoid(head,face,[0,-.02,.255],[.265,.3,.087]);
+ for(const side of [-1,1]){
+  ellipsoid(head,white,[side*.12,.065,.331],[.094,.083,.026]);ellipsoid(head,dark,[side*.13,.047,.353],[.035,.044,.016]);ellipsoid(head,white,[side*.13-.01,.06,.367],[.009,.01,.004]);
+  ellipsoid(head,fur,[side*.12,.112,.35],[.108,.029,.021]).rotation.z=side*.09;
+  ellipsoid(head,skin,[side*.29,-.01,.045],[.066,.105,.055]);
+  ellipsoid(head,fur,[side*.256,-.17,.22],[.064,.19,.07]).rotation.z=side*.14;
+ }
+ ellipsoid(head,skin,[0,-.079,.357],[.108,.065,.087]);for(const side of [-1,1])ellipsoid(head,dark,[side*.043,-.096,.432],[.023,.012,.008]);
+ const grin=tube(head,dark,[new T.Vector3(-.17,-.18,.32),new T.Vector3(-.06,-.21,.344),new T.Vector3(.09,-.21,.343),new T.Vector3(.18,-.16,.32)],.016);
+ ellipsoid(head,white,[.065,-.204,.351],[.032,.031,.008]);ellipsoid(head,skin,[0,-.26,.265],[.14,.055,.066]);
+ for(let i=0;i<5;i++)ellipsoid(root,fur,[(i-2)*.066,2.51+Math.sin(i)*.025,.035],[.038,.13,.038]).rotation.z=(i-2)*-.17;
+ const limbs:T.Group[]=[];
+ for(const side of [-1,1]){
+  const shoulder=joint(root,[side*.32,1.83,.035],'Shoulder');ellipsoid(shoulder,fur,[side*.04,-.4,0],[.115,.45,.115]);
+  const elbow=joint(shoulder,[side*.04,-.8,0],'Elbow');ellipsoid(elbow,fur,[0,-.35,0],[.095,.4,.095]);ellipsoid(elbow,skin,[0,-.75,.05],[.13,.12,.1]);
+  for(let i=0;i<4;i++)ellipsoid(elbow,skin,[(i-1.5)*.048,-.84,.10],[.022,.095,.03]);
+  const hip=joint(root,[side*.18,.78,0],'Short hip');ellipsoid(hip,fur,[0,-.17,0],[.115,.22,.12]);const knee=joint(hip,[0,-.34,0],'Knee');ellipsoid(knee,fur,[0,-.13,.012],[.085,.18,.085]);ellipsoid(knee,skin,[0,-.285,.105],[.12,.065,.21]);
+  for(let i=0;i<3;i++)ellipsoid(knee,skin,[(i-1)*.059,-.29,.285],[.028,.04,.06]);limbs.push(shoulder,elbow,hip,knee);
+ }
+ root.scale.setScalar(.67);root.userData={kind,torso,head,limbs,walk:0,vy:0};return root;
 }
 export function animateCreature(root:T.Group,time:number,moving:boolean,dt:number){
-  const {kind,limbs,head,tail,ears}=root.userData,blend=1-Math.exp(-dt*14),phase=time*(kind==='pongo'?6:11),s=Math.sin(phase);
-  if(kind==='pongo'){
+  const {kind,limbs,head,tail,ears}=root.userData,blend=1-Math.exp(-dt*14),phase=time*(kind==='rat'?11:6),s=Math.sin(phase);
+  if(kind==='pongo'||kind==='bongo'){
     // Paired knuckle/crutch bound: both arms plant together, short legs follow.
     for(let side=0;side<2;side++){const index=side*4,targets=moving?[s*.48,-.2-Math.max(0,-s)*.4,-s*.27,.16+Math.max(0,s)*.2]:[.02,-.12,0,.1];for(let i=0;i<4;i++)limbs[index+i].rotation.x=T.MathUtils.lerp(limbs[index+i].rotation.x,targets[i],blend);limbs[index].rotation.z=side===0?-.11:.11;}
     head.rotation.z=Math.sin(time*1.7)*.045;head.rotation.x=moving?Math.sin(phase)*.065:Math.sin(time)*.025;

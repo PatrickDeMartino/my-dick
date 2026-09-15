@@ -1,0 +1,5 @@
+Elevation: NASA Blue Marble Next Generation / GEBCO 08, grayscale 0-6400 m. Relief is artistically exaggerated.
+https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/
+Cities: Natural Earth populated places, public domain, population >300,000. Lights illustrate real city locations, not measured night radiance.
+https://www.naturalearthdata.com/
+Retro ocean: original site artwork /media/psychedelic-earth-texture-v1.png

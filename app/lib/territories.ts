@@ -70,6 +70,7 @@ export function territoryFromLonLat(lon: number, lat: number): TerritoryBox | nu
 }
 
 export const LAND_COLOR_PRESETS: { id: string; label: string; hex: number }[] = [
+  {id:"retro",label:"RETRO",hex:0xffffff},
   { id: "original", label: "URF", hex: 0xffffff },
   { id: "acid", label: "ACID", hex: 0xb9ff39 },
   { id: "dusk", label: "DUSK", hex: 0xff7ad4 },

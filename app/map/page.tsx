@@ -24,7 +24,7 @@ const NODES: ChartNode[] = [
   { id: "townhex", href: "/penguin-town-hex", icon: "⬡", label: "PENGUIN TOWN · HEX", hint: "experimental hex-grid take, sign in to build", x: 25, y: 80 },
   { id: "yoohoo", href: "/bb-yoohoo-room", icon: "🥤", label: "BB'S YOO-HOO ROOM", hint: "found by hitting Middle East", x: 50, y: 92 },
   { id: "brain", href: "/brain-room", icon: "🧠", label: "THE BRAIN ROOM", hint: "squishy neural playroom", x: 92, y: 50 },
-  { id: "bongo", href: "/bongo", icon: "🦧", label: "BONGO'S LAB", hint: "standalone neural link", x: 85, y: 80 },
+  { id: "bongo", href: "/bongo", icon: "🦧", label: "BONGO'S LAB", hint: "inside the brain-room world", x: 85, y: 80 },
   { id: "anubis", href: "/anubis", icon: "☥", label: "ANUBIS TV ROOM", hint: "temple television, smokes once a minute", x: 8, y: 88 },
 ];
 

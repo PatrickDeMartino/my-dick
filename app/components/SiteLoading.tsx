@@ -26,7 +26,7 @@ const MESSAGES = ["the government is always watching", "downloading spyware", "g
 export default function SiteLoading() {
   const pathname = usePathname().replace(/\/$/, "") || "/";
   const theme = THEMES[pathname] ?? { art: "/media/loading-art.webp", title: "ENTERING THE WEIRD", accent: "#ef77ff" };
-  const message = useMemo(() => pathname === "/" ? "sup dood, im pat\nthis is my fucking website\npeep it   shit's Lit" : MESSAGES[Math.floor(Math.random() * MESSAGES.length)], [pathname]);
+  const message = useMemo(() => pathname === "/" ? "sup dood, im pat\nthis is my fucking website\npeep it   shit's Lit" : MESSAGES[Array.from(pathname).reduce((sum,c)=>sum+c.charCodeAt(0),0)%MESSAGES.length], [pathname]);
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(true);
   const [failure, setFailure] = useState(false);

@@ -48,43 +48,8 @@ test("mobile landing choices are active and open with one tap", async () => {
   assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.choice-object \.choice-object-label \{ opacity: 1;/);
 });
 
-test("renders the Dr. Bongo neural-link scene", async () => {
-  const response = await request("/bongo");
-  assert.equal(response.status, 200);
-
-  const html = await response.text();
-  assert.match(html, /Dr\. Bongo Neural Link/);
-  assert.match(html, /Talk to the ape/);
-  assert.match(html, /orangutan-aliens\.jpg/);
-  assert.match(html, /Fuck this Noise/);
-});
-
-test("Dr. Bongo has full-screen Feed and Beat interactions", async () => {
-  const widget = await readFile(new URL("../app/bongo/OrangutanWidget.tsx", import.meta.url), "utf8");
-  const banner = await readFile(new URL("../app/components/SiteBanner.tsx", import.meta.url), "utf8");
-  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-
-  assert.match(widget, /className="orangutan-playfield"/);
-  assert.match(widget, /new THREE\.WebGLRenderer/);
-  assert.match(widget, /spawnBananaRef\.current = spawnBanana/);
-  assert.match(widget, /beatBongoRef\.current = swingBat/);
-  assert.match(widget, /chewTimer/);
-  assert.match(widget, /targetScale \+ 0\.05/);
-  assert.match(widget, /targetScale - 0\.05/);
-  assert.match(widget, /PROPERTY OF/);
-  assert.match(widget, /THE CIA/);
-  assert.match(widget, /triggerBloodSpatter\(\)/);
-  assert.match(widget, /textureLoader\.load\("\/media\/bongo-banana-cutout-v1\.png"\)/);
-  assert.match(widget, /textureLoader\.load\("\/media\/bongo-bat-cutout-v1\.png"\)/);
-  assert.match(banner, /interactWithBongo\("feed"\)/);
-  assert.match(banner, /interactWithBongo\("beat"\)/);
-  assert.match(banner, /dr-bongo-model-icon-v1\.png/);
-  assert.match(banner, /bongo-banana-cutout-v1\.png/);
-  assert.match(banner, /bongo-bat-cutout-v1\.png/);
-  const actionHandler = banner.match(/const interactWithBongo[\s\S]*?\n {2}};/)?.[0] ?? "";
-  assert.doesNotMatch(actionHandler, /setBongoMenuOpen\(false\)/);
-  assert.match(styles, /bongo-blood-flash \.5s/);
-});
+test("old Bongo room redirects into the shared laboratory",async()=>{const response=await request('/bongo');assert.equal(response.status,307);assert.equal(response.headers.get('location'),'/brain-room?arrival=lab');});
+test("shared brain world contains the Bongo console and collapsible controls",async()=>{const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/Brain world controls/);assert.match(html,/aria-expanded="false"/);const consoleSource=await readFile(new URL('../app/brain-room/BongoConsole.tsx',import.meta.url),'utf8');assert.match(consoleSource,/api\/chat/);assert.match(consoleSource,/Upload consciousness/);});
 
 test("chat remains interactive without an API key", async () => {
   const response = await request("/api/chat", {
@@ -149,16 +114,8 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   assert.match(banner, /trip-rat-meat-balance-changed/);
 });
 
-test("renders the playable Brain Room and meadow controls", async () => {
-  const response = await request("/brain-room");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /The brain room/i);
-  assert.match(html, /cow field/i);
-  assert.match(html, /Lab rat/);
-  assert.match(html, /Ragdoll/);
-  assert.doesNotMatch(html, /brain-room__art-overlay/);
-  assert.match(html, /href="\/bongo"/);
+test("renders the expanded Brain Room with a closed menu and mobile controls", async () => {
+ const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/Brain room/);assert.match(html,/Bongo/);assert.match(html,/brain-joystick/);assert.match(html,/JUMP/);assert.match(html,/aria-expanded="false"/);assert.doesNotMatch(html,/brain-room__art-overlay/);
 });
 
 test("renders the Anubis pigeon television room", async () => {
