@@ -149,13 +149,15 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
   assert.match(banner, /trip-rat-meat-balance-changed/);
 });
 
-test("renders the responsive Brain Room experiment selector", async () => {
+test("renders the playable Brain Room and meadow controls", async () => {
   const response = await request("/brain-room");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Choose a test subject/i);
-  assert.match(html, /brain-room-overlay-mobile\.jpg/);
-  assert.match(html, /LAB RAT/);
+  assert.match(html, /The brain room/i);
+  assert.match(html, /cow field/i);
+  assert.match(html, /Lab rat/);
+  assert.match(html, /Ragdoll/);
+  assert.doesNotMatch(html, /brain-room__art-overlay/);
   assert.match(html, /href="\/bongo"/);
 });
 

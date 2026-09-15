@@ -1,125 +1,28 @@
 "use client";
-import { useScreenMode } from "../lib/useScreenMode";
-
-import { FormEvent, useEffect, useRef, useState } from "react";
-import BrainWorld3D from "./BrainWorld3D";
-
-type Subject = "pongo" | "rat";
-type Motion = { x: number; y: number; vx: number; vy: number };
-type Message = { role: "user" | "assistant"; content: string };
-const opening: Message = { role: "assistant", content: "Bongo online. The room is a brain, the brain is a room, and I still require bananas." };
-
-export default function BrainRoom() {
-  const roomRef = useRef<HTMLElement>(null);
-  const dragRef = useRef<{ pointer: number; dx: number; dy: number; lastX: number; lastY: number; lastTime: number } | null>(null);
-  const motionRef = useRef<Motion>({ x: 55, y: 40, vx: 0, vy: 0 });
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [ratMotion, setRatMotion] = useState(motionRef.current);
-  const [consoleOpen, setConsoleOpen] = useState(false);
-  const [pov, setPov] = useState(false);
-  const [walker, setWalker] = useState({ x: 50, y: 66 });
-  const [roomEvent, setRoomEvent] = useState("WASD / ARROWS TO EXPLORE");
-  const [messages, setMessages] = useState<Message[]>([opening]);
-  const [draft, setDraft] = useState("");
-  const [thinking, setThinking] = useState(false);
-  useScreenMode((subject === "pongo" ? "a" : subject === "rat" ? "b" : "") + (pov ? (subject ? "1" : "c") : "") + (consoleOpen ? (subject ? (pov ? "a" : "2") : "d") : ""));
-
-  const chooseSubject = (next: Subject) => {
-    setSubject((current) => current === next ? null : next);
-    setPov(false);
-    setRoomEvent("DRAG · THROW · BOUNCE");
-    if (next === "pongo") setConsoleOpen(false);
-  };
-
-  useEffect(() => {
-    if (subject !== "rat" || pov) return;
-    let frame = 0;
-    let previous = performance.now();
-    const animate = (now: number) => {
-      const dt = Math.min((now - previous) / 1000, .035);
-      previous = now;
-      if (!dragRef.current) {
-        const next = { ...motionRef.current };
-        next.vy += 52 * dt; next.x += next.vx * dt; next.y += next.vy * dt;
-        next.vx *= Math.pow(.985, dt * 60);
-        if (next.x < 2 || next.x > 78) { next.x = Math.max(2, Math.min(78, next.x)); next.vx *= -.72; }
-        if (next.y < 2 || next.y > 70) { next.y = Math.max(2, Math.min(70, next.y)); next.vy *= -.66; }
-        motionRef.current = next; setRatMotion(next);
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [subject, pov]);
-
-  useEffect(() => {
-    if (!pov) return;
-    const move = (dx: number, dy: number) => setWalker((current) => ({ x: Math.max(7, Math.min(90, current.x + dx)), y: Math.max(34, Math.min(78, current.y + dy)) }));
-    const onKey = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
-      if (["arrowleft", "a"].includes(key)) move(-3, 0);
-      if (["arrowright", "d"].includes(key)) move(3, 0);
-      if (["arrowup", "w"].includes(key)) move(0, -2.4);
-      if (["arrowdown", "s"].includes(key)) move(0, 2.4);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pov]);
-
-  async function transmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const content = draft.trim();
-    if (!content || thinking) return;
-    const next = [...messages, { role: "user" as const, content }];
-    setMessages(next); setDraft(""); setThinking(true);
-    try {
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: next }) });
-      const data = await response.json() as { reply?: string };
-      setMessages((current) => [...current, { role: "assistant", content: data.reply || "The implant received only static and one banana emoji." }]);
-    } catch { setMessages((current) => [...current, { role: "assistant", content: "Neural signal scrambled. Try again, human." }]); }
-    finally { setThinking(false); }
-  }
-
-  const moveWalker = (dx: number, dy: number) => setWalker((current) => ({ x: Math.max(7, Math.min(90, current.x + dx)), y: Math.max(34, Math.min(78, current.y + dy)) }));
-  const cameraTransform = pov ? `perspective(1100px) translate3d(${(50 - walker.x) * .18}vw, ${(58 - walker.y) * .08}vh, 55px) scale(1.17)` : undefined;
-
-  return <main className={`brain-room${pov ? " is-pov" : ""}${subject ? ` has-${subject}` : ""}`} ref={roomRef}>
-    <BrainWorld3D subject={subject} walkMode={pov} />
-    <picture className="brain-room__art-overlay" aria-hidden="true">
-      <source media="(max-width: 620px)" srcSet="/brain-room/brain-room-overlay-mobile.jpg" />
-      <source media="(max-width: 1100px)" srcSet="/brain-room/brain-room-overlay-tablet.jpg" />
-      <img src="/brain-room/brain-room-overlay-wide.jpg" alt="" />
-    </picture>
-    <div className="brain-room__shade" aria-hidden="true" />
-    <a className="brain-room__back" href="/">← HOME</a>
-    <header className="brain-room__title"><small>NEURAL PLAYROOM</small><h1>{pov ? "Walk the cortex" : "Choose a test subject"}</h1></header>
-
-    {!pov && <nav className="brain-room__controls" aria-label="Brain room experiments">
-      <button type="button" aria-pressed={subject === "pongo"} onClick={() => chooseSubject("pongo")}><img src="/media/dr-bongo-model-icon-v1.png" alt="" /><span><b>PONGO</b><small>{subject === "pongo" ? "Pongo go nap now" : "Pongo dumb · Bongo smart"}</small></span></button>
-      <button type="button" aria-pressed={subject === "rat"} onClick={() => chooseSubject("rat")}><img src="/media/lab-rat-ragdoll-v2.png" alt="" /><span><b>LAB RAT</b><small>{subject === "rat" ? "Return rat to cage" : "Activate articulated physics rat"}</small></span></button>
-    </nav>}
-    {!pov && <a className="brain-room__full-lab" href="/bongo">OPEN STANDALONE BONGO LAB ↗</a>}
-
-    {subject && <button className="brain-room__pov" type="button" onClick={() => setPov((value) => !value)}>{pov ? "EXIT POV" : "SWITCH TO POV"}</button>}
-    {subject === "pongo" && !pov && <p className="brain-room__hint">PONGO · WASD WALK · SPACE JUMP · DRAG CAMERA</p>}
-
-    {false && subject === "rat" && !pov && <button type="button" className={`brain-room__rat${Math.abs(ratMotion.vx) + Math.abs(ratMotion.vy) > 7 ? " is-flying" : ""}`} aria-label="Drag and throw the articulated laboratory rat" style={{ left: `${ratMotion.x}%`, top: `${ratMotion.y}%`, transform: `rotate(${Math.max(-28, Math.min(28, ratMotion.vx * .6))}deg)` }}
-      onPointerDown={(event) => { const bounds = roomRef.current?.getBoundingClientRect(); if (!bounds) return; event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { pointer: event.pointerId, dx: event.clientX - bounds.left - bounds.width * ratMotion.x / 100, dy: event.clientY - bounds.top - bounds.height * ratMotion.y / 100, lastX: event.clientX, lastY: event.clientY, lastTime: performance.now() }; }}
-      onPointerMove={(event) => { const drag = dragRef.current; const bounds = roomRef.current?.getBoundingClientRect(); if (!drag || drag.pointer !== event.pointerId || !bounds) return; const now = performance.now(); const elapsed = Math.max(now - drag.lastTime, 8); const next = { x: Math.max(2, Math.min(78, (event.clientX - bounds.left - drag.dx) / bounds.width * 100)), y: Math.max(2, Math.min(70, (event.clientY - bounds.top - drag.dy) / bounds.height * 100)), vx: (event.clientX - drag.lastX) / bounds.width * 100000 / elapsed, vy: (event.clientY - drag.lastY) / bounds.height * 100000 / elapsed }; drag.lastX = event.clientX; drag.lastY = event.clientY; drag.lastTime = now; motionRef.current = next; setRatMotion(next); }}
-      onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }}>
-      <span className="rat-joint rat-tail" /><span className="rat-joint rat-ear" /><span className="rat-joint rat-paw rat-paw-one" /><span className="rat-joint rat-paw rat-paw-two" />
-      <img src="/media/lab-rat-ragdoll-v2.png" alt="A realistic white laboratory rat" draggable={false} />
-    </button>}
-
-    {false && pov && subject && <section className="brain-room__pov-world" aria-label="Navigable third-person brain room">
-      <button className="brain-hotspot brain-window" type="button" onClick={() => { setRoomEvent("VOID ACCEPTED · RESPAWNING SUBJECT"); setWalker({ x: 50, y: 66 }); }}>JUMP OUT WINDOW <small>(suicide)</small></button>
-      <button className="brain-hotspot brain-beanbag" type="button" onClick={() => { setRoomEvent("GOOD · NEURAL COMFORT +1"); setWalker({ x: 73, y: 64 }); }}>SIT IN BEAN BAG <small>(good)</small></button>
-      <div className={`brain-room__walker is-${subject}`} style={{ left: `${walker.x}%`, top: `${walker.y}%`, transform: `translate(-50%,-100%) scale(${.66 + walker.y / 125})` }}><img src={subject === "pongo" ? "/media/dr-bongo-model-icon-v1.png" : "/media/lab-rat-ragdoll-v2.png"} alt={subject === "pongo" ? "Pongo" : "Laboratory rat"} /></div>
-      <p className="brain-room__event">{roomEvent}</p>
-      <div className="brain-room__dpad" aria-label="Movement controls"><button onClick={() => moveWalker(0,-3)}>▲</button><button onClick={() => moveWalker(-4,0)}>◀</button><button onClick={() => moveWalker(0,3)}>▼</button><button onClick={() => moveWalker(4,0)}>▶</button></div>
-    </section>}
-
-    {subject === "rat" && !pov && <p className="brain-room__hint">WASD WALK · SPACE JUMP · DRAG CAMERA</p>}
+import {useEffect,useState} from 'react';
+import BrainWorld3D from './BrainWorld3D';
+import {useScreenMode} from '../lib/useScreenMode';
+import './room.css';
+export default function BrainRoom(){
+  const [subject,setSubject]=useState<'pongo'|'rat'>('pongo');
+  const [pov,setPov]=useState(false),[ragdoll,setRagdoll]=useState(false),[reset,setReset]=useState(0);
+  useScreenMode(subject==='pongo'?'a':'b');
+  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.repeat||(e.target as HTMLElement)?.closest('input,textarea,select'))return;if(e.code==='KeyR')setRagdoll(v=>!v);if(e.code==='KeyV')setPov(v=>!v);if(e.code==='KeyH'){setRagdoll(false);setReset(v=>v+1);}if(e.code==='Digit1'){setSubject('pongo');setRagdoll(false);}if(e.code==='Digit2'){setSubject('rat');setRagdoll(false);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
+  const touch=(code:string,pressed:boolean)=>window.dispatchEvent(new CustomEvent('brain-input',{detail:{code,pressed}}));
+  const choose=(s:'pongo'|'rat')=>{setSubject(s);setRagdoll(false);};
+  return <main className="brain-room cortex-game">
+    <BrainWorld3D subject={subject} walkMode={pov} ragdoll={ragdoll} reset={reset}/>
+    <div className="cortex-vignette" aria-hidden="true"/>
+    <header className="cortex-header"><a href="/" className="cortex-home">↖ HOME</a><div><p>TRIPTOTROPIC / A LIVING PLACE</p><h1>The brain room<span> & the meadow</span></h1></div><a href="/bongo" className="cortex-lab">BONGO LAB ↗</a></header>
+    <aside className="cortex-note"><span>01 / THROUGH THE WINDOW</span><p>There’s a whole world<br/>outside your head.</p><small>Jump through the arch into the cow field.<br/>Take the wooden steps to come back.</small></aside>
+    <footer className="cortex-dock">
+      <div className="cortex-subjects" aria-label="Playable characters">
+        <button aria-pressed={subject==='pongo'} onClick={()=>choose('pongo')}><img src="/media/dr-bongo-model-icon-v1.png" alt=""/><span><small>01 / PRIMATE</small><b>Pongo</b></span></button>
+        <button aria-pressed={subject==='rat'} onClick={()=>choose('rat')}><img src="/media/lab-rat-ragdoll-v2.png" alt=""/><span><small>02 / RODENT</small><b>Lab rat</b></span></button>
+      </div>
+      <div className="cortex-actions"><button aria-pressed={ragdoll} onClick={()=>setRagdoll(v=>!v)}>{ragdoll?'Stand up':'Ragdoll'} <kbd>R</kbd></button><button aria-pressed={pov} onClick={()=>setPov(v=>!v)}>{pov?'Follow camera':'First person'} <kbd>V</kbd></button><button onClick={()=>{setRagdoll(false);setReset(v=>v+1);}}>Back to room <kbd>H</kbd></button></div>
+      <p className="cortex-keys">{ragdoll?'Drag the body to lift it. Release to throw.':'WASD / arrows · Move     Shift · Run     Space · Jump     Drag · Look'}</p>
+    </footer>
+    <div className="cortex-touch" aria-label="Touch movement">{[['KeyW','↑'],['KeyA','←'],['KeyS','↓'],['KeyD','→'],['Space','Jump']].map(([code,label])=><button key={code} aria-label={label==='Jump'?'Jump':`Move ${label}`} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);touch(code,true);}} onPointerUp={()=>touch(code,false)} onPointerCancel={()=>touch(code,false)}>{label}</button>)}</div>
   </main>;
 }
-
