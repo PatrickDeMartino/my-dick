@@ -419,7 +419,7 @@ export default function HomeRoom3D() {
       brain.rotation.y = -.28 + Math.sin(time * .38) * .18;
       brain.position.set(4.25+brainSpatial.x*1.45,-.05+brainSpatial.y*1.15+Math.sin(time*.72)*.12,-.2+brainSpatial.z*1.2);
       brain.scale.setScalar(1.34*brainSpatial.scale);
-      brainLife.update(dt);
+      brainLife.update(dt*windStrength);
       crystals.forEach((cluster,index)=>{cluster.rotation.y+=dt*(index%2?.08:-.06);});
       vines.forEach(vine=>{
         const swinger=pongos.find(pongo=>pongo.swing?.vine===vine);

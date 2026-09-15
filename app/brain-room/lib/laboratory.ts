@@ -1,3 +1,4 @@
+import {makeEvilLaser} from './evil-laser';
 import {BreakableWalls} from './breakables';
 import {batchParts} from './batch-parts';
 import * as T from 'three';
@@ -43,5 +44,6 @@ export function makeLab(solids:Solid[]){
  const computerHitbox=box([0,1.65,-7.5],[3.2,1.1,1],new T.MeshBasicMaterial({visible:false}));computerHitbox.name='Bongo keyboard interaction';
  const bongo=makeDrBongo();bongo.position.set(4,.5,-6.6);bongo.rotation.y=-.3;root.add(bongo);
  sign(['DR. BONGO','NEURAL LINK / ONLINE'],[0,6.5,-12.68],9,2.2);
- batchParts(root,[bongo,screen,computerHitbox,...breakables.pieces.map(p=>p.mesh)]);return {root,bongo,screen,specimens,computerHitbox,breakables};
+ const laser=makeEvilLaser();root.add(laser.root);solids.push({center:laser.root.position.clone().add(LAB_CENTER).add(new T.Vector3(0,1.6,0)),half:new T.Vector3(1.9,1.6,1.5)});
+ batchParts(root,[laser.root,bongo,screen,computerHitbox,...breakables.pieces.map(p=>p.mesh)]);return {root,bongo,screen,specimens,computerHitbox,breakables,laser};
 }

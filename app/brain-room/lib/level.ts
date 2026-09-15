@@ -1,3 +1,7 @@
+import {makeLivingSkin} from './living-skin';
+import {makeHomeBrain} from '../../lib/homeBrain';
+import {woodMaterial,detailFence} from './environment-detail';
+import {batchParts} from './batch-parts';
 import {cortexShell,brainEnvelope,makeDreamTree} from './cortex-shell';
 import {BreakableWalls} from './breakables';
 import * as T from 'three';
@@ -28,7 +32,7 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
     darkFlesh.map=backing;darkFlesh.bumpMap=backing;darkFlesh.bumpScale=.11;
   }
   const wood = mat(0x49302b);
-  const paleWood = mat(0xae8a63);
+  const paleWood = woodMaterial(0xae8a63);
   const mesh = (g: T.BufferGeometry, m: T.Material, p: number[], parent: T.Object3D = root) => {
     const o = new T.Mesh(g, m); o.position.set(p[0], p[1], p[2]); o.castShadow = true; o.receiveShadow = true; parent.add(o); return o;
   };
@@ -57,9 +61,9 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
     const order=Array.from({length:used.length},(_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
     for(const start of order){if(used[start])continue;let id=start;const points:T.Vector3[]=[];const limit=12+Math.floor(random()*28);
       for(let step=0;step<limit;step++){
-        used[id]=1;const {x,y}=xy(id);points.push(origin.clone().addScaledVector(u,x+(random()-.5)*spacing*.32).addScaledVector(v,y+Math.sin(x*1.3+y*.4)*.065+(random()-.5)*spacing*.3).addScaledVector(normal,.065+random()*.05));
+        used[id]=1;const {x,y}=xy(id);points.push(origin.clone().addScaledVector(u,x+Math.sin(y*1.6+x*.4)*.11+(random()-.5)*spacing*.4).addScaledVector(v,y+Math.sin(x*1.3+y*.4)*.13+(random()-.5)*spacing*.3).addScaledVector(normal,.065+random()*.05));
         const row=Math.floor(id/nx),col=id%nx;const neighbors:number[]=[];
-        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const xx=col+dx,yy=row+dy;if(xx>=0&&xx<nx&&yy>=0&&yy<ny&&!used[yy*nx+xx])neighbors.push(yy*nx+xx);}
+        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){const xx=col+dx,yy=row+dy;if(xx>=0&&xx<nx&&yy>=0&&yy<ny&&!used[yy*nx+xx])neighbors.push(yy*nx+xx);}
         if(!neighbors.length)break;id=neighbors[Math.floor(random()*neighbors.length)];
       }
       const radius=options.lightweight?.18:.187;
@@ -119,6 +123,17 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   for(const x of [-1.615,1.615])box([x,0,.15],[.018,1.83,.025],trim,painting);
   for(const y of [-.911,.911])box([0,y,.15],[3.24,.018,.025],trim,painting);
 
+  // Merge tissue into world coordinates so its deformation and crawler contact agree.
+  const roomSkin=makeLivingSkin(.065,2.5),exteriorSkin=makeLivingSkin(.035,5);
+  room.updateMatrixWorld(true);
+  for(const material of [flesh,darkFlesh]){const parts:T.Mesh[]=[];room.traverse(o=>{if(o instanceof T.Mesh&&o.material===material)parts.push(o);});const geometryParts=parts.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});if(geometryParts.length){const g=mergeGeometries(geometryParts);geometryParts.forEach(g=>g.dispose());parts.forEach(o=>{o.removeFromParent();o.geometry.dispose();});if(g){const tissue=mesh(g,material,[0,0,0],room);tissue.name='Living cortical tissue';roomSkin.apply(tissue);}}}
+  exterior.traverse(o=>{if(o instanceof T.Mesh)exteriorSkin.apply(o);});
+  const center=new T.Vector3(0,6.5,0),half=new T.Vector3(5.43,3.18,5.43);
+  const roomSurface=(d:T.Vector3)=>{const distances=[half.x/Math.max(.00001,Math.abs(d.x)),half.y/Math.max(.00001,Math.abs(d.y)),half.z/Math.max(.00001,Math.abs(d.z))],axis=distances.indexOf(Math.min(...distances)),point=d.clone().multiplyScalar(distances[axis]).add(center),normal=new T.Vector3();normal.setComponent(axis,-Math.sign(d.getComponent(axis)));return{point,normal};};
+  const roomLife=typeof document==='undefined'?null:makeHomeBrain(()=>{},{surface:roomSurface,skin:roomSkin,shell:false,unit:.85,count:6,center,surfaceLift:.025,valid:d=>{const p=roomSurface(d).point;return !(p.x<-5&&Math.abs(p.z)<2.15&&p.y<8.6);}});
+  const exteriorLife=typeof document==='undefined'?null:makeHomeBrain(()=>{},{surface:brainEnvelope,skin:exteriorSkin,shell:false,unit:.23,count:5,valid:d=>{const p=brainEnvelope(d).point;return !(p.x<-.78&&Math.abs(p.z)<.4&&p.y>-.7&&p.y<.7);}});
+  if(roomLife)root.add(roomLife.root);if(exteriorLife)exterior.add(exteriorLife.root);
+  let lastAmbience=0;
   const grass=mat(0x758454); const land=box([0,-.35,0],[180,.7,180],grass,root,true);land.name='Walkable meadow';
   const dirt=mat(0xae9772);box([-13,.005,0],[14,.02,3.1],dirt);
   // Steps let either character return through the same window.
@@ -127,21 +142,22 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   for(let z=-34;z<=34;z+=3.4){for(const x of [-48,21]){box([x, .8,z],[.14,1.6,.14],paleWood,fence);for(const y of [.55,1.1])box([x,y,z+1.7],[.1,.1,3.4],paleWood,fence);}}
   for(let x=-48;x<=21;x+=3.4)for(const z of [-34,34]){if(z===-34&&x>-18&&x<-8)continue;box([x,.8,z],[.14,1.6,.14],paleWood,fence);for(const y of [.55,1.1])box([x+1.7,y,z],[3.4,.1,.1],paleWood,fence);}
   for(const [x,z,sx,sz] of [[-48,0,.15,68],[21,0,.15,68],[-33,-34,30,.15],[6,-34,30,.15],[-13.5,34,69,.15]])solids.push({center:new T.Vector3(x,.65,z),half:new T.Vector3(sx/2,.65,sz/2)});
+  detailFence(fence,paleWood);batchParts(fence);
   const barn=new T.Group();barn.name='Red meadow barn';root.add(barn);
-  const barnWalls=new BreakableWalls(solids,barn);const barnMat=mat(0x9e4e48);barnWalls.add([-37,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-27,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-32,2.5,-24],[10,5,.3],barnMat);barnWalls.add([-35.3,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-28.7,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-32,4.4,-16],[3.2,1.2,.3],barnMat);
+  const barnWalls=new BreakableWalls(solids,barn);const barnMat=woodMaterial(0x9e4e48);barnWalls.add([-37,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-27,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-32,2.5,-24],[10,5,.3],barnMat);barnWalls.add([-35.3,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-28.7,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-32,4.4,-16],[3.2,1.2,.3],barnMat);
   const roof=mesh(new T.CylinderGeometry(0,7.2,3,4,1),mat(0x443a48),[-32,6.5,-20],barn);roof.rotation.y=Math.PI/4;roof.scale.z=.8;
-  barnWalls.add([-32,1.8,-15.94],[3,3.6,.16],mat(0x492e31));
+  barnWalls.add([-32,1.8,-15.94],[3,3.6,.16],woodMaterial(0x492e31));
   for(const x of [-1.7,1.7])box([-32+x,1.85,-15.85],[.14,3.7,.1],mat(0xead6b7),barn);
   box([-32,3.68,-15.85],[3.55,.16,.1],mat(0xead6b7),barn);
   // Thin quartz clusters, mostly green, with occasional spectral colours.
-  const shaft=new T.CylinderGeometry(.065,.09,.48,5);const point=new T.ConeGeometry(.065,.22,5);point.translate(0,.35,0);
+  const shaft=new T.CylinderGeometry(.06,.09,.48,8,4);const point=new T.ConeGeometry(.06,.22,8);point.translate(0,.35,0);
   const crystalGeo=mergeGeometries([shaft,point])!;shaft.dispose();point.dispose();
-  const crystalMat=new T.MeshStandardMaterial({color:0xffffff,metalness:.28,roughness:.23,emissive:0x83ff9b,emissiveIntensity:.3});
-  const crystalWind={value:0};crystalMat.onBeforeCompile=shader=>{shader.uniforms.windTime=crystalWind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(windTime*.7+instanceMatrix[3].x*.6+instanceMatrix[3].z*.4)*pow(max(0.,position.y+.24),2.)*.055;');};
-  const blades=new T.InstancedMesh(crystalGeo,crystalMat,2200),dummy=new T.Object3D();const crystalColors=[0x71eaa3,0x3fba78,0x98ff78,0x54e8c8,0xae7fff,0xf791d5,0xf9c871];
+  const crystalMat=new T.MeshPhysicalMaterial({color:0xffffff,metalness:.32,roughness:.16,clearcoat:1,clearcoatRoughness:.12,emissive:0xffffff,emissiveIntensity:.16});
+  const crystalWind={value:0};crystalMat.onBeforeCompile=shader=>{shader.uniforms.windTime=crystalWind;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n #ifdef USE_INSTANCING_COLOR\n totalEmissiveRadiance*=vColor;\n #endif');shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(windTime*.7+instanceMatrix[3].x*.6+instanceMatrix[3].z*.4)*pow(max(0.,position.y+.24),2.)*.055;');};
+  const blades=new T.InstancedMesh(crystalGeo,crystalMat,2200),dummy=new T.Object3D();const crystalColors=[0x71eaa3,0x3fba78,0x98ff78,0x54e8c8,0xae67ff,0xee4f67,0x4b90ff,0xf9c871];
   for(let i=0;i<2200;i++){if(i%4===0){dummy.userData.x=-66+random()*114;dummy.userData.z=-78+random()*135;}let x=dummy.userData.x+(random()-.5)*.6,z=dummy.userData.z+(random()-.5)*.6;
     if((Math.abs(x)<7&&Math.abs(z)<7)||(x>-29&&x<5&&z<-43)||(Math.abs(x+12)<3&&z<-28))x=35+random()*15;
-    const scale=.45+random()*1.2;dummy.position.set(x,.25*scale,z);dummy.rotation.set((random()-.5)*.3,random()*6.28,(random()-.5)*.4);dummy.scale.set(.7,scale,.7);dummy.updateMatrix();blades.setMatrixAt(i,dummy.matrix);blades.setColorAt(i,new T.Color(crystalColors[random()<.8?Math.floor(random()*3):3+Math.floor(random()*4)]));}root.add(blades);
+    const scale=.45+random()*1.2;dummy.position.set(x,.25*scale,z);dummy.rotation.set((random()-.5)*.3,random()*6.28,(random()-.5)*.4);dummy.scale.set(.7,scale,.7);dummy.updateMatrix();blades.setMatrixAt(i,dummy.matrix);blades.setColorAt(i,new T.Color(crystalColors[random()<.66?Math.floor(random()*3):3+Math.floor(random()*5)]));}root.add(blades);
   const flowers=new T.InstancedMesh(new T.IcosahedronGeometry(.065,0),mat(0xf4d9ac),340);
   for(let i=0;i<340;i++){dummy.position.set(-45+random()*60,.32,-31+random()*62);dummy.scale.setScalar(1);dummy.rotation.set(0,0,0);dummy.updateMatrix();flowers.setMatrixAt(i,dummy.matrix);}root.add(flowers);
   const trees:T.Group[]=[];for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if((x<-39&&z<0)||(x>-31&&x<8&&z<-36))continue;const tree=makeDreamTree(i);tree.position.set(x,0,z);root.add(tree);trees.push(tree);}
@@ -149,7 +165,7 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   const cows=makeHerd(random);cows.forEach(cow=>root.add(cow.root));
   const lab=makeLab(solids);root.add(lab.root);
   const dreamscape=makeDreamscape();root.add(dreamscape.root);
-  return {root,room,solids,cows,lamp,lab,dreamscape,barnWalls,updateAmbience:(time:number)=>{trees.forEach((tree,i)=>{tree.rotation.z=Math.sin(time*.4+i)*.012;tree.rotation.x=Math.sin(time*.31+i*2)*.009;});exterior.scale.y=4.8+Math.sin(time*.43)*.015;crystalWind.value=time;}};
+  return {root,room,solids,cows,lamp,lab,dreamscape,barnWalls,spawnBrainWorm(p:T.Vector3){return (Math.abs(p.x)<6&&Math.abs(p.z)<6?roomLife:exteriorLife)?.spawnWorm();},disposeBrainLife(){roomLife?.dispose();exteriorLife?.dispose();},updateAmbience:(time:number)=>{const dt=Math.max(0,Math.min(.05,time-lastAmbience));lastAmbience=time;roomLife?.update(dt);exteriorLife?.update(dt);trees.forEach((tree,i)=>{tree.rotation.z=Math.sin(time*.4+i)*.012;tree.rotation.x=Math.sin(time*.31+i*2)*.009;});exterior.scale.y=4.8+Math.sin(time*.43)*.015;crystalWind.value=time;}};
 }
 
 /** Resolve a sphere against the same boxes that describe the visible level. */

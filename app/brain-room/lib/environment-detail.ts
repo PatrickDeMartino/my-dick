@@ -1,0 +1,8 @@
+import * as T from 'three';
+/** Grain follows the board UVs, with long fibres and occasional elliptical knots. */
+export function woodMaterial(color:number){
+ const size=256,data=new Uint8Array(size*size*4);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const u=x/size,v=y/size,knot=Math.sin(v*6.28)*.06*Math.exp(-Math.pow((u-.43)*6,2)),grain=Math.sin((u+knot)*260+Math.sin(v*8)*1.8)*.055+Math.sin(u*730+v*15)*.027,ring=Math.sin(Math.sqrt((u-.43)**2+((v-.48)*.25)**2)*360)*Math.exp(-((u-.43)**2*90+(v-.48)**2*13))*.12,c=Math.max(0,Math.min(255,(.82+grain+ring)*255)),i=(y*size+x)*4;data.set([c,c,c,255],i);}
+ const texture=new T.DataTexture(data,size,size);texture.needsUpdate=true;texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.colorSpace=T.SRGBColorSpace;
+ return new T.MeshStandardMaterial({color,map:texture,bumpMap:texture,bumpScale:.035,roughness:.79});
+}
+export function detailFence(root:T.Group,wood:T.Material){const posts:T.Mesh[]=[];root.traverse(o=>{if(o instanceof T.Mesh&&o.geometry instanceof T.BoxGeometry&&o.geometry.parameters.height>1)posts.push(o);});const metal=new T.MeshStandardMaterial({color:0x6d6251,metalness:.8,roughness:.38});for(const p of posts){const cap=new T.Mesh(new T.ConeGeometry(.12,.14,4),wood);cap.position.copy(p.position);cap.position.y+=.86;cap.rotation.y=Math.PI/4;root.add(cap);for(const y of [.55,1.1])for(const z of [-.081,.081]){const bolt=new T.Mesh(new T.SphereGeometry(.024,8,6),metal);bolt.scale.z=.3;bolt.position.set(p.position.x,y,p.position.z+z);root.add(bolt);}}}

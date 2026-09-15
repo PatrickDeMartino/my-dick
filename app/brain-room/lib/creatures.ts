@@ -5,6 +5,14 @@ export type BrainSubject='pongo'|'rat'|'bongo'|null;
 function ellipsoid(parent:T.Object3D,mat:T.Material,p:number[],s:number[]){const o=new T.Mesh(new T.SphereGeometry(1,40,28),mat);o.position.set(p[0],p[1],p[2]);o.scale.set(s[0],s[1],s[2]);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
 function joint(parent:T.Object3D,p:number[],name:string){const o=new T.Group();o.name=name;o.position.set(p[0],p[1],p[2]);parent.add(o);return o;}
 function tube(parent:T.Object3D,mat:T.Material,points:T.Vector3[],radius:number){const o=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),24,radius,7,false),mat);parent.add(o);return o;}
+
+/** Twenty-sided cross-sections with an asymmetric shoulder, elbow and wrist profile. */
+export function sculptLimb(parent:T.Object3D,mat:T.Material,points:number[][],side=1){
+ const positions:number[]=[],uvs:number[]=[],indices:number[]=[];const rings=24,sides=20,profiles=points.map(p=>new T.Vector4(p[0],p[1],p[2],p[3]));
+ for(let j=0;j<=rings;j++){const t=j/rings*(profiles.length-1),k=Math.min(profiles.length-2,Math.floor(t)),f=t-k,a=profiles[k],b=profiles[k+1],y=T.MathUtils.lerp(a.x,b.x,f),rx=T.MathUtils.lerp(a.y,b.y,f),rz=T.MathUtils.lerp(a.z,b.z,f),bend=T.MathUtils.lerp(a.w,b.w,f);for(let i=0;i<=sides;i++){const angle=i/sides*Math.PI*2,contour=1+.055*Math.cos(angle*3+y*3)+.025*Math.sin(angle*5);positions.push(side*bend+Math.cos(angle)*rx*contour,y,Math.sin(angle)*rz*contour);uvs.push(i/sides,j/rings);if(j<rings&&i<sides){const n=j*(sides+1)+i;indices.push(n,n+1,n+sides+1,n+1,n+sides+2,n+sides+1);}}}
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);geometry.computeVertexNormals();const mesh=new T.Mesh(geometry,mat);mesh.name='Sculpted 20-sided limb';mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+
 function makeRat(){
   const root=new T.Group();root.name='Lab rat — curious little marshmallow';
   const fur=furMaterial(0xf2eee5),pink=new T.MeshStandardMaterial({color:0xeaa5b0,roughness:.58}),inner=new T.MeshStandardMaterial({color:0xc8798c,roughness:.65}),black=new T.MeshPhysicalMaterial({color:0x1b121b,roughness:.13,clearcoat:1}),white=new T.MeshBasicMaterial({color:0xffffff});
@@ -49,9 +57,9 @@ export function makeBrainCreature(kind:Exclude<BrainSubject,null>){
  const tongue:T.Group[]=[],tongueVelocity:number[]=[];let tongueParent:T.Object3D=head;const tongueMat=new T.MeshPhysicalMaterial({color:0xee879e,roughness:.36,clearcoat:.6});for(let i=0;i<6;i++){const bone=joint(tongueParent,i===0?[.035,-.19,.36]:[0,-.026,.018],'Floppy tongue '+i);ellipsoid(bone,tongueMat,[0,-.012,.008],[.041-i*.003,.025,.018]);tongue.push(bone);tongueVelocity.push(0);tongueParent=bone;}
  const limbs:T.Group[]=[];
  for(const side of [-1,1]){
-  const shoulder=joint(root,[side*.32,1.83,.035],'Shoulder');ellipsoid(shoulder,fur,[side*.04,-.4,0],[.115,.45,.115]);
-  const elbow=joint(shoulder,[side*.04,-.8,0],'Elbow');ellipsoid(elbow,fur,[0,-.35,0],[.095,.4,.095]);ellipsoid(elbow,skin,[0,-.75,.05],[.13,.12,.1]);
-  for(let i=0;i<4;i++)ellipsoid(elbow,skin,[(i-1.5)*.048,-.84,.10],[.022,.095,.03]);
+  const shoulder=joint(root,[side*.32,1.83,.035],'Shoulder');sculptLimb(shoulder,fur,[[.04,0,0,0],[0,.115,.105,0],[-.15,.14,.12,.01],[-.34,.125,.106,.026],[-.61,.085,.082,.035],[-.8,.103,.095,.04],[-.84,0,0,.04]],side);
+  const elbow=joint(shoulder,[side*.04,-.8,0],'Elbow');sculptLimb(elbow,fur,[[.025,0,0,0],[0,.101,.095,0],[-.16,.108,.093,.009],[-.37,.091,.08,.016],[-.61,.065,.06,0],[-.71,.076,.069,0],[-.74,0,0,0]],side);const palm=sculptLimb(elbow,skin,[[-.64,0,0,0],[-.67,.082,.065,0],[-.75,.124,.073,0],[-.84,.113,.056,0],[-.87,0,0,0]]);palm.position.z=.045;
+  for(let i=0;i<4;i++){const finger=sculptLimb(elbow,skin,[[0,0,0,0],[-.02,.024,.025,0],[-.065,.025,.022,.004],[-.12,.018,.021,.009],[-.17,0,0,.015]]);finger.position.set((i-1.5)*.05,-.8,.105);}
   const hip=joint(root,[side*.18,.78,0],'Short hip');ellipsoid(hip,fur,[0,-.17,0],[.115,.22,.12]);const knee=joint(hip,[0,-.34,0],'Knee');ellipsoid(knee,fur,[0,-.13,.012],[.085,.18,.085]);ellipsoid(knee,skin,[0,-.285,.105],[.12,.065,.21]);
   for(let i=0;i<3;i++)ellipsoid(knee,skin,[(i-1)*.059,-.29,.285],[.028,.04,.06]);limbs.push(shoulder,elbow,hip,knee);
  }
