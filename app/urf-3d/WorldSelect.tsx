@@ -1,4 +1,5 @@
 "use client";
+import "./launch.css";
 import { useScreenMode } from "../lib/useScreenMode";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -82,9 +83,10 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [world3d, setWorld3d] = useState(false);
   const [charge, setCharge] = useState(0);
   const [quiver, setQuiver] = useState(12);
-  const [archerActive, setArcherActive] = useState(false);
+  const [archerActive, setArcherActive] = useState(true);
   const [alienType, setAlienType] = useState<AlienType>("original");
-  const [aimMode, setAimMode] = useState(false);
+  const [aimMode, setAimMode] = useState(true);
+  const [aimName,setAimName]=useState("AIM AT PLANET URF");
   const [stick, setStick] = useState({ x: 0, y: 0 });
   const [reticle, setReticle] = useState<{ x: number; y: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; tone: string } | null>(null);
@@ -93,7 +95,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
   const [cubeMode, setCubeMode] = useState(false);
-  const [alienMenuOpen,setAlienMenuOpen] = useState(true);
+  const [alienMenuOpen,setAlienMenuOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<EditTargetId>("globe");
   const [editOffsets, setEditOffsets] = useState<Record<EditTargetId, EditOffset>>(makeEditOffsets);
   const [platformScale, setPlatformScale] = useState(1);
@@ -126,7 +128,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     image.onload = () => setTexture(image);
     const timer = window.setInterval(() => {
       setTextureDrift((value) => (value + 1) % 360);
-      setLandSpin((value) => wrapAngle(value - .12));
+      // The globe holds still while lining up a shot. Drag to choose its rotation.
     }, 140);
     return () => window.clearInterval(timer);
   }, []);
@@ -178,6 +180,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
     import("./globe3d")
       .then(({ createGlobe3D }) =>
         createGlobe3D(canvas, landFeatures, territories, {
+          onAim: setAimName,
           onCharge: setCharge,
           onQuiver: setQuiver,
           onShot: (result) => {
@@ -252,8 +255,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   }, [alienType, world3d]);
 
   useEffect(() => {
+    worldRef.current?.setActive(archerActive);
     worldRef.current?.setAimMode(aimMode);
-  }, [aimMode, world3d]);
+  }, [aimMode, archerActive, world3d]);
 
   useEffect(() => {
     const preset = LAND_COLOR_PRESETS.find((entry) => entry.id === landPreset);
@@ -508,7 +512,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         ref={canvasRef}
         className="globe-canvas"
         style={{
-          transform: oceanTransform,
+          transform: world3d ? undefined : oceanTransform,
+          opacity: world3d ? 0 : 1,
         }}
         aria-label={
           terrainBrush
@@ -521,8 +526,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           event.currentTarget.setPointerCapture(event.pointerId);
           if (event.button === 2 && archerActive) {
             updateAim(event.clientX, event.clientY);
-            setAimMode(true);
-            worldRef.current?.setAimMode(true);
+            setAimMode(false);
+            worldRef.current?.setAimMode(false);
+            dragRef.current={active:true,x:event.clientX,y:event.clientY,mode:"orbit"};
             return;
           }
           if (terrainBrush) {
@@ -562,7 +568,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             return;
           }
           updateAim(event.clientX, event.clientY);
-          if (pressRef.current.down && !pressRef.current.moved) {
+          if (pressRef.current.down && !pressRef.current.moved && !aimMode) {
             const travel = Math.hypot(event.clientX - pressRef.current.x, event.clientY - pressRef.current.y);
             if (travel > 6) {
               pressRef.current.moved = true;
@@ -573,7 +579,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         }}
         onPointerUp={(event) => {
           dragRef.current.active = false; boxDragRef.current.active = false;
-          if (event.button === 2) { setAimMode(false); worldRef.current?.setAimMode(false); return; }
+          if (event.button === 2) { setAimMode(true); worldRef.current?.setAimMode(true); return; }
           releasePress(true);
         }}
         onPointerCancel={() => { dragRef.current.active = false; boxDragRef.current.active = false; releasePress(false); }}
@@ -593,7 +599,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
       <button
         type="button"
         className="antarctica-marker"
-        style={{ left: `${south.x}px`, top: `${south.y}px`, opacity: south.visible ? "1" : "0", pointerEvents: south.visible ? "auto" : "none" }}
+        style={{ left: `${south.x}px`, top: `${south.y}px`, opacity: south.visible && !world3d ? "1" : "0", pointerEvents: south.visible && !world3d ? "auto" : "none" }}
         onClick={onEnter}
         aria-label="Enter Antarctica"
       >
@@ -605,9 +611,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <div className="archer-chip">
             <span className="archer-face" aria-hidden="true">👽</span>
             <div className="archer-gauges">
-              <b>{{original:"GOOPY · BOW",doop:"DOOPY · REVOLVER",zorp:"DOORP · AK-47"}[alienType]}</b>
+              <b>{{original:"ZIX · ARCHER",doop:"PIP · ARCHER",zorp:"VEX · ARCHER"}[alienType]}</b>
               <div className="archer-bar" role="presentation"><i style={{ width: `${Math.round(charge * 100)}%` }} /></div>
-              <small>{quiver} {alienType === "original" ? "ARROWS" : "PEPSI CANS"} · {archerActive ? "WASD MOVE · RIGHT CLICK AIM · LEFT CLICK FIRE" : "FLOATING · CLICK TO ACTIVATE"}</small>
+              <small>{quiver} ARROWS · HOLD TO DRAW · RELEASE TO LAND</small>
             </div>
           </div>
           <div
@@ -637,12 +643,12 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             aria-pressed={aimMode}
             onClick={() => { const next=!aimMode; setAimMode(next); worldRef.current?.setAimMode(next); }}
           >
-            <span>{aimMode ? "AIM ON" : "AIM"}</span>
+            <span>{aimMode ? "ROTATE PLANET" : "AIM ARROW"}</span>
           </button>
           <button
             type="button"
             className="archer-fire"
-            aria-label={alienType === "original" ? "Draw the bow and loose an arrow" : "Fire a Pepsi can"}
+            aria-label="Hold to draw the bow, release to select where the arrow lands"
             onPointerDown={(event) => {
               event.currentTarget.setPointerCapture(event.pointerId);
               worldRef.current?.setDrawing(true);
@@ -650,8 +656,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             onPointerUp={() => worldRef.current?.setDrawing(false)}
             onPointerCancel={() => worldRef.current?.cancelDraw()}
           >
-            <span>FIRE</span>
+            <span>LOOSE<br/>ARROW</span>
           </button>
+          <div className="urf-landing-readout"><small>PREDICTED LANDING</small><b>{aimName}</b><span>LAND AN ARROW TO SELECT</span></div>
           {reticle && (
             <div className="archer-reticle" style={{ left: `${reticle.x}px`, top: `${reticle.y}px` }} aria-hidden="true">
               <i style={{ transform: `scale(${1 + charge * 0.75})` }} />
@@ -923,7 +930,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <button type="button" className="menu-close" aria-label="Collapse alien menu" onClick={()=>setAlienMenuOpen(false)}>×</button>
           <header><b>👽 ALIEN</b><small>ISLAND</small></header>
           <div className="alien-toolbar__characters">
-            {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{{original:"GOOPY",doop:"DOOPY",zorp:"DOORP"}[type]}</button>)}
+            {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{{original:"ZIX",doop:"PIP",zorp:"VEX"}[type]}</button>)}
           </div>
           <label><span>SIZE</span><input type="range" min={.55} max={2.25} step={.05} value={platformScale} onChange={event=>{const value=Number(event.target.value);setPlatformScale(value);worldRef.current?.setPlatformScale(value);}}/><b>{platformScale.toFixed(2)}×</b></label>
           {(["x","y","z"] as const).map(axis=><label key={axis}><span>{axis.toUpperCase()}</span><input type="range" min={-2.5} max={2.5} step={.05} value={editOffsets.platform[axis]} onChange={event=>setOffsetAxis("platform",axis,Number(event.target.value))}/><b>{editOffsets.platform[axis].toFixed(1)}</b></label>)}
@@ -947,19 +954,19 @@ export default function WorldSelect() {
   };
 
   return (
-    <main className="world-screen">
+    <main className="world-screen urf-launch">
       <div className="stars" aria-hidden="true" />
       <header className="world-header world-header--minimal">
-        <h1>Go anywhere</h1>
+        <small>TRIPTOTROPIC / WORLD SELECT</small><h1>Take your shot.</h1>
       </header>
       <button className="quit-button" type="button" aria-label="Exit world selection" onClick={closeSelector}>×</button>
       <section className="globe-stage" aria-label="World map">
         <Globe onEnter={() => router.push("/penguin-town")} />
       </section>
       <footer className="world-footer world-footer--minimal">
-        <div className="control-hint" title="Drag: 360° rotate · Shift-drag: roll"><span>↔</span></div>
-        <div className="control-hint" title="Scroll to zoom"><span>＋</span></div>
-        <div className="control-hint" title="WASD walk · Q/E fly island · R/F rise · Z/X depth · C hop · G ragdoll"><span>🏹</span></div>
+        <div className="control-hint"><span>Right-drag · Rotate planet</span></div>
+        <div className="control-hint"><span>Scroll · Zoom</span></div>
+        <div className="control-hint" title="WASD walk · Q/E fly island · R/F rise · Z/X depth · C hop · G ragdoll"><span>WASD · Walk</span></div>
       </footer>
     </main>
   );

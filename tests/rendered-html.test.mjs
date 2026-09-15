@@ -202,9 +202,9 @@ test("renders the 3D world-select room (Planet Urf archer)", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /<title>Urf World Editor \| Triptotropic<\/title>/i);
-  assert.match(html, /GO ANYWHERE/i);
-  assert.match(html, /Move the land, ocean, alien, and floating platform through the Urf cube\./);
+  assert.match(html, /<title>Urf Archer World Select \| Triptotropic<\/title>/i);
+  assert.match(html, /TAKE YOUR SHOT/i);
+  assert.match(html, /Choose the world where it lands\./);
   // The terrain toolbar and the archer HUD only mount once the WebGL 3D
   // layer boots client-side (world3d state), so they're absent from the
   // server-rendered shell — not something to assert on here.

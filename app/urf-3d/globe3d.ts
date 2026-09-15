@@ -1,12 +1,14 @@
+import { buildLaunchIsland, cosmicOcean } from "./launch-island";
+import {launchVelocity,predictFlight,sphereContact,PLANET_CENTER} from "./archery";
 /// <reference types="vite/client" />
 import type * as THREE_NS from "three";
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { territoryFromLonLat } from "../lib/territories";
-import { createAlien as createSharedAlien } from "../../games/alien-archer/src/game/alien";
+import { createAlien as createSharedAlien } from "./grok/alien";
 
 declare global {
   interface Window {
-    __controlsTest?: {
+    __urfControlsTest?: {
       getYaw: () => number;
       getSpeed: () => number;
       getX?: () => number;
@@ -18,24 +20,8 @@ declare global {
   }
 }
 
-/**
- * Planet Urf — 3D world layer.
- *
- * This module renders ONLY the things that should be three-dimensional:
- * the landmasses (real extruded geometry with cliffs and lighting), the
- * orbiting satellite, and the playable alien archer plus their arrows.
- *
- * The ocean is deliberately NOT drawn here. It stays exactly as it is on the
- * live site: the stationary, drifting, psychedelic 2D void painted by the
- * existing canvas underneath this one. Everywhere there is water, this layer
- * is transparent and that painting shows through — so the land spins in 3D
- * over a still 2D ocean.
- *
- * The camera is orthographic and framed to the exact same projection the 2D
- * layer uses (sphere radius 1 === 0.43 * frameSize * zoom pixels), so the 3D
- * land lines up pixel-for-pixel with the existing lock markers, the Antarctica
- * button, the graticule and the rim glow.
- */
+/** Fully spatial Urf selector. The supplied game rig fires physical arrows at
+ * a raycast target; preview and impact share the same ballistic calculation. */
 
 export type Point = [number, number];
 export type PolygonGeometry = { type: "Polygon"; coordinates: Point[][] };
@@ -67,6 +53,7 @@ export type ShotResult = {
 
 export type Globe3DEvents = {
   onShot: (result: ShotResult) => void;
+  onAim?: (target: string) => void;
   onCharge: (charge: number) => void;
   onQuiver: (arrows: number) => void;
 };
@@ -127,7 +114,7 @@ const RELOAD_SECONDS = 1.35;
 const ARROW_MIN_SPEED = 2.4;
 const ARROW_MAX_SPEED = 5.6;
 const GRAVITY = -1.55;
-const AIR_DRAG = 0.16;
+const AIR_DRAG = 0;
 const ARROW_LIFETIME = 7;
 /** A full draw, in wall-clock milliseconds. */
 const DRAW_MILLISECONDS = 900;
@@ -138,7 +125,7 @@ const PHYSICS_STEP = 1 / 240;
 const IMPACT_RADIUS = GLOBE_RADIUS + 0.012;
 const STUCK_LIFETIME = 5;
 
-const ALIEN_SCALE = 0.56;
+const ALIEN_SCALE = 0.76;
 const WALK_SPEED = 0.42;
 /** The walkable slab is tilted toward the camera, so walking "back" also
  * walks up the screen — an isometric read that keeps depth legible under an
@@ -399,6 +386,7 @@ type AlienRig = {
   backLeg: { hip: THREE_NS.Group; knee: THREE_NS.Group };
   bowArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
   gunArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
+  drawArm: { shoulder: THREE_NS.Group; elbow: THREE_NS.Group };
   bow: THREE_NS.Group;
   quiver: THREE_NS.Group;
   revolver: THREE_NS.Group;
@@ -410,323 +398,24 @@ type AlienRig = {
   nock: THREE_NS.Object3D;
 };
 
-/** Bow limb half-length, in the bow's own local space. */
-const BOW_REACH = 0.34;
-
-/**
- * The Urf scout: a low-poly alien archer built to the reference art — bright
- * green faceted body, big teardrop skull with black almond eyes, violet bands
- * at the biceps, waist, thighs and ankles, a quiver of purple-fletched arrows
- * across the back, and a dark recurve bow with a real string that bends to the
- * nock as the shot is drawn.
- *
- * Every joint is a group so the animation code can pose it: two-bone arms and
- * legs, a torso that twists and leans into the shot, and a head that tracks.
- */
-function buildLegacyAlien(THREE: typeof THREE_NS): AlienRig {
-  // Match the playable Alien World rig: brighter greentall skin, faceted
-  // geometry, violet wraps and the same oversized shooter-style skull.
-  const skin = new THREE.MeshStandardMaterial({ color: 0x7cff3a, emissive:0x164a08, emissiveIntensity:.2, flatShading: true, roughness: 0.46, metalness: 0.04 });
-  const skinShade = new THREE.MeshStandardMaterial({ color: 0x3aaa1c, flatShading: true, roughness: 0.58 });
-  const band = new THREE.MeshStandardMaterial({ color: 0x6b2d9b, emissive:0x4a1060, emissiveIntensity:.25, flatShading: true, roughness: 0.5, metalness: 0.15 });
-  const eye = new THREE.MeshStandardMaterial({ color: 0x0a0610, roughness: 0.12, metalness: 0.5 });
-  const wood = new THREE.MeshStandardMaterial({ color: 0x8a5730, flatShading: true, roughness: 0.78 });
-  const cord = new THREE.MeshStandardMaterial({ color: 0xf0e6cf, roughness: 0.45 });
-  const leather = new THREE.MeshStandardMaterial({ color: 0x40261a, flatShading: true, roughness: 0.9 });
-  const fletch = new THREE.MeshStandardMaterial({ color: 0xa855f7, flatShading: true, roughness: 0.55, side: THREE.DoubleSide });
-  const steel = new THREE.MeshStandardMaterial({ color: 0xc8d4e0, flatShading: true, roughness: 0.25, metalness: 0.8 });
-
-  const group = new THREE.Group();
-  const body = new THREE.Group();
-  group.add(body);
-
-  /** A tapered faceted limb segment, hanging down from its pivot. */
-  const bone = (length: number, top: number, bottom: number, material: THREE_NS.Material) => {
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(top, bottom, length, 5), material);
-    mesh.position.y = -length / 2;
-    return mesh;
-  };
-
-  const ring = (radius: number, thickness: number) => new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, thickness, 6), band);
-
-  // ---------------------------------------------------------- legs ----
-  // A wide archer stance: front leg planted forward, back leg braced.
-  const buildLeg = (forward: number) => {
-    const hip = new THREE.Group();
-    hip.position.set(forward * 0.13, 0.5, forward * 0.04);
-    body.add(hip);
-
-    hip.add(bone(0.28, 0.058, 0.05, skin));
-    const thighBand = ring(0.062, 0.03);
-    thighBand.position.y = -0.1;
-    hip.add(thighBand);
-
-    const knee = new THREE.Group();
-    knee.position.y = -0.28;
-    hip.add(knee);
-    knee.add(bone(0.26, 0.05, 0.036, skin));
-
-    const ankleBand = ring(0.045, 0.026);
-    ankleBand.position.y = -0.22;
-    knee.add(ankleBand);
-
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.16), skinShade);
-    foot.position.set(0, -0.27, 0.04);
-    knee.add(foot);
-    [-1, 0, 1].forEach((toe) => {
-      const digit = new THREE.Mesh(new THREE.ConeGeometry(.012, .07, 5), skinShade);
-      digit.rotation.x = Math.PI / 2;
-      digit.position.set(toe * .025, -.27, .145);
-      knee.add(digit);
-    });
-
-    return { hip, knee };
-  };
-  const frontLeg = buildLeg(1);
-  const backLeg = buildLeg(-1);
-
-  // --------------------------------------------------------- torso ----
-  const torso = new THREE.Group();
-  torso.position.y = 0.5;
-  body.add(torso);
-
-  const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.072, 0.1, 6), skin);
-  pelvis.position.y = 0.04;
-  torso.add(pelvis);
-
-  const waist = ring(0.092, 0.038);
-  waist.position.y = 0.075;
-  torso.add(waist);
-
-  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.082, 0.25, 6), skin);
-  chest.position.y = 0.21;
-  torso.add(chest);
-
-  // Sash across the chest, the way the reference art wears it.
-  const sash = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.32, 0.19), band);
-  sash.position.set(0, 0.2, 0);
-  sash.rotation.x = 0.32;
-  torso.add(sash);
-
-  // ---------------------------------------------------------- head ----
-  const head = new THREE.Group();
-  head.position.y = 0.37;
-  torso.add(head);
-
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.042, 0.06, 5), skin);
-  neck.position.y = -0.02;
-  head.add(neck);
-
-  // The classic teardrop cranium: wide and tall up top, tapering to a chin.
-  const skull = new THREE.Mesh(new THREE.IcosahedronGeometry(0.145, 2), skin);
-  skull.scale.set(.98, 1.38, 1.14);
-  skull.position.y = 0.13;
-  head.add(skull);
-
-  const jaw = new THREE.Mesh(new THREE.SphereGeometry(.085,10,8), skinShade);
-  jaw.scale.set(.85,.68,.9);
-  jaw.position.set(0,0,.035);
-  head.add(jaw);
-
-  [-1, 1].forEach((side) => {
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(.006, .01, .16, 5), skinShade);
-    antenna.position.set(side * .055, .3, 0);
-    antenna.rotation.z = side * -.28;
-    head.add(antenna);
-    const antennaGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(.019, 7, 5),
-      new THREE.MeshStandardMaterial({ color: 0x8dff78, emissive: 0x39ff66, emissiveIntensity: 1.5 }),
-    );
-    antennaGlow.position.set(side * .077, .376, 0);
-    head.add(antennaGlow);
-  });
-
-  [-1, 1].forEach((side) => {
-    const almond = new THREE.Mesh(new THREE.IcosahedronGeometry(0.062, 1), eye);
-    almond.scale.set(1.28, 1.58, 0.86);
-    almond.position.set(side * 0.062, 0.125, 0.108);
-    almond.rotation.z = side * 0.22;
-    almond.rotation.y = side * -0.18;
-    head.add(almond);
-
-    const glint = new THREE.Mesh(
-      new THREE.SphereGeometry(0.014, 6, 6),
-      new THREE.MeshBasicMaterial({ color: 0xf8fff4 }),
-    );
-    glint.position.set(side * 0.048, 0.142, 0.148);
-    head.add(glint);
-  });
-
-  // -------------------------------------------------------- quiver ----
-  const quiver = new THREE.Group();
-  quiver.position.set(-0.03, 0.25, -0.085);
-  quiver.rotation.set(0.24, 0, 0.42);
-  torso.add(quiver);
-
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.046, 0.21, 6), leather);
-  quiver.add(tube);
-  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.3, 0.13), band);
-  strap.rotation.z = -0.38;
-  strap.position.set(0.05, 0.02, 0.06);
-  quiver.add(strap);
-
-  for (let index = 0; index < 4; index += 1) {
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 4), wood);
-    shaft.position.set((index - 1.5) * 0.02, 0.19, (index % 2) * 0.016 - 0.008);
-    quiver.add(shaft);
-    const vane = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.07, 4), fletch);
-    vane.position.set((index - 1.5) * 0.02, 0.3, (index % 2) * 0.016 - 0.008);
-    quiver.add(vane);
-  }
-
-  // ---------------------------------------------------------- arms ----
-  const buildArm = (side: number) => {
-    const shoulder = new THREE.Group();
-    shoulder.position.set(side * 0.1, 0.31, 0);
-    torso.add(shoulder);
-
-    const cap = new THREE.Mesh(new THREE.IcosahedronGeometry(0.052, 0), skin);
-    shoulder.add(cap);
-    shoulder.add(bone(0.23, 0.045, 0.036, skin));
-
-    const bicep = ring(0.05, 0.028);
-    bicep.position.y = -0.11;
-    shoulder.add(bicep);
-
-    const elbow = new THREE.Group();
-    elbow.position.y = -0.23;
-    shoulder.add(elbow);
-    elbow.add(bone(0.22, 0.036, 0.028, skin));
-
-    const wrist = ring(0.036, 0.024);
-    wrist.position.y = -0.19;
-    elbow.add(wrist);
-
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.046, 8, 6), skinShade);
-    hand.scale.set(0.88, 1.22, 0.82);
-    hand.position.y = -0.24;
-    elbow.add(hand);
-
-    return { shoulder, elbow };
-  };
-  const bowArm = buildArm(1);
-  const gunArm = buildArm(-1);
-  gunArm.shoulder.visible = false;
-
-  // ----------------------------------------------------------- bow ----
-  // A recurve profile swept along a curve, so the limbs actually curl back at
-  // the tips the way the reference bow does.
-  const bow = new THREE.Group();
-  const spine = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, -BOW_REACH, 0.055),
-    new THREE.Vector3(0, -BOW_REACH * 0.72, -0.012),
-    new THREE.Vector3(0, -BOW_REACH * 0.3, -0.045),
-    new THREE.Vector3(0, 0, -0.052),
-    new THREE.Vector3(0, BOW_REACH * 0.3, -0.045),
-    new THREE.Vector3(0, BOW_REACH * 0.72, -0.012),
-    new THREE.Vector3(0, BOW_REACH, 0.055),
-  ]);
-  const limb = new THREE.Mesh(new THREE.TubeGeometry(spine, 26, 0.018, 5, false), wood);
-  bow.add(limb);
-
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.1, 6), leather);
-  grip.position.z = -0.052;
-  bow.add(grip);
-
-  const stringUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 4), cord);
-  const stringLower = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 4), cord);
-  bow.add(stringUpper, stringLower);
-
-  // The arrow sitting on the string, shown only while the bow is drawn.
-  const nockedArrow = new THREE.Group();
-  const nockedShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.66, 5), wood);
-  nockedShaft.rotation.x = Math.PI / 2;
-  nockedArrow.add(nockedShaft);
-  const nockedHead = new THREE.Mesh(new THREE.ConeGeometry(0.019, 0.06, 4), steel);
-  nockedHead.rotation.x = Math.PI / 2;
-  nockedHead.position.z = 0.36;
-  nockedArrow.add(nockedHead);
-  for (let index = 0; index < 3; index += 1) {
-    const vane = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.05), fletch);
-    vane.position.z = -0.3;
-    vane.rotation.z = (index / 3) * Math.PI * 2;
-    vane.rotation.y = Math.PI / 2;
-    nockedArrow.add(vane);
-  }
-  bow.add(nockedArrow);
-
-  const nock = new THREE.Object3D();
-  bow.add(nock);
-
-  // The bow hangs from the bow hand.
-  bow.position.set(0, -0.26, 0.02);
-  bowArm.elbow.add(bow);
-
-  // Guns are held at the very back/bottom of the stock so the complete arm
-  // and complete weapon remain visible with only the hand-tip touching.
-  const revolver = new THREE.Group();
-  const gunmetal = new THREE.MeshStandardMaterial({ color: 0x252733, flatShading: true, roughness: .28, metalness: .86 });
-  const gripMat = new THREE.MeshStandardMaterial({ color: 0x5a2719, flatShading: true, roughness: .78 });
-  const revBarrel = new THREE.Mesh(new THREE.CylinderGeometry(.026,.026,.36,8),gunmetal); revBarrel.rotation.x=Math.PI/2; revBarrel.position.z=.2; revolver.add(revBarrel);
-  const revCylinder = new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.1,10),gunmetal); revCylinder.rotation.z=Math.PI/2; revCylinder.position.z=.02; revolver.add(revCylinder);
-  const revGrip = new THREE.Mesh(new THREE.BoxGeometry(.075,.18,.07),gripMat); revGrip.position.set(0,-.09,-.035); revGrip.rotation.x=-.24; revolver.add(revGrip);
-  const ak47 = new THREE.Group();
-  const akBody = new THREE.Mesh(new THREE.BoxGeometry(.11,.11,.48),gunmetal); akBody.position.z=.22; ak47.add(akBody);
-  const akBarrel = new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.48,7),gunmetal); akBarrel.rotation.x=Math.PI/2; akBarrel.position.z=.7; ak47.add(akBarrel);
-  const akStock = new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.3),gripMat); akStock.position.set(0,-.02,-.2); akStock.rotation.x=.16; ak47.add(akStock);
-  const akMag = new THREE.Mesh(new THREE.BoxGeometry(.075,.22,.12),gripMat); akMag.position.set(0,-.15,.25); akMag.rotation.x=-.32; ak47.add(akMag);
-  revolver.visible = false; ak47.visible = false;
-  const weaponMount = new THREE.Group(); weaponMount.position.set(0,-.28,.02); weaponMount.rotation.x=-Math.PI/2; gunArm.elbow.add(weaponMount); weaponMount.add(revolver,ak47);
-  const muzzle = new THREE.Object3D(); muzzle.position.set(0,0,.96); weaponMount.add(muzzle);
-
-  return { group, body, torso, head, frontLeg, backLeg, bowArm, gunArm, bow, quiver, revolver, ak47, muzzle, stringUpper, stringLower, nockedArrow, nock };
-}
-
-/**
- * Compose the world selector archer from the exact Goopy rig used by the alien
- * game, then mount the selector's existing bow, quiver and aiming anchors onto
- * that shared skeleton. This keeps the globe-specific ballistics while making
- * the character asset and articulated movement consistent across levels.
- */
-function buildAlien(THREE: typeof THREE_NS): AlienRig {
-  const shared = createSharedAlien("zix");
-  const gear = buildLegacyAlien(THREE);
-
-  gear.bow.removeFromParent();
-  gear.bow.position.set(0, -0.05, 0.03);
-  shared.handR.add(gear.bow);
-
-  gear.quiver.removeFromParent();
-  gear.quiver.position.set(-0.05, 0.02, 0);
-  gear.quiver.rotation.set(0.18, 0, 0.36);
-  shared.backMount.add(gear.quiver);
-
-  shared.ak.root.visible = false;
-  shared.revolver.root.visible = false;
-  shared.jetpack.visible = false;
-  const muzzle = new THREE.Object3D();
-  muzzle.position.set(0, 0, 0.78);
-  shared.gunMount.add(muzzle);
-
-  return {
-    group: shared.root,
-    body: shared.hips,
-    torso: shared.torso,
-    head: shared.head,
-    frontLeg: { hip: shared.legR, knee: shared.shinR },
-    backLeg: { hip: shared.legL, knee: shared.shinL },
-    bowArm: { shoulder: shared.armR, elbow: shared.forearmR },
-    gunArm: { shoulder: shared.armR, elbow: shared.forearmR },
-    bow: gear.bow,
-    quiver: gear.quiver,
-    revolver: shared.revolver.root,
-    ak47: shared.ak.root,
-    muzzle,
-    stringUpper: gear.stringUpper,
-    stringLower: gear.stringLower,
-    nockedArrow: gear.nockedArrow,
-    nock: gear.nock,
-  };
+/** The exact current grokMADEthis character and recurve bow, with selector IK anchors. */
+function buildAlien(THREE: typeof THREE_NS, kind: AlienType = "original"): AlienRig {
+  const shared=createSharedAlien(kind==="doop"?"pip":kind==="zorp"?"vex":"zix");
+  const bow=shared.bow.root;shared.root.add(bow);bow.scale.setScalar(.9);
+  const oldString=bow.children.find(o=>o instanceof THREE.Line);oldString?.removeFromParent();
+  const nockedArrow=bow.children.find(o=>o instanceof THREE.Group) as THREE_NS.Group;
+  const cordMaterial=new THREE.MeshBasicMaterial({color:0xf8efff});
+  const stringUpper=new THREE.Mesh(new THREE.CylinderGeometry(.003,.003,1,5),cordMaterial);
+  const stringLower=stringUpper.clone();bow.add(stringUpper,stringLower);
+  const nock=new THREE.Object3D();bow.add(nock);
+  shared.ak.root.visible=false;shared.revolver.root.visible=false;shared.bow.flash.visible=false;
+  const quiver=shared.quiverMount;
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(.085,.06,.42,8),new THREE.MeshStandardMaterial({color:0x492842,flatShading:true}));quiver.add(tube);
+  for(let i=0;i<5;i++){const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.55,5),new THREE.MeshStandardMaterial({color:0x9e7259}));shaft.position.set((i-2)*.027,.18,0);quiver.add(shaft);const feather=new THREE.Mesh(new THREE.ConeGeometry(.026,.12,3),new THREE.MeshStandardMaterial({color:0xbe64ee}));feather.position.copy(shaft.position);feather.position.y+=.22;quiver.add(feather);}
+  return {group:shared.root,body:shared.hips,torso:shared.torso,head:shared.head,
+    frontLeg:{hip:shared.legR,knee:shared.shinR},backLeg:{hip:shared.legL,knee:shared.shinL},
+    bowArm:{shoulder:shared.armL,elbow:shared.forearmL},drawArm:{shoulder:shared.armR,elbow:shared.forearmR},gunArm:{shoulder:shared.armR,elbow:shared.forearmR},
+    bow,quiver,revolver:shared.revolver.root,ak47:shared.ak.root,muzzle:shared.bow.muzzle,stringUpper,stringLower,nockedArrow,nock};
 }
 
 function buildSatellite(THREE: typeof THREE_NS) {
@@ -763,62 +452,7 @@ function buildSatellite(THREE: typeof THREE_NS) {
   return { group, light, beacon };
 }
 
-/** The floating slab the archer stands on, plus a little alien flora. */
-function buildPlatform(THREE: typeof THREE_NS) {
-  const group = new THREE.Group();
-  const rockTop = new THREE.MeshStandardMaterial({ color: 0xb0459d, flatShading: true, roughness: 0.82 });
-  const crystal = new THREE.MeshStandardMaterial({ color: 0x39e6d4, flatShading: true, roughness: 0.25, metalness: 0.3, emissive: 0x0d5f5a, emissiveIntensity: 0.5 });
-  const cap = new THREE.MeshStandardMaterial({ color: 0xff7ad4, flatShading: true, roughness: 0.6 });
-  const stalk = new THREE.MeshStandardMaterial({ color: 0x8f4fd8, flatShading: true, roughness: 0.7 });
-  const edgeMaterial = new THREE.MeshBasicMaterial({ color: 0x33dfff, transparent: true, opacity: 0.16 });
-
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(SLAB_RADIUS, SLAB_RADIUS * 0.96, 0.055, 12), rockTop);
-  group.add(deck);
-
-  const edge = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.CylinderGeometry(SLAB_RADIUS * 1.02, SLAB_RADIUS * .96, .075, 12)),
-    edgeMaterial,
-  );
-  edge.position.y = .015;
-  group.add(edge);
-
-  const underglow = new THREE.Mesh(
-    new THREE.TorusGeometry(SLAB_RADIUS * .82, .018, 5, 42),
-    new THREE.MeshBasicMaterial({ color: 0x20cfff, transparent: true, opacity: .08 }),
-  );
-  underglow.rotation.x = Math.PI / 2;
-  underglow.position.y = -.08;
-  group.add(underglow);
-
-  const decorations: { x: number; z: number; scale: number; kind: "crystal" | "shroom" }[] = [
-    { x: -0.44, z: 0.16, scale: 0.62, kind: "crystal" },
-    { x: -0.3, z: 0.32, scale: 0.4, kind: "crystal" },
-    { x: 0.46, z: 0.1, scale: 0.52, kind: "crystal" },
-    { x: 0.33, z: 0.34, scale: 0.34, kind: "crystal" },
-    { x: -0.48, z: -0.2, scale: 0.5, kind: "shroom" },
-    { x: 0.5, z: -0.22, scale: 0.42, kind: "shroom" },
-  ];
-
-  decorations.forEach((item) => {
-    if (item.kind === "crystal") {
-      const shard = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.42, 5), crystal);
-      shard.position.set(item.x, 0.21 * item.scale, item.z);
-      shard.scale.setScalar(item.scale);
-      shard.rotation.z = (hashNoise(item.x, item.z) - 0.5) * 0.5;
-      group.add(shard);
-    } else {
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.04, 0.3, 6), stalk);
-      stem.position.set(item.x, 0.15 * item.scale, item.z);
-      stem.scale.setScalar(item.scale);
-      const hat = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.14, 8), cap);
-      hat.position.set(item.x, 0.3 * item.scale, item.z);
-      hat.scale.setScalar(item.scale);
-      group.add(stem, hat);
-    }
-  });
-
-  return { group, edgeMaterial, underglow: underglow.material as THREE_NS.MeshBasicMaterial };
-}
+function buildPlatform(_THREE: typeof THREE_NS) { return buildLaunchIsland(); }
 
 /** A bolt-on satellite part. Added into a dedicated upgrade slot on the
  * stock satellite so the base model never has to be rebuilt or torn down. */
@@ -981,7 +615,7 @@ async function loadOptionalModel(THREE: typeof THREE_NS, file: string | null | u
 
 type Arrow = {
   mesh: THREE_NS.Group;
-  kind: "arrow" | "pepsi";
+  kind: "arrow";
   velocity: THREE_NS.Vector3;
   age: number;
   stuck: boolean;
@@ -1006,9 +640,17 @@ export async function createGlobe3D(
     return null;
   }
   renderer.setClearAlpha(0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.18;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
   const scene = new THREE.Scene();
+  let starSeed=59;const rand=()=>{starSeed=(starSeed*1664525+1013904223)>>>0;return starSeed/4294967296;};
+  const starPositions=[];for(let i=0;i<900;i++)starPositions.push((rand()-.5)*15,(rand()-.5)*10,-4-rand()*5);
+  const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute("position",new THREE.Float32BufferAttribute(starPositions,3));scene.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xd5c3f6,size:.014,transparent:true,opacity:.65,sizeAttenuation:true})));
+  const nebulaMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{time:{value:0}},vertexShader:"varying vec2 uvp;void main(){uvp=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",fragmentShader:"varying vec2 uvp;uniform float time;void main(){vec2 p=(uvp-.5)*vec2(2.,1.);float a=atan(p.y,p.x);float r=length(p);float swirl=sin(a*3.+r*19.+sin(p.x*9.+p.y*13.)*1.2-time*.018);float haze=pow(max(0.,swirl),5.)*.25;vec3 color=mix(vec3(.32,.12,.58),vec3(.08,.46,.52),sin(r*23.)*.5+.5);gl_FragColor=vec4(color,haze);}"});
+  const nebula=new THREE.Mesh(new THREE.PlaneGeometry(18,12),nebulaMaterial);nebula.position.set(.5,0,-9);scene.add(nebula);
   const camera = new THREE.OrthographicCamera(-1.16, 1.16, 1.16, -1.16, 0.1, 24);
   camera.position.set(0, 0, 8);
   camera.lookAt(0, 0, 0);
@@ -1039,7 +681,7 @@ export async function createGlobe3D(
   const UNIVERSE_SIZE = 8;
   const universeEdges = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIVERSE_SIZE, UNIVERSE_SIZE, UNIVERSE_SIZE)),
-    new THREE.LineBasicMaterial({ color: 0x5be6ff, transparent: true, opacity: 0.4 }),
+    new THREE.LineBasicMaterial({ color: 0x5be6ff, transparent: true, opacity: 0.055 }),
   );
   scene.add(universeEdges);
 
@@ -1048,7 +690,7 @@ export async function createGlobe3D(
   const universeFloor = new THREE.GridHelper(UNIVERSE_SIZE, 16, 0x8a5cff, 0x1c3a4a);
   const floorMaterial = universeFloor.material as THREE_NS.Material & { opacity: number; transparent: boolean };
   floorMaterial.transparent = true;
-  floorMaterial.opacity = 0.22;
+  floorMaterial.opacity = 0.035;
   universeFloor.position.y = -UNIVERSE_SIZE / 2;
   scene.add(universeFloor);
 
@@ -1060,10 +702,11 @@ export async function createGlobe3D(
   // ocean below stays visible, but it hides land on the far side of the globe.
   const occluder = new THREE.Mesh(
     new THREE.SphereGeometry(GLOBE_RADIUS * 0.998, 72, 48),
-    new THREE.MeshBasicMaterial({ colorWrite: false }),
+    cosmicOcean(),
   );
   occluder.renderOrder = -1;
   planet.add(occluder);
+  const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.055,48,32),new THREE.MeshBasicMaterial({color:0x7ff9eb,transparent:true,opacity:.055,side:THREE.BackSide,depthWrite:false}));planet.add(atmosphere);
 
   // Per-cell terrain warp, in world-radius units added on top of the base
   // land/ice height — this is what the Cube panel's raise/lower brush edits.
@@ -1145,6 +788,7 @@ export async function createGlobe3D(
   const satellite = buildSatellite(THREE);
   satellite.group.scale.setScalar(1.5);
   worldSpin.add(satellite.group);
+  for(const radius of [1.52,1.9]){const points=Array.from({length:129},(_,i)=>{const a=i/128*Math.PI*2;return new THREE.Vector3(Math.cos(a)*radius,Math.sin(a)*.42+.18,Math.sin(a)*radius);});const ring=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineDashedMaterial({color:radius===1.52?0x83dfd2:0xbc9dea,transparent:true,opacity:.17,dashSize:.035,gapSize:.045,depthWrite:false}));ring.computeLineDistances();worldSpin.add(ring);}
 
   // Empty slot the customization tab fills with bolt-on parts. Kept as a
   // child of the satellite so upgrades ride its orbit and rotation for free.
@@ -1170,7 +814,7 @@ export async function createGlobe3D(
   // It still never uses lookAt, so the 2D ocean and 3D land stay aligned;
   // the spin is an explicit rotation the flight controls drive, not a
   // camera-facing correction.
-  const FLY_ORBIT = 0.9;
+  const FLY_ORBIT = 1.58;
   const FLY_DEPTH = 1.82;
   const FLY_DEPTH_MIN = 1.15;
   const FLY_DEPTH_MAX = 2.6;
@@ -1185,53 +829,14 @@ export async function createGlobe3D(
   let selectedTarget: EditTargetId = "globe";
 
   const placeIsland = (elapsed: number) => {
-    const hover = selectedTarget === "platform" ? 0 : 1;
-    const wiggleAz = flyAzimuth + hover * (Math.sin(elapsed * 0.37) * 0.1 + Math.sin(elapsed * 0.11) * 0.05);
-    const wiggleEl = flyElevation + hover * (Math.sin(elapsed * 0.49) * 0.07 + Math.cos(elapsed * 0.23) * 0.04);
-    const wiggleZ = flyDepth + hover * (Math.sin(elapsed * 0.29) * 0.12 + Math.cos(wiggleAz) * 0.18);
-    const nextX = Math.sin(wiggleAz) * FLY_ORBIT;
-    const nextY = Math.cos(wiggleAz) * FLY_ORBIT * 0.48 + wiggleEl * 0.8 - 0.22;
-    islandRoot.position.set(nextX, nextY, wiggleZ);
-
-    // Heading follows the direction of travel across the screen, so banking
-    // the platform hard into a turn reads as an actual turn, not a wobble.
-    // It's a full, unclamped rotation — several laps around the globe winds
-    // this up past a full 360° and keeps going.
-    const travel = Math.hypot(nextX - prevIslandX, nextY - prevIslandY);
-    if (travel > 0.0004) {
-      const targetHeading = Math.atan2(nextX - prevIslandX, nextY - prevIslandY);
-      let delta = targetHeading - (flyHeading % (Math.PI * 2));
-      delta = ((delta + Math.PI) % (Math.PI * 2)) - Math.PI;
-      flyHeading += delta * Math.min(1, travel * 18);
-    }
-    prevIslandX = nextX;
-    prevIslandY = nextY;
-
-    islandRoot.rotation.y = flyHeading + platformYaw;
-    islandRoot.rotation.z = Math.sin(elapsed * 0.71) * 0.08 - flyHeading * 0.12;
-    islandRoot.rotation.x = Math.cos(elapsed * 0.53) * 0.05;
-    // The camera tracks the platform's flight much more now — roughly
-    // doubled sideways parallax, plus a small dolly in/out that follows the
-    // Z/X depth axis — so flying the alien around genuinely reads as the
-    // camera moving with them through space, not a fixed viewpoint with a
-    // toy drifting in front of it. It still looks straight at the globe's
-    // center throughout: the aim math depends on that lookAt target and
-    // can't be repointed at the island without redoing the shot geometry.
-    camera.up.set(0, 1, 0);
-    if (selectedTarget === "platform") {
-      const front = new THREE.Vector3(0, 0.72, 2.55)
-        .applyAxisAngle(new THREE.Vector3(0, 1, 0), islandRoot.rotation.y);
-      camera.position.copy(islandRoot.position).add(front);
-      camera.lookAt(islandRoot.position.x, islandRoot.position.y + 0.3, islandRoot.position.z);
-    } else {
-      camera.position.set(
-        islandRoot.position.x * 0.42,
-        islandRoot.position.y * 0.32,
-        8 - (islandRoot.position.z - FLY_DEPTH) * 0.6,
-      );
-      camera.lookAt(0, 0, 0);
-    }
+    const hover=editOffsetsReady && selectedTarget!=="platform"?.015:0;
+    islandRoot.position.set(Math.sin(flyAzimuth)*FLY_ORBIT,-.68+flyElevation*.4+Math.sin(elapsed*.5)*hover,flyDepth);
+    islandRoot.rotation.set(.025*Math.cos(elapsed*.4),platformYaw,.015*Math.sin(elapsed*.5));
+    camera.up.set(0,1,0);
+    if(selectedTarget==="platform") {camera.position.copy(islandRoot.position).add(new THREE.Vector3(0,1.25,6));camera.lookAt(islandRoot.position.x,islandRoot.position.y+.4,islandRoot.position.z);}
+    else {camera.position.set(0,.28,8);camera.lookAt(0,.28,0);}
   };
+  let editOffsetsReady=false;
 
   const islandRoot = new THREE.Group();
   placeIsland(0);
@@ -1242,26 +847,12 @@ export async function createGlobe3D(
   platform.group.position.set(0, -0.05, 0);
   islandRoot.add(platform.group);
 
-  const alien = buildAlien(THREE);
+  let alien = buildAlien(THREE);
+  const retiredAliens:THREE_NS.Group[]=[];
   alien.group.scale.setScalar(ALIEN_SCALE);
   islandRoot.add(alien.group);
 
-  // If Blender exports are listed in public/models/index.json they take over.
-  void readModelManifest().then(async (manifest) => {
-    const [archerModel, propsModel] = await Promise.all([
-      loadOptionalModel(THREE, manifest.archer),
-      loadOptionalModel(THREE, manifest.props),
-    ]);
-    if (disposed) return;
-    if (archerModel) {
-      alien.body.visible = false;
-      alien.group.add(archerModel);
-    }
-    if (propsModel) {
-      propsModel.scale.setScalar(0.5);
-      platform.group.add(propsModel);
-    }
-  });
+  // The supplied game rig is the canonical selector character.
 
   // Loose arrows use the same palette as the one on the string, so a shot in
   // flight reads as the arrow that was just nocked.
@@ -1301,17 +892,6 @@ export async function createGlobe3D(
     return group;
   };
 
-  const makePepsiProjectile = () => {
-    const group = new THREE.Group();
-    const label = new THREE.MeshStandardMaterial({ color: 0x1757d7, emissive: 0x071c59, emissiveIntensity: .35, roughness: .34, metalness: .42 });
-    const metal = new THREE.MeshStandardMaterial({ color: 0xd8e0eb, roughness: .2, metalness: .92 });
-    const can = new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.16,14),label); can.rotation.x=Math.PI/2; group.add(can);
-    [-.08,.08].forEach((z)=>{const rim=new THREE.Mesh(new THREE.TorusGeometry(.05,.008,5,14),metal);rim.position.z=z;group.add(rim)});
-    const stripe = new THREE.Mesh(new THREE.TorusGeometry(.056,.012,6,16),new THREE.MeshBasicMaterial({color:0xef253c})); stripe.rotation.x=Math.PI/2; group.add(stripe);
-    group.scale.setScalar(2);
-    return group;
-  };
-
   const guideMaterial = new THREE.LineBasicMaterial({ color:0x7cfff0, transparent:true, opacity:.52, blending:THREE.AdditiveBlending, depthWrite:false });
   const guideGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
   const aimLaser = new THREE.Line(guideGeometry,guideMaterial);
@@ -1332,6 +912,7 @@ export async function createGlobe3D(
   let disposed = false;
 
   const rotation = { lon: 0, lat: -15, roll: 0 };
+  editOffsetsReady=true;
   const aim = { x: 0.35, y: 0.35 };
   const move = { x: 0, y: 0 };
   const keys = {
@@ -1363,7 +944,7 @@ export async function createGlobe3D(
 
   let drawing = false;
   let alienType: AlienType = "original";
-  let aimMode = false;
+  let aimMode = true;
   let drawStartedAt = 0;
   let charge = 0;
   let quiver = QUIVER_MAX;
@@ -1422,7 +1003,7 @@ export async function createGlobe3D(
   };
 
   const applyView = () => {
-    const half = 0.5 / (0.43 * zoom);
+    const half = Math.max(1.72, 2.85 / (width / Math.max(height,1))) / zoom;
     const aspect = width / Math.max(height, 1);
     camera.left = -half * aspect;
     camera.right = half * aspect;
@@ -1447,13 +1028,14 @@ export async function createGlobe3D(
    * orthographic camera the screen position maps straight onto the sphere, so
    * "point at Africa, hit Africa" holds exactly.
    */
-  const worldFromScreen = (nx: number, ny: number) => {
-    const half = 0.5 / (0.43 * zoom);
-    const x = nx * half * (width / Math.max(height, 1));
-    const y = ny * half;
-    const radial = x * x + y * y;
-    if (radial >= 0.97) return aimTarget.set(x, y, 0.12);
-    return aimTarget.set(x, y, Math.sqrt(1 - radial));
+  const aimRay=new THREE.Raycaster();
+  const globeSphere=new THREE.Sphere(PLANET_CENTER.clone(),IMPACT_RADIUS);
+  const worldFromScreen = (nx:number,ny:number) => {
+    camera.updateMatrixWorld();planet.updateMatrixWorld();
+    aimRay.setFromCamera(new THREE.Vector2(nx,ny),camera);globeSphere.center.copy(planet.position);
+    const hit=aimRay.ray.intersectSphere(globeSphere,aimTarget);
+    if(hit)return hit;
+    return aimRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-planet.position.z),aimTarget)??aimTarget.copy(planet.position);
   };
 
   const territoryAt = (lon: number, lat: number): Territory | null => {
@@ -1478,24 +1060,9 @@ export async function createGlobe3D(
     if (quiver <= 0) return;
     quiver -= 1;
 
-    const projectileKind = alienType === "original" ? "arrow" : "pepsi";
-    const arrow = projectileKind === "arrow" ? makeArrow() : makePepsiProjectile();
-    (projectileKind === "arrow" ? alien.nock : alien.muzzle).getWorldPosition(bowWorld);
-    arrow.position.copy(bowWorld);
-
-    // Loose a real lofted shot: solve for the launch velocity that puts the
-    // arrow on the aim point after `flight` seconds under gravity. The arrow
-    // climbs over the planet's shoulder and comes down onto the target rather
-    // than skimming up into its belly, which is both how a bow actually works
-    // and the only way to reach the far north of a sphere from below it.
-    const toTarget = worldFromScreen(aim.x, aim.y).clone().sub(bowWorld);
-    const distance = Math.max(toTarget.length(), 0.4);
-    const speed = ARROW_MIN_SPEED + (ARROW_MAX_SPEED - ARROW_MIN_SPEED) * (projectileKind === "pepsi" ? 1 : charge);
-    const flight = projectileKind === "pepsi" ? distance / (speed * 2.35) : (distance / speed) * (1.6 - 0.3 * charge);
-    const velocity = toTarget.divideScalar(flight);
-    velocity.y += 0.5 * Math.abs(GRAVITY) * flight;
-    // Drag will shave a little off the way, so lean into the shot slightly.
-    velocity.multiplyScalar(1 + AIR_DRAG * flight * 0.55);
+    const projectileKind = "arrow" as const;
+    const arrow=makeArrow();alien.nock.getWorldPosition(bowWorld);arrow.position.copy(bowWorld);
+    const velocity=launchVelocity(bowWorld,worldFromScreen(aim.x,aim.y),charge);
 
     scene.add(arrow);
     arrows.push({ mesh: arrow, kind: projectileKind, velocity, age: 0, stuck: false, stuckAge: 0 });
@@ -1517,7 +1084,7 @@ export async function createGlobe3D(
   const resolveHit = (position: THREE_NS.Vector3) => {
     // Bring the hit point back into the planet's own frame, then read it as
     // longitude/latitude using the same convention as the 2D projection.
-    const local = scratch.copy(position).applyQuaternion(planet.quaternion.clone().invert()).normalize();
+    const local = scratch.copy(position).sub(planet.position).applyQuaternion(planet.quaternion.clone().invert()).normalize();
     const lat = (Math.asin(clamp(local.y, -1, 1)) * 180) / Math.PI;
     const lon = (Math.atan2(local.x, local.z) * 180) / Math.PI;
 
@@ -1560,27 +1127,13 @@ export async function createGlobe3D(
         remaining -= step;
 
         previousPoint.copy(arrow.mesh.position);
-        const before = previousPoint.length();
         arrow.velocity.y += GRAVITY * step;
-        arrow.velocity.multiplyScalar(Math.max(0, 1 - AIR_DRAG * step));
-        arrow.mesh.position.addScaledVector(arrow.velocity, step);
-
-        if (before > IMPACT_RADIUS && arrow.mesh.position.length() <= IMPACT_RADIUS) {
-          // Walk back along this step to the moment of impact, so the reading
-          // is the tile the arrow actually pierced.
-          let outside = 0;
-          let inside = 1;
-          for (let pass = 0; pass < 12; pass += 1) {
-            const middle = (outside + inside) / 2;
-            const length = impactPoint.copy(previousPoint).lerp(arrow.mesh.position, middle).length();
-            if (length > IMPACT_RADIUS) outside = middle;
-            else inside = middle;
-          }
-          impactPoint.copy(previousPoint).lerp(arrow.mesh.position, inside);
-          arrow.mesh.position.copy(impactPoint);
-          landed = true;
-        }
+        arrow.mesh.position.addScaledVector(arrow.velocity,step);
+        const contact=sphereContact(previousPoint,arrow.mesh.position,planet.position,IMPACT_RADIUS);
+        if(contact){arrow.mesh.position.copy(contact);landed=true;}
       }
+
+
 
       if (arrow.velocity.lengthSq() > 0.0001) {
         arrow.mesh.lookAt(scratch.copy(arrow.mesh.position).add(arrow.velocity));
@@ -1597,7 +1150,7 @@ export async function createGlobe3D(
         continue;
       }
 
-      if (arrow.age > (arrow.kind === "pepsi" ? ARROW_LIFETIME * 3.2 : ARROW_LIFETIME) || arrow.mesh.position.length() > (arrow.kind === "pepsi" ? 58 : 12)) {
+      if (arrow.age > ARROW_LIFETIME || arrow.mesh.position.length() > 14) {
         scene.remove(arrow.mesh);
         arrows.splice(index, 1);
       }
@@ -1644,154 +1197,55 @@ export async function createGlobe3D(
     arm.elbow.rotation.set(-(Math.PI - elbowAngle), 0, 0);
   };
 
-  const stepAlien = (delta: number, elapsed: number) => {
-    const inputX = clamp(move.x + (keys.right ? 1 : 0) - (keys.left ? 1 : 0), -1, 1);
-    const inputZ = clamp(move.y + (keys.up ? 1 : 0) - (keys.down ? 1 : 0), -1, 1);
-    const acceleration = walker.y > .001 ? 2.4 : 5.8;
-    walker.vx += (inputX * WALK_SPEED - walker.vx) * Math.min(1, delta * acceleration);
-    walker.vz += (inputZ * WALK_SPEED - walker.vz) * Math.min(1, delta * acceleration);
-    if (Math.abs(inputX) < .05) walker.vx *= Math.max(0, 1 - delta * 8.5);
-    if (Math.abs(inputZ) < .05) walker.vz *= Math.max(0, 1 - delta * 8.5);
-    const walkLimitX = WALK_LIMIT_X * platformScale;
-    const walkLimitZ = platformScale;
-    walker.x = clamp(walker.x + walker.vx * delta, -walkLimitX, walkLimitX);
-    walker.z = clamp(walker.z + walker.vz * delta, 0, walkLimitZ);
-    if (Math.abs(walker.x) >= walkLimitX) walker.vx *= -.22;
-    if (walker.z <= 0 || walker.z >= walkLimitZ) walker.vz *= -.22;
-    walker.vy -= 2.8 * delta;
-    walker.y += walker.vy * delta;
-    if (walker.y < 0) {
-      walker.y = 0;
-      walker.vy = Math.abs(walker.vy) > .55 ? -walker.vy * .18 : 0;
-    }
-    walker.ragdoll = Math.max(0, walker.ragdoll - delta);
-    walker.spin += walker.ragdoll > 0 ? delta * 8 : 0;
-    const moving = Math.hypot(walker.vx, walker.vz) > .035;
-
-    alien.group.position.set(
-      walker.x + editOffsets.alien.x,
-      walker.z * SLAB_RISE + walker.y + editOffsets.alien.y,
-      -walker.z * SLAB_DEPTH + editOffsets.alien.z,
-    );
-    // Local X/Z remain zero when standing, which keeps every character
-    // perpendicular to the platform even while the whole island rotates.
-    alien.group.rotation.x = walker.ragdoll > 0 ? Math.sin(walker.spin * .8) * 1.1 : 0;
-    alien.group.rotation.z = walker.ragdoll > 0 ? walker.spin : 0;
-
-    // Aim: from the archer toward wherever the player is pointing on the globe.
-    const target = worldFromScreen(aim.x, aim.y);
-    alien.group.getWorldPosition(bowWorld);
-    aimDirection.copy(target).sub(bowWorld);
-    aimDirection.y += 0.12;
-    if (aimDirection.lengthSq() < 0.0001) aimDirection.set(0, 0.3, -1);
-    aimDirection.normalize();
-
-    const shotSource = alienType === "original" ? alien.nock : alien.muzzle;
-    shotSource.getWorldPosition(bowWorld);
-    const guideTarget = worldFromScreen(aim.x, aim.y).clone();
-    const guidePoints = Array.from({length:25},(_,index)=>{
-      const t=index/24;
-      const point=bowWorld.clone().lerp(guideTarget,t);
-      point.y += Math.sin(t*Math.PI) * (alienType === "original" ? .62 : .08);
-      return point;
-    });
-    guideGeometry.setFromPoints(guidePoints);
-    landingX.position.copy(guideTarget).multiplyScalar(1.012);
-    landingX.lookAt(camera.position);
-    aimGuide.visible = aimMode && archerActive;
-
-    // The whole body turns to face the shot, so the arms only ever have to
-    // pose along the body's own forward axis. That keeps the draw readable
-    // from any angle instead of fighting the aim direction.
-    const facing = Math.atan2(aimDirection.x, aimDirection.z);
-    const toCamera = Math.atan2(camera.position.x - islandRoot.position.x, camera.position.z - islandRoot.position.z);
-    // Weighted toward the camera rather than the aim line — the scout reads
-    // as facing forward, toward the viewer, most of the time, and only turns
-    // sharply side-on when the shot itself is far off to one side.
-    const mixed = facing * 0.35 + toCamera * 0.65;
-    walker.facing += ((mixed - walker.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, delta * 9);
-    alien.group.rotation.y = walker.facing + (walker.ragdoll > 0 ? walker.spin * .35 : 0);
-
-    const pitch = Math.asin(clamp(aimDirection.y, -1, 1));
-
-    // The archer stands below the planet, so the shot is steeply uphill. Rather
-    // than winching the arm over its head, the whole body leans back into the
-    // shot — which is what an archer actually does — and the arms keep the
-    // classic level silhouette relative to the body.
-    alien.body.rotation.x = -pitch * 0.62;
-
-    // Side-on stance: the torso is turned across the line of the shot.
-    alien.torso.rotation.x = -pitch * 0.12;
-    alien.torso.rotation.y = -0.06 + charge * 0.05;
-    alien.torso.rotation.z = 0.04 - charge * 0.04;
-    alien.head.rotation.x = -pitch * 0.1 + 0.08;
-    alien.head.rotation.y = 0.16 - charge * 0.04;
-
-    // Bow arm: aimed straight down the line of the shot. Pointing the limb
-    // rather than dialling in Euler angles keeps the bow square to the shot no
-    // matter how the body is turned or leaning.
-    alien.torso.updateWorldMatrix(true, false);
-    alien.torso.getWorldQuaternion(ikAim);
-    ikAim.invert();
-    ikDirection.copy(aimDirection).applyQuaternion(ikAim).normalize();
-    // Ease the bow down toward chest height; the arrow still leaves along the
-    // true line of the shot, the archer just doesn't hold it over their face.
-    ikDirection.y -= 0.26;
-    ikDirection.normalize();
-    if (alienType === "original") {
-      alien.bowArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
-      alien.bowArm.elbow.rotation.set(0.1 - charge * 0.08, 0, 0);
-    } else {
-      alien.gunArm.shoulder.quaternion.setFromUnitVectors(limbDown, ikDirection);
-      alien.gunArm.elbow.rotation.set(.04,0,0);
-    }
-    // The bow hangs off the hand with its arrow axis running down the arm and
-    // its limbs standing upright across it.
-    alien.bow.rotation.set(-Math.PI / 2, 0, 0);
-
-    // The string bends to the nock, and the arrow rides on it.
-    const pull = 0.04 + charge * 0.38;
-    bowTipUpper.set(0, BOW_REACH, 0.055);
-    bowTipLower.set(0, -BOW_REACH, 0.055);
-    nockPoint.set(0, 0, 0.055 + pull);
-    spanCord(alien.stringUpper, bowTipUpper, nockPoint);
-    spanCord(alien.stringLower, bowTipLower, nockPoint);
-    alien.nock.position.copy(nockPoint);
-    alien.nockedArrow.visible = alienType === "original" && charge > 0.02;
-    alien.nockedArrow.position.set(0, 0, nockPoint.z - 0.3);
-    alien.nockedArrow.rotation.set(0, Math.PI, 0);
-
-    if (moving) {
-      // Walk cycle: hips swing, knees bend on the back stroke.
-      walker.stride += delta * 8.5;
-      const swing = Math.sin(walker.stride) * 0.5;
-      alien.frontLeg.hip.rotation.x = swing;
-      alien.backLeg.hip.rotation.x = -swing;
-      alien.frontLeg.knee.rotation.x = Math.max(0, -swing) * 0.9;
-      alien.backLeg.knee.rotation.x = Math.max(0, swing) * 0.9;
-      alien.body.position.y = Math.abs(Math.sin(walker.stride)) * 0.022;
-      alien.body.rotation.z = Math.sin(walker.stride) * 0.03;
-    } else {
-      // Braced archer stance: front leg forward and straight, back leg bent.
-      walker.stride = 0;
-      const settleTo = (node: THREE_NS.Object3D, axis: "x" | "z", value: number) => {
-        node.rotation[axis] += (value - node.rotation[axis]) * Math.min(1, delta * 7);
-      };
-      settleTo(alien.frontLeg.hip, "x", -0.24 - charge * 0.05);
-      settleTo(alien.backLeg.hip, "x", 0.3 + charge * 0.06);
-      settleTo(alien.frontLeg.knee, "x", 0.16);
-      settleTo(alien.backLeg.knee, "x", 0.34 + charge * 0.1);
-      settleTo(alien.body, "z", 0);
-      alien.body.position.y = Math.sin(elapsed * 1.7) * 0.011 - charge * 0.015;
+  let guideAt=0;
+  let lastAimName="";
+  const stepAlien = (delta:number,elapsed:number) => {
+    const inputX=clamp(move.x+Number(keys.right)-Number(keys.left),-1,1),inputZ=clamp(move.y+Number(keys.up)-Number(keys.down),-1,1);
+    walker.vx+=(inputX*WALK_SPEED-walker.vx)*Math.min(1,delta*8);walker.vz+=(inputZ*WALK_SPEED-walker.vz)*Math.min(1,delta*8);
+    walker.x=clamp(walker.x+walker.vx*delta,-.54*platformScale,.54*platformScale);walker.z=clamp(walker.z+walker.vz*delta,0,platformScale);
+    walker.vy-=2.8*delta;walker.y=Math.max(0,walker.y+walker.vy*delta);if(walker.y===0)walker.vy=0;
+    walker.ragdoll=Math.max(0,walker.ragdoll-delta);walker.spin+=walker.ragdoll>0?delta*8:0;
+    alien.group.position.set(walker.x+editOffsets.alien.x,walker.z*SLAB_RISE+walker.y+editOffsets.alien.y,-walker.z*SLAB_DEPTH+editOffsets.alien.z);
+    alien.group.getWorldPosition(bowWorld);aimDirection.copy(worldFromScreen(aim.x,aim.y)).sub(bowWorld);aimDirection.y-=.9;
+    const worldFacing=Math.atan2(aimDirection.x,aimDirection.z);const islandRotation=new THREE.Euler().setFromQuaternion(islandRoot.getWorldQuaternion(new THREE.Quaternion()));
+    const targetFacing=worldFacing-islandRotation.y;walker.facing+=((targetFacing-walker.facing+Math.PI*3)%(Math.PI*2)-Math.PI)*Math.min(1,delta*12);
+    alien.group.rotation.set(walker.ragdoll>0?Math.sin(walker.spin)*.5:0,walker.facing,walker.ragdoll>0?walker.spin:0);
+    const moving=Math.hypot(walker.vx,walker.vz)>.025;walker.stride+=delta*(moving?8:1);
+    alien.body.position.y=.9+(moving?Math.abs(Math.sin(walker.stride))*.025:Math.sin(elapsed*1.7)*.008);
+    alien.frontLeg.hip.rotation.set(moving?Math.sin(walker.stride)*.45:-.18,0,-.12);alien.backLeg.hip.rotation.set(moving?-Math.sin(walker.stride)*.45:.22,0,.12);
+    alien.frontLeg.knee.rotation.x=moving?Math.max(0,-Math.sin(walker.stride))*.5:.1;alien.backLeg.knee.rotation.x=moving?Math.max(0,Math.sin(walker.stride))*.5:.2;
+    alien.torso.rotation.set(0,0,-charge*.035);alien.head.rotation.set(-.08,0,0);
+    alien.group.updateWorldMatrix(true,true);
+    const center=alien.group.localToWorld(new THREE.Vector3(0,1.48,.5));
+    const shotDirection=worldFromScreen(aim.x,aim.y).clone().sub(center).normalize();
+    const localDirection=shotDirection.clone().applyQuaternion(alien.group.getWorldQuaternion(new THREE.Quaternion()).invert());
+    alien.bow.position.set(0,1.48,.5);alien.bow.quaternion.setFromUnitVectors(axisZ,localDirection);
+    bowTipUpper.set(0,.65,-.12);bowTipLower.set(0,-.62,-.1);nockPoint.set(0,0,-.14-charge*.27);
+    spanCord(alien.stringUpper,bowTipUpper,nockPoint);spanCord(alien.stringLower,bowTipLower,nockPoint);
+    alien.nockedArrow.position.z=-charge*.27;alien.nockedArrow.visible=quiver>0;alien.nock.position.set(0,0,.25-charge*.27);
+    alien.bow.updateWorldMatrix(true,true);
+    solveArm(alien.bowArm,alien.bow.localToWorld(new THREE.Vector3(0,0,.11)),.34,.39);
+    solveArm(alien.drawArm,alien.bow.localToWorld(nockPoint.clone()),.34,.39);
+    alien.group.updateWorldMatrix(true,true);
+    aimGuide.visible=aimMode&&archerActive;
+    if(aimGuide.visible&&elapsed-guideAt>.05){
+      guideAt=elapsed;alien.nock.getWorldPosition(bowWorld);
+      const prediction=predictFlight(bowWorld,launchVelocity(bowWorld,worldFromScreen(aim.x,aim.y),drawing?charge:.55),planet.position,IMPACT_RADIUS);
+      guideGeometry.setFromPoints(prediction.points);landingX.visible=Boolean(prediction.hit);
+      let name="AIM AT PLANET URF";
+      if(prediction.hit){landingX.position.copy(prediction.hit);const outward=prediction.hit.clone().sub(planet.position).normalize();landingX.position.addScaledVector(outward,.02);landingX.lookAt(landingX.position.clone().add(outward));const local=planet.worldToLocal(prediction.hit.clone()).normalize();const lon=Math.atan2(local.x,local.z)*180/Math.PI,lat=Math.asin(clamp(local.y,-1,1))*180/Math.PI;name=mask.isLand(lon,lat)?territoryAt(lon,lat)?.name??"UNMAPPED LAND":"OPEN WATER";guideMaterial.color.setHex(name==="OPEN WATER"?0xff829d:0xafff70);}
+      if(name!==lastAimName){lastAimName=name;events.onAim?.(name);}
     }
   };
 
+
+
   // ---------------------------------------------------------------- input --
 
-  let archerActive = false;
+  let archerActive = true;
 
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!archerActive) return;
+    if (!archerActive || (event.target as HTMLElement)?.closest("input,textarea,select")) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = true;
     else if (code === "KeyS" || code === "ArrowDown") keys.down = true;
@@ -1837,11 +1291,13 @@ export async function createGlobe3D(
     }
   };
 
+  const clearInput=()=>{Object.keys(keys).forEach(k=>keys[k as keyof typeof keys]=false);move.x=move.y=0;drawing=false;charge=0;};
+  window.addEventListener("blur",clearInput);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
 
   if (import.meta.env.DEV || new URLSearchParams(window.location.search).has("qa")) {
-    window.__controlsTest = {
+    window.__urfControlsTest = {
       getYaw: () => walker.facing,
       getX: () => walker.x,
       getZ: () => walker.z,
@@ -1895,10 +1351,15 @@ export async function createGlobe3D(
     updateBoxQuaternion();
     syncPlanetQuaternion();
     planet.position.set(
-      editOffsets.globe.x + editOffsets.land.x,
-      editOffsets.globe.y + editOffsets.land.y,
-      editOffsets.globe.z + editOffsets.land.z,
+      PLANET_CENTER.x + editOffsets.globe.x + editOffsets.land.x,
+      PLANET_CENTER.y + editOffsets.globe.y + editOffsets.land.y,
+      PLANET_CENTER.z + editOffsets.globe.z + editOffsets.land.z,
     ).applyQuaternion(boxQuaternion);
+    nebulaMaterial.uniforms.time.value=elapsed;
+    worldSpin.position.copy(planet.position);
+    (occluder.material as THREE_NS.ShaderMaterial).uniforms.time.value=elapsed;
+    occluder.position.set(editOffsets.ocean.x,editOffsets.ocean.y,editOffsets.ocean.z);
+    planet.updateMatrixWorld(true);
     universeEdges.quaternion.copy(boxQuaternion);
     universeFloor.position.set(0, -UNIVERSE_SIZE / 2, 0).applyQuaternion(boxQuaternion);
     universeFloor.quaternion.copy(boxQuaternion);
@@ -1916,8 +1377,7 @@ export async function createGlobe3D(
       }
     }
 
-    stepAlien(delta, elapsed);
-    stepArrows(delta);
+
 
     const orbitInput = (keys.orbitRight ? 1 : 0) - (keys.orbitLeft ? 1 : 0);
     const tiltInput = (keys.tiltUp ? 1 : 0) - (keys.tiltDown ? 1 : 0);
@@ -1939,14 +1399,16 @@ export async function createGlobe3D(
     islandRoot.position.add(editOffsets.platform);
     islandRoot.position.applyQuaternion(boxQuaternion);
     islandRoot.quaternion.premultiply(boxQuaternion);
+    islandRoot.updateMatrixWorld(true);
+    stepAlien(delta,elapsed);stepArrows(delta);
     const platformSelected = selectedTarget === "platform";
     platform.edgeMaterial.opacity = platformSelected ? .95 : .16;
     platform.underglow.opacity = platformSelected ? .7 + Math.sin(elapsed * 5) * .18 : .08;
 
-    const orbit = elapsed * 0.32;
+    const orbit = elapsed * 0.24;
     satellite.group.position.set(
       Math.cos(orbit) * 1.52 + editOffsets.satellite.x,
-      Math.sin(orbit * 0.6) * 0.42 + 0.18 + editOffsets.satellite.y,
+      Math.sin(orbit) * 0.42 + 0.18 + editOffsets.satellite.y,
       Math.sin(orbit) * 1.52 + editOffsets.satellite.z,
     );
     satellite.group.rotation.y = -orbit + Math.PI / 2;
@@ -1961,9 +1423,9 @@ export async function createGlobe3D(
     // offset added here — the rotation comes along for free via the parent.
     const moonOrbit = elapsed * 0.045;
     moon.group.position.set(
-      Math.cos(moonOrbit) * 2.7 + editOffsets.moon.x,
+      Math.cos(moonOrbit) * 1.9 + editOffsets.moon.x,
       Math.sin(moonOrbit * 0.35) * 0.55 + 0.35 + editOffsets.moon.y,
-      Math.sin(moonOrbit) * 2.7 + editOffsets.moon.z,
+      Math.sin(moonOrbit) * 1.9 + editOffsets.moon.z,
     );
     moon.group.rotation.y += delta * 0.04;
 
@@ -2021,15 +1483,10 @@ export async function createGlobe3D(
       if (!active) { Object.keys(keys).forEach((key) => { keys[key as keyof typeof keys] = false; }); drawing = false; charge = 0; }
     },
     setAlienType: (type) => {
-      alienType = type;
-      const archer = type === "original";
-      alien.bow.visible = archer;
-      alien.quiver.visible = archer;
-      alien.revolver.visible = type === "doop";
-      alien.ak47.visible = type === "zorp";
-      drawing = false;
-      charge = 0;
+      if(type!==alienType){const old=alien.group;const next=buildAlien(THREE,type);next.group.position.copy(old.position);next.group.quaternion.copy(old.quaternion);next.group.scale.setScalar(ALIEN_SCALE);old.removeFromParent();retiredAliens.push(old);islandRoot.add(next.group);alien=next;}
+      alienType=type;drawing=false;charge=0;
     },
+
     setAimMode: (active) => {
       aimMode = active;
       if (!active) aimGuide.visible = false;
@@ -2044,7 +1501,7 @@ export async function createGlobe3D(
     setSize: (nextWidth, nextHeight) => {
       width = nextWidth;
       height = nextHeight;
-      applySize();
+      applySize();applyView();
     },
     setTerritories: (next) => {
       activeTerritories = next;
@@ -2132,7 +1589,7 @@ export async function createGlobe3D(
     paintTerrain: () => {
       if (!terrainBrush) return;
       const point = worldFromScreen(aim.x, aim.y);
-      const local = scratch.copy(point).applyQuaternion(planet.quaternion.clone().invert()).normalize();
+      const local = scratch.copy(point).sub(planet.position).applyQuaternion(planet.quaternion.clone().invert()).normalize();
       const lat = (Math.asin(clamp(local.y, -1, 1)) * 180) / Math.PI;
       const lon = (Math.atan2(local.x, local.z) * 180) / Math.PI;
       // A wide enough brush (10 cells, ~7.5° across) and strong enough step
@@ -2145,9 +1602,12 @@ export async function createGlobe3D(
       window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      if (window.__controlsTest) delete window.__controlsTest;
-      renderer.dispose();
-      landGeometry.dispose();
+      if (window.__urfControlsTest) delete window.__urfControlsTest;
+      window.removeEventListener("blur",clearInput);
+      const geometries=new Set<THREE_NS.BufferGeometry>(),materials=new Set<THREE_NS.Material>();
+      const collect=(root:THREE_NS.Object3D)=>root.traverse(o=>{const m=o as THREE_NS.Mesh;if(m.geometry)geometries.add(m.geometry);if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(v=>materials.add(v));});
+      collect(scene);retiredAliens.forEach(collect);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();
     },
   };
 }
+
