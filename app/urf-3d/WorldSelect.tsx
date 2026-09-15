@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { useRouter } from "next/navigation";
 import type { AlienType, EditOffset, EditTargetId, Globe3DHandle, SatellitePartId, Territory } from "./globe3d";
+import {ToolsSection,FloatingPanel} from "../components/WorldTools";
 import { LAND_COLOR_PRESETS, TERRITORIES } from "../lib/territories";
 import SocialPopup from "../components/SocialPopup";
 import { useProfile } from "../lib/useProfile";
@@ -676,13 +677,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
         </div>
       )}
       {selector && (
-        <div className="territory-selector" role="dialog" aria-modal="false" aria-label={`${selector.name} entry`}>
-          <button
-            type="button"
-            className="territory-selector__close"
-            aria-label={`Close ${selector.name}`}
-            onClick={() => setSelector(null)}
-          >×</button>
+        <FloatingPanel title={`Landing / ${selector.name}`} open onClose={()=>setSelector(null)} side={1} initialHeight={340}><div className="territory-selector" role="dialog" aria-modal="false" aria-label={`${selector.name} entry`}>
+
           <div className="territory-selector__body">
             <div className="eyebrow"><span /> ARROW LANDED</div>
             <h2>{selector.name}</h2>
@@ -706,7 +702,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
               </>
             )}
           </div>
-        </div>
+        </div></FloatingPanel>
       )}
       {loginGateTerritory && !profile && (
         <SocialPopup
@@ -719,21 +715,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           }}
         />
       )}
-      {world3d && (
-        <div className={`globe-toolbar${terrainOpen ? " is-open" : ""}`} onPointerDown={(event) => event.stopPropagation()}>
-          <button
-            type="button"
-            className="globe-toolbar-toggle"
-            onClick={() => setTerrainOpen((value) => !value)}
-            aria-expanded={terrainOpen}
-            aria-label={terrainOpen ? "Collapse terrain controls" : "Expand terrain controls"}
-          >
-            ⚙ TERRAIN
-          </button>
-          {terrainOpen && (
-            <>
-              <button type="button" className="menu-close" aria-label="Collapse terrain menu" onClick={()=>setTerrainOpen(false)}>×</button>
-              <span>LAND</span>
+      {world3d&&<ToolsSection title="Globe terrain & satellites"><div className="urf-unified-options">              <span>LAND</span>
               {LAND_COLOR_PRESETS.map((preset) => (
                 <button
                   key={preset.id}
@@ -766,11 +748,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   {part.label}
                 </button>
               ))}
-              <small>Q/E FLY · R/F TILT · Z/X ZIP</small>
-            </>
-          )}
-        </div>
-      )}
+</div></ToolsSection>}
       {world3d && (
         <div
           className="gyro-nav"
@@ -800,8 +778,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <div className="gyro-nav__core" />
         </div>
       )}
-      {world3d && (
-        <div className={`cube-toolbar${cubeMode ? " is-open" : ""}`} onPointerDown={(event) => event.stopPropagation()}>
+      {world3d && (<ToolsSection title="World objects & sculpting">
+        <div className="urf-unified-options" onPointerDown={(event) => event.stopPropagation()}>
           <button
             type="button"
             className="cube-toolbar-toggle"
@@ -814,7 +792,7 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           </button>
           {cubeMode && (
             <>
-              <button type="button" className="menu-close" aria-label="Collapse cube menu" onClick={()=>setCubeMode(false)}>×</button>
+
               <small className="cube-toolbar__hint">Drag the globe to tumble the whole box</small>
               <span>OBJECT</span>
               <div className="cube-toolbar__targets">
@@ -937,10 +915,10 @@ function Globe({ onEnter }: { onEnter: () => void }) {
             </>
           )}
         </div>
-      )}
-      {world3d && alienMenuOpen && (
-        <aside className="alien-toolbar" aria-label="Alien and island controls" onPointerDown={(event)=>event.stopPropagation()}>
-          <button type="button" className="menu-close" aria-label="Collapse alien menu" onClick={()=>setAlienMenuOpen(false)}>×</button>
+</ToolsSection>      )}
+      {world3d && (<ToolsSection title="Alien & island">
+        <aside className="urf-unified-options" aria-label="Alien and island controls" onPointerDown={(event)=>event.stopPropagation()}>
+
           <header><b>👽 ALIEN</b><small>ISLAND</small></header>
           <div className="alien-toolbar__characters">
             {(["original","doop","zorp"] as AlienType[]).map(type=><button key={type} type="button" className={alienType===type?"is-active":""} onClick={()=>setAlienType(type)}>{{original:"ZIX",doop:"PIP",zorp:"VEX"}[type]}</button>)}
@@ -948,9 +926,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
           <label><span>SIZE</span><input type="range" min={.55} max={2.25} step={.05} value={platformScale} onChange={event=>{const value=Number(event.target.value);setPlatformScale(value);worldRef.current?.setPlatformScale(value);}}/><b>{platformScale.toFixed(2)}×</b></label>
           {(["x","y","z"] as const).map(axis=><label key={axis}><span>{axis.toUpperCase()}</span><input type="range" min={-2.5} max={2.5} step={.05} value={editOffsets.platform[axis]} onChange={event=>setOffsetAxis("platform",axis,Number(event.target.value))}/><b>{editOffsets.platform[axis].toFixed(1)}</b></label>)}
           <button type="button" className="alien-toolbar__reset" onClick={()=>resetEditOffset("platform")}>RESET ISLAND</button>
-        </aside>
+        </aside></ToolsSection>
       )}
-      {world3d && !alienMenuOpen && <button type="button" className="alien-toolbar-reopen" onClick={()=>setAlienMenuOpen(true)} aria-label="Open alien menu">👽</button>}
+
       <div className="globe-shadow" />
     </div>
   );

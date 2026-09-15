@@ -1,3 +1,4 @@
+import {BreakableWalls} from './breakables';
 import {batchParts} from './batch-parts';
 import * as T from 'three';
 import type {Solid} from './level';
@@ -9,12 +10,13 @@ export const LAB_ENTRY=new T.Vector3(-12,.48,-61);
 export const COMPUTER_POINT=new T.Vector3(-12,.5,-64);
 export function makeLab(solids:Solid[]){
  const root=new T.Group();root.name='Bongo laboratory warehouse';root.position.copy(LAB_CENTER);
+ const breakables=new BreakableWalls(solids,root);
  const metal=new T.MeshStandardMaterial({color:0x35434c,metalness:.55,roughness:.48}),plaster=new T.MeshStandardMaterial({color:0x9fa9a8,roughness:.91}),dark=new T.MeshStandardMaterial({color:0x18242a,roughness:.6}),orange=new T.MeshStandardMaterial({color:0xe08a37,emissive:0xb34c0a,emissiveIntensity:.3});
  const glow=new T.MeshBasicMaterial({color:0xa7f1e4});
  const box=(p:number[],s:number[],m:T.Material,solid=false)=>{const mesh=new T.Mesh(new T.BoxGeometry(...s as [number,number,number]),m);mesh.position.set(...p as [number,number,number]);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);if(solid)solids.push({center:mesh.position.clone().add(LAB_CENTER),half:new T.Vector3(...s as [number,number,number]).multiplyScalar(.5)});return mesh;};
  box([0,.04,0],[32,.16,26],new T.MeshStandardMaterial({color:0x64716e,roughness:.88}),true);
- box([-16,5,0],[.45,10,26],plaster,true);box([16,5,0],[.45,10,26],plaster,true);box([0,5,-13],[32,10,.45],plaster,true);
- box([-9.6,5,13],[12.8,10,.45],plaster,true);box([9.6,5,13],[12.8,10,.45],plaster,true);box([0,8,13],[6.4,4,.45],plaster,true);
+ breakables.add([-16,5,0],[.45,10,26],plaster,LAB_CENTER);breakables.add([16,5,0],[.45,10,26],plaster,LAB_CENTER);breakables.add([0,5,-13],[32,10,.45],plaster,LAB_CENTER);
+ breakables.add([-9.6,5,13],[12.8,10,.45],plaster,LAB_CENTER);breakables.add([9.6,5,13],[12.8,10,.45],plaster,LAB_CENTER);box([0,8,13],[6.4,4,.45],plaster,true);
  box([0,10.2,0],[33,.45,27],metal,true);
  for(const x of [-14,-7,0,7,14])box([x,9.8,0],[.18,.34,26],metal);
  for(const z of [-10,0,10]){box([0,9.1,z],[29,.12,.12],metal);box([0,8.99,z],[18,.08,.13],glow);const light=new T.PointLight(0xb9e4d9,110,22,2);light.position.set(0,7.6,z);root.add(light);}
@@ -41,5 +43,5 @@ export function makeLab(solids:Solid[]){
  const computerHitbox=box([0,1.65,-7.5],[3.2,1.1,1],new T.MeshBasicMaterial({visible:false}));computerHitbox.name='Bongo keyboard interaction';
  const bongo=makeDrBongo();bongo.position.set(4,.5,-6.6);bongo.rotation.y=-.3;root.add(bongo);
  sign(['DR. BONGO','NEURAL LINK / ONLINE'],[0,6.5,-12.68],9,2.2);
- batchParts(root,[bongo,screen,computerHitbox]);return {root,bongo,screen,specimens,computerHitbox};
+ batchParts(root,[bongo,screen,computerHitbox,...breakables.pieces.map(p=>p.mesh)]);return {root,bongo,screen,specimens,computerHitbox,breakables};
 }

@@ -3,7 +3,7 @@ import {cowHide} from './surface';
 export type Cow={root:T.Group;legs:T.Bone[];knees:T.Bone[];tail:T.Bone[];head:T.Bone;ears:T.Bone[];spring:number[];phase:number;origin:T.Vector3;travel:number;stride:number};
 export function makeHerd(random:()=>number){
   const hide=cowHide(),white=new T.MeshStandardMaterial({color:0xeee7d7,roughness:.85}),black=new T.MeshStandardMaterial({color:0x242126,roughness:.65}),pink=new T.MeshStandardMaterial({color:0xd99a99,roughness:.7}),horn=new T.MeshStandardMaterial({color:0xd3bd99,roughness:.7});
-  const sphere=new T.SphereGeometry(1,24,18);
+  const sphere=new T.SphereGeometry(1,36,24);
   const part=(parent:T.Object3D,m:T.Material,p:number[],s:number[])=>{const mesh=new T.Mesh(sphere,m);mesh.position.set(p[0],p[1],p[2]);mesh.scale.set(s[0],s[1],s[2]);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;};
   const bone=(parent:T.Object3D,p:number[],name:string)=>{const b=new T.Bone();b.position.set(p[0],p[1],p[2]);b.name=name;parent.add(b);return b;};
   const cows:Cow[]=[];

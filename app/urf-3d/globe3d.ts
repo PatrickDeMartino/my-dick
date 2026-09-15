@@ -1,7 +1,7 @@
-import {organicTerrain,loadElevation,retroLandMaterial,makeCityLights,type Elevation} from './organic-terrain';
+import {organicTerrain,gridSample,loadElevation,retroLandMaterial,makeCityLights,type Elevation} from './organic-terrain';
 import { buildLaunchIsland, cosmicOcean } from "./launch-island";
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import {launchVelocity,predictFlight,sphereContact,PLANET_CENTER} from "./archery";
+import {launchVelocity,predictFlight,sphereContact,reliefContact,PLANET_CENTER} from "./archery";
 /// <reference types="vite/client" />
 import type * as THREE_NS from "three";
 import { geoEquirectangular, geoPath } from "d3-geo";
@@ -957,12 +957,14 @@ export async function createGlobe3D(
    * "point at Africa, hit Africa" holds exactly.
    */
   const aimRay=new THREE.Raycaster();
+  const surfaceRadius=(direction:THREE_NS.Vector3)=>{const d=direction.clone().applyQuaternion(planet.quaternion.clone().invert()),lon=Math.atan2(d.x,d.z)*180/Math.PI,lat=Math.asin(clamp(d.y,-1,1))*180/Math.PI;return mask.isLand(lon,lat)?Math.max(GLOBE_RADIUS+.003,GLOBE_RADIUS+.078+elevation(lon,lat)*.135+gridSample(terrainHeights,480,240,lon,lat)):GLOBE_RADIUS+.002;};
+  const contactWithRelief=(from:THREE_NS.Vector3,to:THREE_NS.Vector3)=>reliefContact(from,to,planet.position,surfaceRadius);
   const globeSphere=new THREE.Sphere(PLANET_CENTER.clone(),IMPACT_RADIUS);
   const worldFromScreen = (nx:number,ny:number) => {
     camera.updateMatrixWorld();planet.updateMatrixWorld();
     aimRay.setFromCamera(new THREE.Vector2(nx,ny),camera);globeSphere.center.copy(planet.position);
     const hit=aimRay.ray.intersectSphere(globeSphere,aimTarget);
-    if(hit)return hit;
+    if(hit){const direction=hit.clone().sub(planet.position).normalize();return aimTarget.copy(planet.position).addScaledVector(direction,surfaceRadius(direction));}
     return aimRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-planet.position.z),aimTarget)??aimTarget.copy(planet.position);
   };
 
@@ -1057,7 +1059,7 @@ export async function createGlobe3D(
         previousPoint.copy(arrow.mesh.position);
         arrow.velocity.y += GRAVITY * step;
         arrow.mesh.position.addScaledVector(arrow.velocity,step);
-        const contact=sphereContact(previousPoint,arrow.mesh.position,planet.position,IMPACT_RADIUS);
+        const contact=contactWithRelief(previousPoint,arrow.mesh.position);
         if(contact){arrow.mesh.position.copy(contact);landed=true;}
       }
 
@@ -1158,7 +1160,7 @@ export async function createGlobe3D(
     aimGuide.visible=aimMode&&archerActive;
     if(aimGuide.visible&&elapsed-guideAt>.05){
       guideAt=elapsed;alien.nock.getWorldPosition(bowWorld);
-      const prediction=predictFlight(bowWorld,launchVelocity(bowWorld,worldFromScreen(aim.x,aim.y),drawing?charge:.55),planet.position,IMPACT_RADIUS);
+      const prediction=predictFlight(bowWorld,launchVelocity(bowWorld,worldFromScreen(aim.x,aim.y),drawing?charge:.55),planet.position,IMPACT_RADIUS,contactWithRelief);
       guideGeometry.setFromPoints(prediction.points);landingX.visible=Boolean(prediction.hit);
       let name="AIM AT PLANET URF";
       if(prediction.hit){landingX.position.copy(prediction.hit);const outward=prediction.hit.clone().sub(planet.position).normalize();landingX.position.addScaledVector(outward,.02);landingX.lookAt(landingX.position.clone().add(outward));const local=planet.worldToLocal(prediction.hit.clone()).normalize();const lon=Math.atan2(local.x,local.z)*180/Math.PI,lat=Math.asin(clamp(local.y,-1,1))*180/Math.PI;name=mask.isLand(lon,lat)?territoryAt(lon,lat)?.name??"UNMAPPED LAND":"OPEN WATER";guideMaterial.color.setHex(name==="OPEN WATER"?0xff829d:0xafff70);}
@@ -1258,6 +1260,9 @@ export async function createGlobe3D(
 
   // ----------------------------------------------------------------- loop --
 
+  let ambienceSpeed=1;
+  const worldSettings=(event:Event)=>{const d=(event as CustomEvent).detail;ambienceSpeed=d.wind;renderer.toneMappingExposure=1.18*d.light;renderer.setPixelRatio(Math.min(devicePixelRatio,d.quality));};
+  window.addEventListener('trip-world-settings',worldSettings);window.dispatchEvent(new Event('trip-world-ready'));
   let previous = performance.now();
   let frame = 0;
 
@@ -1276,9 +1281,9 @@ export async function createGlobe3D(
     // A free tumble, with a gently wandering axis. Hold the surface still
     // throughout drawing and flight so the preview remains the landing point.
     if (!drawing && !arrows.some(a => !a.stuck) && aimMode && !terrainBrush) {
-      tumbleTime += delta;
+      tumbleTime += delta*ambienceSpeed;
       tumbleAxis.set(.8 + .35*Math.sin(tumbleTime*.07), .45*Math.sin(tumbleTime*.11), .7 + .3*Math.cos(tumbleTime*.09)).normalize();
-      tumbleStep.setFromAxisAngle(tumbleAxis, delta*.115);
+      tumbleStep.setFromAxisAngle(tumbleAxis, delta*.115*ambienceSpeed);
       tumble.premultiply(tumbleStep).normalize();
     }
 
@@ -1468,7 +1473,7 @@ export async function createGlobe3D(
       landHex = hex; applyLandFinish();
     },
     setOceanStyle: (style) => { (occluder.material as THREE_NS.ShaderMaterial).uniforms.style.value = clamp(Math.round(style),0,4); },
-    setLandRetro: (enabled)=>{retroMesh.visible=enabled;landMesh.visible=!enabled;cityLights.material.uniforms.retro.value=enabled?1:0;},
+    setLandRetro: (enabled)=>{retroMesh.visible=enabled;landMesh.visible=!enabled;cityLights.material.uniforms.retro.value=0;},
     setCityLights: (enabled)=>{cityLights.visible=enabled;},
     setTerrainFinish: (finish) => { terrainFinish = finish; applyLandFinish(); },
     setLandFlagMode: (enabled) => {
@@ -1539,7 +1544,7 @@ export async function createGlobe3D(
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       if (window.__urfControlsTest) delete window.__urfControlsTest;
-      window.removeEventListener("blur",clearInput);
+      window.removeEventListener("blur",clearInput);window.removeEventListener('trip-world-settings',worldSettings);
       const geometries=new Set<THREE_NS.BufferGeometry>(),materials=new Set<THREE_NS.Material>();
       const collect=(root:THREE_NS.Object3D)=>root.traverse(o=>{const m=o as THREE_NS.Mesh;if(m.geometry)geometries.add(m.geometry);if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(v=>materials.add(v));});
       collect(scene);retiredAliens.forEach(collect);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());reflections.dispose();renderer.dispose();

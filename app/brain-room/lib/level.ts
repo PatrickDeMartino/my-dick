@@ -1,3 +1,5 @@
+import {cortexShell,brainEnvelope,makeDreamTree} from './cortex-shell';
+import {BreakableWalls} from './breakables';
 import * as T from 'three';
 import {makeLab} from './laboratory';
 import {makeDreamscape} from './dreamscape';
@@ -22,7 +24,7 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   if(typeof document!=='undefined'){
     const cortex=new T.TextureLoader().load('/brain-room/cortex.png');cortex.colorSpace=T.SRGBColorSpace;cortex.wrapS=cortex.wrapT=T.RepeatWrapping;cortex.anisotropy=4;
     flesh.map=cortex;flesh.bumpMap=cortex;flesh.bumpScale=.045;
-    const backing=cortex.clone();backing.repeat.set(2.7,1.8);backing.needsUpdate=true;
+    const backing=new T.TextureLoader().load('/brain-room/cortex.png');backing.colorSpace=T.SRGBColorSpace;backing.wrapS=backing.wrapT=T.RepeatWrapping;backing.anisotropy=4;backing.repeat.set(2.7,1.8);
     darkFlesh.map=backing;darkFlesh.bumpMap=backing;darkFlesh.bumpScale=.11;
   }
   const wood = mat(0x49302b);
@@ -46,6 +48,7 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   box([-6, 9.2, 0], [.55, 1.6, 3.6], darkFlesh, room, true);
   box([0, 10, 0], [12.6, .45, 12.6], darkFlesh, room, true);
   const folds: T.BufferGeometry[] = [];
+  const exterior=cortexShell(brainEnvelope,{count:options.lightweight?180:650,radius:.07,detail:options.lightweight?16:54,segments:options.lightweight?18:38,radial:options.lightweight?6:10,skip:p=>p.x<-.78&&Math.abs(p.z)<.36&&p.y>-.65&&p.y<.66});exterior.position.set(0,6.3,0);exterior.scale.set(6.2,4.8,6);room.add(exterior);
   function foldSurface(width: number, height: number, origin: T.Vector3, u: T.Vector3, v: T.Vector3, normal: T.Vector3, skip?: (x: number,y:number)=>boolean) {
     const spacing=options.lightweight?.76:.39;
     const nx=Math.floor(width/spacing),ny=Math.floor(height/spacing),used=new Uint8Array(nx*ny);
@@ -54,13 +57,13 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
     const order=Array.from({length:used.length},(_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
     for(const start of order){if(used[start])continue;let id=start;const points:T.Vector3[]=[];const limit=12+Math.floor(random()*28);
       for(let step=0;step<limit;step++){
-        used[id]=1;const {x,y}=xy(id);points.push(origin.clone().addScaledVector(u,x+(random()-.5)*spacing*.32).addScaledVector(v,y+(random()-.5)*spacing*.32).addScaledVector(normal,.065+random()*.05));
+        used[id]=1;const {x,y}=xy(id);points.push(origin.clone().addScaledVector(u,x+(random()-.5)*spacing*.32).addScaledVector(v,y+Math.sin(x*1.3+y*.4)*.065+(random()-.5)*spacing*.3).addScaledVector(normal,.065+random()*.05));
         const row=Math.floor(id/nx),col=id%nx;const neighbors:number[]=[];
         for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const xx=col+dx,yy=row+dy;if(xx>=0&&xx<nx&&yy>=0&&yy<ny&&!used[yy*nx+xx])neighbors.push(yy*nx+xx);}
         if(!neighbors.length)break;id=neighbors[Math.floor(random()*neighbors.length)];
       }
       const radius=options.lightweight?.18:.187;
-      if(points.length>1){const curve=new T.CatmullRomCurve3(points,false,'centripetal');const tube=new T.TubeGeometry(curve,Math.max(5,(points.length-1)*(options.lightweight?2:5)),radius,options.lightweight?5:9,false);const uv=tube.getAttribute('uv');for(let k=0;k<uv.count;k++)uv.setX(k,uv.getX(k)*curve.getLength()/2.5);folds.push(tube);}
+      if(points.length>1){const curve=new T.CatmullRomCurve3(points,false,'centripetal');const tube=new T.TubeGeometry(curve,Math.max(5,(points.length-1)*(options.lightweight?2:8)),radius,options.lightweight?5:14,false);const uv=tube.getAttribute('uv');for(let k=0;k<uv.count;k++)uv.setX(k,uv.getX(k)*curve.getLength()/2.5);folds.push(tube);}
       for(const point of points.length===1?points:[points[0],points[points.length-1]]){const cap=new T.SphereGeometry(radius,options.lightweight?6:10,options.lightweight?4:8);cap.translate(point.x,point.y,point.z);folds.push(cap);}
     }
   }
@@ -125,33 +128,35 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   for(let x=-48;x<=21;x+=3.4)for(const z of [-34,34]){if(z===-34&&x>-18&&x<-8)continue;box([x,.8,z],[.14,1.6,.14],paleWood,fence);for(const y of [.55,1.1])box([x+1.7,y,z],[3.4,.1,.1],paleWood,fence);}
   for(const [x,z,sx,sz] of [[-48,0,.15,68],[21,0,.15,68],[-33,-34,30,.15],[6,-34,30,.15],[-13.5,34,69,.15]])solids.push({center:new T.Vector3(x,.65,z),half:new T.Vector3(sx/2,.65,sz/2)});
   const barn=new T.Group();barn.name='Red meadow barn';root.add(barn);
-  box([-32,2.5,-20],[10,5,8],mat(0x9e4e48),barn,true);
+  const barnWalls=new BreakableWalls(solids,barn);const barnMat=mat(0x9e4e48);barnWalls.add([-37,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-27,2.5,-20],[.3,5,8],barnMat);barnWalls.add([-32,2.5,-24],[10,5,.3],barnMat);barnWalls.add([-35.3,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-28.7,2.5,-16],[3.4,5,.3],barnMat);barnWalls.add([-32,4.4,-16],[3.2,1.2,.3],barnMat);
   const roof=mesh(new T.CylinderGeometry(0,7.2,3,4,1),mat(0x443a48),[-32,6.5,-20],barn);roof.rotation.y=Math.PI/4;roof.scale.z=.8;
-  box([-32,1.8,-15.94],[3,3.6,.08],mat(0x492e31),barn);
+  barnWalls.add([-32,1.8,-15.94],[3,3.6,.16],mat(0x492e31));
   for(const x of [-1.7,1.7])box([-32+x,1.85,-15.85],[.14,3.7,.1],mat(0xead6b7),barn);
   box([-32,3.68,-15.85],[3.55,.16,.1],mat(0xead6b7),barn);
   // Thin quartz clusters, mostly green, with occasional spectral colours.
   const shaft=new T.CylinderGeometry(.065,.09,.48,5);const point=new T.ConeGeometry(.065,.22,5);point.translate(0,.35,0);
   const crystalGeo=mergeGeometries([shaft,point])!;shaft.dispose();point.dispose();
   const crystalMat=new T.MeshStandardMaterial({color:0xffffff,metalness:.28,roughness:.23,emissive:0x83ff9b,emissiveIntensity:.3});
+  const crystalWind={value:0};crystalMat.onBeforeCompile=shader=>{shader.uniforms.windTime=crystalWind;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(windTime*.7+instanceMatrix[3].x*.6+instanceMatrix[3].z*.4)*pow(max(0.,position.y+.24),2.)*.055;');};
   const blades=new T.InstancedMesh(crystalGeo,crystalMat,2200),dummy=new T.Object3D();const crystalColors=[0x71eaa3,0x3fba78,0x98ff78,0x54e8c8,0xae7fff,0xf791d5,0xf9c871];
   for(let i=0;i<2200;i++){if(i%4===0){dummy.userData.x=-66+random()*114;dummy.userData.z=-78+random()*135;}let x=dummy.userData.x+(random()-.5)*.6,z=dummy.userData.z+(random()-.5)*.6;
     if((Math.abs(x)<7&&Math.abs(z)<7)||(x>-29&&x<5&&z<-43)||(Math.abs(x+12)<3&&z<-28))x=35+random()*15;
     const scale=.45+random()*1.2;dummy.position.set(x,.25*scale,z);dummy.rotation.set((random()-.5)*.3,random()*6.28,(random()-.5)*.4);dummy.scale.set(.7,scale,.7);dummy.updateMatrix();blades.setMatrixAt(i,dummy.matrix);blades.setColorAt(i,new T.Color(crystalColors[random()<.8?Math.floor(random()*3):3+Math.floor(random()*4)]));}root.add(blades);
   const flowers=new T.InstancedMesh(new T.IcosahedronGeometry(.065,0),mat(0xf4d9ac),340);
   for(let i=0;i<340;i++){dummy.position.set(-45+random()*60,.32,-31+random()*62);dummy.scale.setScalar(1);dummy.rotation.set(0,0,0);dummy.updateMatrix();flowers.setMatrixAt(i,dummy.matrix);}root.add(flowers);
-  for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if((x<-39&&z<0)||(x>-31&&x<8&&z<-36))continue;const tree=new T.Group();tree.position.set(x,0,z);root.add(tree);mesh(new T.CylinderGeometry(.13,.3,3.6,7),wood,[0,1.8,0],tree);for(let j=0;j<3;j++){const leaf=mesh(new T.IcosahedronGeometry(1.7,1),mat([0x566a49,0x748350,0x87945e][j]),[(j-1)*.75,3.6+j*.5,0],tree);leaf.scale.y=.8;}}
+  const trees:T.Group[]=[];for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if((x<-39&&z<0)||(x>-31&&x<8&&z<-36))continue;const tree=makeDreamTree(i);tree.position.set(x,0,z);root.add(tree);trees.push(tree);}
   for(let i=0;i<24;i++){const a=i/24*Math.PI*2;const mountain=mesh(new T.ConeGeometry(15+random()*12,13+random()*23,6),mat(i%2?0x8b7d99:0xa394a6),[Math.cos(a)*95,-2,Math.sin(a)*95]);mountain.rotation.y=random()*6.28;}
   const cows=makeHerd(random);cows.forEach(cow=>root.add(cow.root));
   const lab=makeLab(solids);root.add(lab.root);
   const dreamscape=makeDreamscape();root.add(dreamscape.root);
-  return {root,room,solids,cows,lamp,lab,dreamscape};
+  return {root,room,solids,cows,lamp,lab,dreamscape,barnWalls,updateAmbience:(time:number)=>{trees.forEach((tree,i)=>{tree.rotation.z=Math.sin(time*.4+i)*.012;tree.rotation.x=Math.sin(time*.31+i*2)*.009;});exterior.scale.y=4.8+Math.sin(time*.43)*.015;crystalWind.value=time;}};
 }
 
 /** Resolve a sphere against the same boxes that describe the visible level. */
 export function collide(position:T.Vector3, radius:number, solids:Solid[], velocity?:T.Vector3, bounce=0) {
   let grounded=false;
   for(const s of solids){
+    if(Math.abs(position.x-s.center.x)>s.half.x+radius||Math.abs(position.y-s.center.y)>s.half.y+radius||Math.abs(position.z-s.center.z)>s.half.z+radius)continue;
     const local=position.clone().sub(s.center);const closest=local.clone().clamp(s.half.clone().negate(),s.half);
     const normal=local.clone().sub(closest);const d=normal.length();
     if(d>=radius)continue;

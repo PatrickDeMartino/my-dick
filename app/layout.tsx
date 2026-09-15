@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SiteBanner from "./components/SiteBanner";
 import SiteLoading from "./components/SiteLoading";
-import AssetsRoomDoor from "./components/AssetsRoomDoor";
+import WorldTools from "./components/WorldTools";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,8 +36,7 @@ export default function RootLayout({
       >
         <SiteLoading />
         <SiteBanner />
-        <AssetsRoomDoor />
-        {children}
+        <WorldTools>{children}</WorldTools>
       </body>
     </html>
   );

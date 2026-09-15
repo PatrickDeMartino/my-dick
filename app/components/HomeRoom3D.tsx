@@ -3,6 +3,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import {makeLooseProp,animateLoose} from "../brain-room/lib/loose-props";
 import { makeHomeBrain } from "../lib/homeBrain";
 import { makeBrainCreature, animateCreature } from "../brain-room/lib/creatures";
 
@@ -355,6 +356,10 @@ export default function HomeRoom3D() {
       } else spawnCan(item);
     };
     window.addEventListener(CAN_EVENT, onSpawn);
+    let windStrength=1;const onWorldSpawn=(event:Event)=>{const e=event as CustomEvent<{kind:string}>;e.preventDefault();if(e.detail.kind==='worm'){brainLife.spawnWorm();return;}const mesh=makeLooseProp(e.detail.kind);mesh.position.set((Math.random()-.5)*2,4,1);scene.add(mesh);cans.push({mesh,velocity:new THREE.Vector3((Math.random()-.5)*2,1,0),spin:new THREE.Vector3(2,3,1),radius:mesh.userData.radius||.25});if(cans.length>40)scene.remove(cans.shift()!.mesh);};
+    const onWorldClear=()=>{cans.forEach(c=>c.mesh.removeFromParent());cans.length=0;heldCan=null;};
+    const onWorldSettings=(event:Event)=>{const d=(event as CustomEvent).detail;windStrength=d.wind;renderer.toneMappingExposure=1.16*d.light;renderer.setPixelRatio(Math.min(devicePixelRatio,d.quality));};
+    window.addEventListener('trip-world-spawn',onWorldSpawn);window.addEventListener('trip-world-clear',onWorldClear);window.addEventListener('trip-world-settings',onWorldSettings);window.dispatchEvent(new Event('trip-world-ready'));
     const onSpatial=(event:Event)=>{
       const detail=(event as CustomEvent<{target:HomeSpatialTarget;value:{x:number;y:number;z:number;scale:number}}>).detail;
       if(detail.target==="brain") brainSpatial={...detail.value};
@@ -410,7 +415,7 @@ export default function HomeRoom3D() {
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), .033);
-      const time = clock.elapsedTime;
+      const time = clock.elapsedTime*windStrength;
       brain.rotation.y = -.28 + Math.sin(time * .38) * .18;
       brain.position.set(4.25+brainSpatial.x*1.45,-.05+brainSpatial.y*1.15+Math.sin(time*.72)*.12,-.2+brainSpatial.z*1.2);
       brain.scale.setScalar(1.34*brainSpatial.scale);
@@ -421,7 +426,7 @@ export default function HomeRoom3D() {
         if(!swinger) aimVine(vine,vine.anchor.clone().add(new THREE.Vector3(Math.sin(time*.65+vine.phase)*.13,-vine.length,Math.cos(time*.54+vine.phase)*.08)));
       });
       for (const can of cans) {
-        if(can===heldCan)continue;
+        animateLoose(can.mesh,time,dt,can.velocity.length());if(can===heldCan)continue;
         can.velocity.y -= 8.5 * dt;
         can.mesh.position.addScaledVector(can.velocity, dt);
         can.mesh.rotation.x += can.spin.x * dt;
@@ -503,7 +508,7 @@ export default function HomeRoom3D() {
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
-      window.removeEventListener(CAN_EVENT, onSpawn);
+      window.removeEventListener(CAN_EVENT, onSpawn);window.removeEventListener('trip-world-spawn',onWorldSpawn);window.removeEventListener('trip-world-clear',onWorldClear);window.removeEventListener('trip-world-settings',onWorldSettings);
       window.removeEventListener(SPATIAL_EVENT,onSpatial);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);

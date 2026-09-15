@@ -49,7 +49,7 @@ test("mobile landing choices are active and open with one tap", async () => {
 });
 
 test("old Bongo room redirects into the shared laboratory",async()=>{const response=await request('/bongo');assert.equal(response.status,307);assert.equal(response.headers.get('location'),'/brain-room?arrival=lab');});
-test("shared brain world contains the Bongo console and collapsible controls",async()=>{const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/Brain world controls/);assert.match(html,/aria-expanded="false"/);const consoleSource=await readFile(new URL('../app/brain-room/BongoConsole.tsx',import.meta.url),'utf8');assert.match(consoleSource,/api\/chat/);assert.match(consoleSource,/Upload consciousness/);});
+test("shared brain world contains the Bongo console and collapsible controls",async()=>{const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/World tools/);assert.match(html,/Customize/);assert.match(html,/Spawn shit/);assert.match(html,/aria-expanded="false"/);const consoleSource=await readFile(new URL('../app/brain-room/BongoConsole.tsx',import.meta.url),'utf8');assert.match(consoleSource,/api\/chat/);assert.match(consoleSource,/Upload consciousness/);});
 
 test("chat remains interactive without an API key", async () => {
   const response = await request("/api/chat", {
@@ -115,7 +115,7 @@ test("feeding the sweatshop workers spends one can of Rat Meat", async () => {
 });
 
 test("renders the expanded Brain Room with a closed menu and mobile controls", async () => {
- const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/Brain room/);assert.match(html,/Bongo/);assert.match(html,/brain-joystick/);assert.match(html,/JUMP/);assert.match(html,/aria-expanded="false"/);assert.doesNotMatch(html,/brain-room__art-overlay/);
+ const response=await request('/brain-room');assert.equal(response.status,200);const html=await response.text();assert.match(html,/brain room/i);assert.match(html,/Bongo/);assert.match(html,/brain-joystick/);assert.match(html,/JUMP/);assert.match(html,/aria-expanded="false"/);assert.doesNotMatch(html,/brain-room__art-overlay/);
 });
 
 test("renders the Anubis pigeon television room", async () => {

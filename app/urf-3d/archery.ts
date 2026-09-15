@@ -18,12 +18,17 @@ export function sphereContact(from:Vector3,to:Vector3,center:Vector3,radius:numb
   const t=(-b-Math.sqrt(discriminant))/(2*a);
   return t>=0&&t<=1?from.clone().addScaledVector(direction,t):null;
 }
-export function predictFlight(origin:Vector3,velocity:Vector3,center:Vector3,radius:number){
+export function predictFlight(origin:Vector3,velocity:Vector3,center:Vector3,radius:number,contact?:(from:Vector3,to:Vector3)=>Vector3|null){
   const p=origin.clone(),v=velocity.clone(),points=[p.clone()];let hit:Vector3|null=null;
   for(let i=0;i<1680;i++){
     const before=p.clone();v.y+=SHOT_GRAVITY*SHOT_STEP;p.addScaledVector(v,SHOT_STEP);
-    hit=sphereContact(before,p,center,radius);if(hit){points.push(hit);break;}
+    hit=contact?contact(before,p):sphereContact(before,p,center,radius);if(hit){points.push(hit);break;}
     if(i%12===0)points.push(p.clone());if(p.length()>14)break;
   }
   return {points,hit};
+}
+
+/** Swept radial relief collision, shared by aiming preview and live arrows. */
+export function reliefContact(from:Vector3,to:Vector3,center:Vector3,surfaceRadius:(direction:Vector3)=>number){
+ const gap=(p:Vector3)=>{const d=p.clone().sub(center);return d.length()-surfaceRadius(d.normalize());};const a=gap(from),b=gap(to);if(a<=0||b>0)return null;let lo=0,hi=1;for(let i=0;i<12;i++){const mid=(lo+hi)*.5;if(gap(from.clone().lerp(to,mid))>0)lo=mid;else hi=mid;}return from.clone().lerp(to,hi);
 }

@@ -1,3 +1,4 @@
+import {cortexShell} from '../brain-room/lib/cortex-shell';
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
@@ -53,9 +54,9 @@ function makeHole(color:number) {
 }
 
 export function makeHomeBrain(onCreatureReady: () => void) {
-  const root=new THREE.Group(), texture=brainTexture();
+  const root=new THREE.Group(), texture=new THREE.TextureLoader().load("/brain-room/cortex.png");texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
   const matter=new THREE.MeshPhysicalMaterial({map:texture,bumpMap:texture,bumpScale:.055,color:0xffa4ce,emissive:0x411028,emissiveIntensity:.16,roughness:.68,clearcoat:.25});
-  for(const lobe of lobes){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,64,44),matter);mesh.position.copy(lobe.center);mesh.scale.copy(lobe.axes);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
+  root.add(cortexShell(brainSurface,{count:650,radius:.07}));
   const stem=new THREE.Mesh(new THREE.CapsuleGeometry(.19,.72,10,20),matter);stem.position.set(.06,-1.42,-.46);stem.rotation.z=-.11;root.add(stem);root.rotation.z=-.08;
   const colors=[0x78ffe4,0xffed69,0x9bff67,0xff7ecb,0x83a8ff],crawlers:Crawler[]=[];
   const eyeMaterial=new THREE.MeshBasicMaterial({color:0x16051b});let worldAge=0;
@@ -63,11 +64,11 @@ export function makeHomeBrain(onCreatureReady: () => void) {
     const index=crawlers.length,count=monkey?32:7+(index*7)%15,group=new THREE.Group(),segments:THREE.Mesh[]=[];
     const color=colors[index%colors.length],material=new THREE.MeshPhysicalMaterial({color,emissive:color,emissiveIntensity:.3,roughness:.34,clearcoat:.75});
     if(!monkey){
-      for(let j=0;j<count;j++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.075*(1-.46*j/count),14,10),material);mesh.castShadow=true;segments.push(mesh);group.add(mesh);}
+      for(let j=0;j<count;j++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.055+(index%5)*.009,24,16),material);mesh.castShadow=true;segments.push(mesh);group.add(mesh);}
       for(const side of [-1,1]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.014,8,6),eyeMaterial);eye.position.set(side*.028,.025,.071);segments[0].add(eye);}
     }else material.dispose();
     const direction=randomDirection(),entry=makeHole(0xc45f91),exit=makeHole(0xe07bad);root.add(entry,exit);
-    const crawler:Crawler={group,segments,direction,heading:randomDirection().projectOnPlane(direction).normalize(),target:randomDirection(),history:[],age:floorSpawn?0:index*1.93,turnAt:0,speed:monkey?.215:.23+(index%3)*.04,spacing:monkey?.075:.067,radius:monkey?.17:.06,monkey,bornAt:floorSpawn?worldAge:worldAge-99,eatenUntil:0,entry,exit,entryDirection:direction.clone(),exitDirection:randomDirection()};
+    const crawler:Crawler={group,segments,direction,heading:randomDirection().projectOnPlane(direction).normalize(),target:randomDirection(),history:[],age:floorSpawn?0:index*1.93,turnAt:0,speed:monkey?.215:.23+(index%3)*.04,spacing:monkey?.075:.067,radius:monkey?.19:.095,monkey,bornAt:floorSpawn?worldAge:worldAge-99,eatenUntil:0,entry,exit,entryDirection:direction.clone(),exitDirection:randomDirection()};
     const surface=brainSurface(direction),floor=new THREE.Vector3((Math.random()-.5)*4.2,-2.25,(Math.random()-.5)*2.4);
     for(let j=0;j<190;j++){const p=floorSpawn?floor.clone().add(new THREE.Vector3(0,0,j*.003)):surface.point.clone().addScaledVector(surface.normal,crawler.radius);crawler.history.push({point:p,normal:floorSpawn?new THREE.Vector3(0,1,0):surface.normal.clone()});}
     crawlers.push(crawler);root.add(group);return crawler;
@@ -135,7 +136,7 @@ export function makeHomeBrain(onCreatureReady: () => void) {
     for(const crawler of crawlers){if(!crawler.group.visible)continue;const count=crawler.monkey?32:crawler.segments.length;
       for(let j=0;j<count;j++){const distance=j*(crawler.monkey?2.1/31:crawler.spacing),{point,normal}=sample(crawler,distance),previous=sample(crawler,Math.max(0,distance-.025)).point,next=sample(crawler,distance+.025).point,tangent=previous.clone().sub(next).normalize(),side=new THREE.Vector3().crossVectors(normal,tangent).normalize(),up=new THREE.Vector3().crossVectors(tangent,side).normalize();
         if(crawler.monkey&&crawler.spine){crawler.spine.positions[j].copy(point);crawler.spine.normals[j].copy(up);crawler.spine.tangents[j].copy(tangent);crawler.spine.time.value=crawler.age;if(j===0)crawler.spine.look.value.set(Math.sin(crawler.age*.9),Math.sin(crawler.age*1.37)*.7);}
-        else if(!crawler.monkey){const bead=crawler.segments[j];bead.position.copy(point);bead.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side,up,tangent));bead.scale.setScalar(1+Math.sin(crawler.age*7-j*.55)*.06);}
+        else if(!crawler.monkey){const bead=crawler.segments[j];bead.position.copy(point);bead.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side,up,tangent));bead.scale.setScalar(1+Math.sin(crawler.age*7)*.035);}
       }
     }
   },dispose(){disposed=true;disposeObject(root);texture.dispose();}};

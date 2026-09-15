@@ -5,12 +5,12 @@ import {buildLaunchIsland,cosmicOcean} from '../../urf-3d/launch-island';
 import {createAlien} from '../../urf-3d/grok/alien';
 export function makeDreamscape(){
  const root=new T.Group();root.name='Crystal hinterland and orbital sky';
- const mushroomMat=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0}},vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;uniform float time;void main(){float a=atan(p.z,p.x),r=length(p.xz);float v=sin(a*7.+r*3.-time*.5+sin(p.y*4.+time)*2.);vec3 col=.5+.5*cos(vec3(0.,2.1,4.2)+v*3.+r*.6+time*.15);gl_FragColor=vec4(col*.85+.1,1.);}'});
+ const mushroomMat=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0}},vertexShader:'uniform float time;varying vec3 p;void main(){p=position;vec3 q=position;q.y+=sin(time*.45+length(position.xz)*.7)*.06;gl_Position=projectionMatrix*modelViewMatrix*vec4(q,1.);}',fragmentShader:'varying vec3 p;uniform float time;void main(){float a=atan(p.z,p.x),r=length(p.xz);float v=sin(a*7.+r*3.-time*.5+sin(p.y*4.+time)*2.);vec3 col=.5+.5*cos(vec3(0.,2.1,4.2)+v*3.+r*.6+time*.15);gl_FragColor=vec4(col*.85+.1,1.);}'});
  const mushrooms:T.Group[]=[];
  for(const [x,z,h,r] of [[29,-45,8,4.7],[44,-64,11,6],[-50,-62,9,5],[-62,-38,6,3.5],[19,-76,6.5,4],[53,-19,8,4.5]]){
   const group=new T.Group();group.position.set(x,0,z);root.add(group);mushrooms.push(group);
-  const stem=new T.Mesh(new T.CylinderGeometry(.45,.8,h,12,5),new T.MeshStandardMaterial({color:0xb2b0ba,roughness:.75}));stem.position.y=h/2;stem.rotation.z=.08;group.add(stem);
-  const cap=new T.Mesh(new T.SphereGeometry(r,48,24,0,Math.PI*2,0,Math.PI*.55),mushroomMat);cap.position.set(h*.07,h,0);cap.scale.y=.55;group.add(cap);
+  const stemCurve=new T.CatmullRomCurve3([new T.Vector3(),new T.Vector3(-h*.05,h*.35,.15),new T.Vector3(h*.03,h*.7,-.15),new T.Vector3(h*.07,h,0)]);const stem=new T.Mesh(new T.TubeGeometry(stemCurve,48,.5,20,false),new T.MeshStandardMaterial({color:0xb2b0ba,roughness:.75}));group.add(stem);
+  const cap=new T.Mesh(new T.SphereGeometry(r,72,40,0,Math.PI*2,0,Math.PI*.55),mushroomMat);const vertices=cap.geometry.getAttribute("position");for(let i=0;i<vertices.count;i++){const x=vertices.getX(i),z=vertices.getZ(i),a=Math.atan2(z,x);vertices.setY(i,vertices.getY(i)+(Math.sin(a*5+r)*.14+Math.cos(a*3)*.19)*Math.hypot(x,z)/r);vertices.setX(i,x*(1+Math.sin(a*3+r)*.055));}cap.geometry.computeVertexNormals();cap.position.set(h*.07,h,0);cap.scale.y=.55;group.add(cap);
   const gills=new T.Mesh(new T.ConeGeometry(r*.95,.65,48,1,true),new T.MeshStandardMaterial({color:0xba83df,emissive:0x913ebd,emissiveIntensity:.25,side:T.DoubleSide}));gills.position.set(h*.07,h-.25,0);group.add(gills);
  }
  const sky=new T.Group();sky.name='Urf and its archer beyond the atmosphere';sky.position.set(58,64,-150);sky.scale.setScalar(16);root.add(sky);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createShuffle, safeMedia, tikTokId } from '../public/anubis-room/social-core.js';
-import { brainSurface } from '../app/lib/homeBrain.ts';
+await import('./compile-expansion.mjs');const {brainSurface}=await import('../work/expansion-check/lib/homeBrain.mjs');
 import { Vector3 } from 'three';
 
 test('shuffle visits all posts once and avoids bag-boundary repeats',()=>{
