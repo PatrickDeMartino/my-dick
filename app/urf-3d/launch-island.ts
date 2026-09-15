@@ -38,6 +38,13 @@ export function buildLaunchIsland(){
 }
 
 export function cosmicOcean(){
-  return new T.ShaderMaterial({uniforms:{time:{value:0}},vertexShader:`varying vec3 p;varying vec3 n;void main(){p=position;n=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader:`varying vec3 p;varying vec3 n;uniform float time;void main(){float w=sin(p.x*13.+sin(p.y*12.+time*.13)*2.8+p.z*5.);float bands=sin(w*3.+p.y*19.+time*.15)*.5+.5;vec3 a=vec3(.12,.025,.28),b=vec3(.1,.45,.56),c=vec3(.68,.09,.47);vec3 color=mix(a,b,smoothstep(.15,.65,bands));color=mix(color,c,smoothstep(.55,.94,bands));float light=.5+.5*max(0.,dot(normalize(n),normalize(vec3(-2.,2.,3.))));gl_FragColor=vec4(color*light,1.);}`});
+  return new T.ShaderMaterial({uniforms:{time:{value:0},style:{value:0}},vertexShader:`varying vec3 p;varying vec3 n;void main(){p=normalize(position);n=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`varying vec3 p;varying vec3 n;uniform float time;uniform float style;
+    vec3 rainbow(float x){return .5+.5*cos(6.28318*(vec3(0.,.33,.67)+x));}
+    void main(){float t=time*.13;float w=sin(p.x*13.+sin(p.y*12.+t)*2.8+p.z*5.);float bands=sin(w*3.+p.y*19.+t)*.5+.5;
+      vec3 color=mix(vec3(.12,.025,.28),vec3(.1,.45,.56),smoothstep(.15,.65,bands));color=mix(color,vec3(.68,.09,.47),smoothstep(.55,.94,bands));
+      if(style>.5&&style<1.5){float flow=sin(p.x*8.+sin(p.z*10.-t)*2.)+sin(p.y*9.+cos(p.x*7.+t)*2.);color=rainbow(flow*.3+t*.09)*(.65+.35*sin(flow*4.));}
+      if(style>1.5&&style<2.5){float cells=sin(p.x*18.+t)*sin(p.y*16.-t)+sin(p.z*19.+t*.7);float edges=pow(1.-abs(sin(cells*3.)),7.);color=mix(vec3(.025,.03,.13),rainbow(cells*.2+t*.04),edges);color+=vec3(.04,.2,.23)*(.5+.5*sin(cells*7.));}
+      if(style>2.5){float ripple=sin(length(p.xy+vec2(sin(t)*.25,cos(t*.7)*.3))*36.-t*3.+sin(p.z*11.)*2.);color=mix(vec3(.23,.015,.31),vec3(1.,.36,.08),smoothstep(-.6,.6,ripple));color=mix(color,vec3(.12,.85,.67),pow(max(0.,ripple),8.));}
+      float light=.55+.45*max(0.,dot(normalize(n),normalize(vec3(-2.,2.,3.))));gl_FragColor=vec4(color*light,1.);}`});
 }

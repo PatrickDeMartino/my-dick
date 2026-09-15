@@ -1,116 +1,63 @@
-"use client";
-
-
-import * as THREE from "three";
-
-export type BrainSubject = "pongo" | "rat" | null;
-
-function material(color: number, emissive = 0) {
-  return new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: .24, roughness: .58, metalness: .04 });
+import * as T from 'three';
+import {furMaterial} from './surface';
+export type BrainSubject='pongo'|'rat'|null;
+function ellipsoid(parent:T.Object3D,mat:T.Material,p:number[],s:number[]){const o=new T.Mesh(new T.SphereGeometry(1,28,20),mat);o.position.set(p[0],p[1],p[2]);o.scale.set(s[0],s[1],s[2]);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
+function joint(parent:T.Object3D,p:number[],name:string){const o=new T.Group();o.name=name;o.position.set(p[0],p[1],p[2]);parent.add(o);return o;}
+function tube(parent:T.Object3D,mat:T.Material,points:T.Vector3[],radius:number){const o=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),24,radius,7,false),mat);parent.add(o);return o;}
+function makeRat(){
+  const root=new T.Group();root.name='Lab rat — curious little marshmallow';
+  const fur=furMaterial(0xf2eee5),pink=new T.MeshStandardMaterial({color:0xeaa5b0,roughness:.58}),inner=new T.MeshStandardMaterial({color:0xc8798c,roughness:.65}),black=new T.MeshPhysicalMaterial({color:0x1b121b,roughness:.13,clearcoat:1}),white=new T.MeshBasicMaterial({color:0xffffff});
+  const torso=ellipsoid(root,fur,[0,.18,0],[.16,.131,.24]);
+  const head=joint(root,[0,.2,.22],'Head');ellipsoid(head,fur,[0,0,0],[.105,.1,.105]);
+  ellipsoid(head,fur,[0,-.025,.08],[.065,.056,.074]);ellipsoid(head,pink,[0,-.027,.14],[.038,.024,.026]).name='Oval pink nose';
+  const ears:T.Group[]=[];
+  for(const side of [-1,1]){
+    const ear=joint(head,[side*.087,.073,-.025],'Cupped ear');ear.rotation.y=side*.4;
+    ellipsoid(ear,fur,[0,0,0],[.069,.081,.021]);ellipsoid(ear,pink,[0,.001,.014],[.057,.067,.014]);ellipsoid(ear,inner,[side*.008,-.025,.025],[.021,.024,.008]);ears.push(ear);
+    ellipsoid(head,black,[side*.071,.024,.075],[.029,.035,.027]);ellipsoid(head,white,[side*.071-.007,.034,.097],[.009,.011,.005]);ellipsoid(head,white,[side*.071+.009,.012,.098],[.003,.004,.002]);
+    for(let i=0;i<4;i++)tube(head,new T.MeshStandardMaterial({color:0xb3a0a0,roughness:.75}),[new T.Vector3(side*.027,-.029+i*.004,.118),new T.Vector3(side*.087,-.016+(i-1.5)*.017,.13),new T.Vector3(side*(.17+i*.008),-.02+(i-1.5)*.024,.10-i*.016)],.0012);
+  }
+  const limbs:T.Group[]=[];
+  for(const x of [-.12,.12])for(const z of [-.13,.13]){
+    const leg=joint(root,[x,.13,z],'Paw joint');ellipsoid(leg,fur,[0,-.035,0],[.027,.054,.027]);ellipsoid(leg,pink,[0,-.085,.024],[.029,.014,.044]);
+    for(let i=0;i<3;i++)ellipsoid(leg,pink,[(i-1)*.012,-.085,.058],[.005,.007,.015]);limbs.push(leg);
+  }
+  const tail:T.Group[]=[];let parent:T.Object3D=root;
+  for(let i=0;i<12;i++){const bone=joint(parent,i===0?[0,.12,-.20]:[0,0,-.037],`Tail joint ${i}`);ellipsoid(bone,pink,[0,0,-.02],[.012*(1-i/14),.012*(1-i/14),.023]);tail.push(bone);parent=bone;}
+  root.scale.setScalar(2.4);root.userData={kind:'rat',torso,head,limbs,tail,ears,walk:0,vy:0};return root;
 }
-
-function part(parent: THREE.Object3D, geometry: THREE.BufferGeometry, mat: THREE.Material, pos: [number, number, number], scale: [number, number, number] = [1, 1, 1]) {
-  const mesh = new THREE.Mesh(geometry, mat);
-  mesh.position.set(...pos);
-  mesh.scale.set(...scale);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  parent.add(mesh);
-  return mesh;
+export function makeBrainCreature(kind:Exclude<BrainSubject,null>){
+  if(kind==='rat')return makeRat();
+  const root=new T.Group();root.name='Pongo — peanut orangutan';
+  const fur=furMaterial(0xb55a27),skin=new T.MeshStandardMaterial({color:0x875342,roughness:.82}),face=new T.MeshStandardMaterial({color:0xbf9070,roughness:.8}),dark=new T.MeshPhysicalMaterial({color:0x23130f,roughness:.2,clearcoat:.55}),white=new T.MeshStandardMaterial({color:0xffe9cd});
+  const torso=ellipsoid(root,fur,[0,1.19,0],[.59,1.02,.46]);ellipsoid(root,fur,[0,.81,.035],[.61,.56,.49]);ellipsoid(root,skin,[0,1.13,.42],[.33,.64,.055]);
+  const head=joint(root,[0,2.03,.02],'Pill head');ellipsoid(head,fur,[0,0,0],[.49,.66,.43]);ellipsoid(head,face,[0,-.07,.335],[.38,.42,.12]);
+  for(const side of [-1,1]){
+    ellipsoid(head,skin,[side*.345,-.11,.31],[.16,.23,.14]);ellipsoid(head,white,[side*.163,.08,.437],[.105,.117,.038]);ellipsoid(head,dark,[side*.174,.066,.47],[.053,.065,.025]);ellipsoid(head,white,[side*.174-.018,.092,.49],[.015,.018,.007]);
+    ellipsoid(head,fur,[side*.165,.211,.414],[.145,.037,.049]).rotation.z=side*.12;ellipsoid(head,skin,[side*.45,.025,.03],[.082,.14,.075]);
+  }
+  ellipsoid(head,skin,[0,-.102,.469],[.144,.077,.09]);for(const side of [-1,1])ellipsoid(head,dark,[side*.052,-.114,.546],[.026,.014,.009]);
+  ellipsoid(head,dark,[0,-.259,.443],[.105,.08,.032]);ellipsoid(head,face,[0,-.28,.458],[.112,.029,.023]);for(const side of [-1,1])ellipsoid(head,white,[side*.035,-.219,.468],[.032,.028,.013]);
+  for(let i=0;i<7;i++)ellipsoid(head,fur,[(i-3)*.065,.58+Math.sin(i)*.02,-.005],[.046,.15,.045]).rotation.z=(i-3)*-.1;
+  const limbs:T.Group[]=[];
+  for(const side of [-1,1]){
+    const shoulder=joint(root,[side*.53,1.77,0],side<0?'Left shoulder':'Right shoulder');ellipsoid(shoulder,fur,[side*.05,-.4,0],[.17,.47,.17]);
+    const elbow=joint(shoulder,[side*.06,-.81,0],'Elbow');ellipsoid(elbow,fur,[0,-.35,.01],[.13,.4,.13]);ellipsoid(elbow,skin,[0,-.76,.05],[.16,.16,.13]);
+    for(let i=0;i<4;i++)ellipsoid(elbow,skin,[(i-1.5)*.058,-.85,.11],[.028,.105,.035]);
+    const hip=joint(root,[side*.29,.79,0],'Short leg hip');ellipsoid(hip,fur,[0,-.17,0],[.16,.22,.17]);
+    const knee=joint(hip,[0,-.34,0],'Knee');ellipsoid(knee,fur,[0,-.13,.012],[.115,.18,.12]);ellipsoid(knee,skin,[0,-.285,.105],[.15,.075,.225]);
+    for(let i=0;i<4;i++)ellipsoid(knee,skin,[(i-1.5)*.06,-.29,.29],[.031,.047,.069]);limbs.push(shoulder,elbow,hip,knee);
+  }
+  root.scale.setScalar(.62);root.userData={kind,torso,head,limbs,walk:0,vy:0};return root;
 }
-
-// Kept from Claude's 3D Brain Room pass: the compact white lab-rat model.
-// The surrounding room and every other route remain from the complete v58 site.
-function makeClaudeLabRat() {
-  const white = new THREE.MeshStandardMaterial({ color: 0xf2ece2, roughness: 0.7 });
-  const pink = new THREE.MeshStandardMaterial({ color: 0xf0a8b6, roughness: 0.55 });
-  const eye = new THREE.MeshStandardMaterial({ color: 0x1a1210, roughness: 0.2 });
-  const group = new THREE.Group();
-
-  const body = part(group, new THREE.SphereGeometry(0.16, 16, 12), white, [0, 0.18, 0], [1, 0.82, 1.5]);
-  const head = part(group, new THREE.SphereGeometry(0.1, 14, 10), white, [0, 0.2, 0.22]);
-  const snout = part(group, new THREE.ConeGeometry(0.05, 0.09, 8), pink, [0, 0.17, 0.32]);
-  snout.rotation.x = Math.PI / 2;
-
-  for (const side of [-1, 1]) {
-    const ear = part(group, new THREE.CircleGeometry(0.05, 12), pink, [side * 0.08, 0.28, 0.2]);
-    ear.rotation.y = side * 0.6;
-    part(group, new THREE.SphereGeometry(0.015, 6, 6), eye, [side * 0.06, 0.22, 0.28]);
+export function animateCreature(root:T.Group,time:number,moving:boolean,dt:number){
+  const {kind,limbs,head,tail,ears}=root.userData,blend=1-Math.exp(-dt*14),phase=time*(kind==='pongo'?6:11),s=Math.sin(phase);
+  if(kind==='pongo'){
+    // Paired knuckle/crutch bound: both arms plant together, short legs follow.
+    for(let side=0;side<2;side++){const index=side*4,targets=moving?[s*.48,-.2-Math.max(0,-s)*.4,-s*.27,.16+Math.max(0,s)*.2]:[.02,-.12,0,.1];for(let i=0;i<4;i++)limbs[index+i].rotation.x=T.MathUtils.lerp(limbs[index+i].rotation.x,targets[i],blend);limbs[index].rotation.z=side===0?-.11:.11;}
+    head.rotation.z=Math.sin(time*1.7)*.045;head.rotation.x=moving?Math.sin(phase)*.065:Math.sin(time)*.025;
+  }else{
+    limbs.forEach((l:T.Group,i:number)=>l.rotation.x=T.MathUtils.lerp(l.rotation.x,moving?Math.sin(phase+[0,Math.PI,Math.PI,0][i])*.35:0,blend));
+    tail.forEach((bone:T.Group,i:number)=>{bone.rotation.y=Math.sin(time*3-i*.4)*(.08+i*.011);bone.rotation.x=.025+Math.sin(time*2-i*.31)*.025;});ears.forEach((ear:T.Group,i:number)=>ear.rotation.z=Math.sin(time*4+i*2)*.065);head.rotation.y=Math.sin(time*1.6)*.06;
   }
-
-  const tail = part(group, new THREE.CylinderGeometry(0.012, 0.006, 0.4, 5), pink, [0, 0.13, -0.32]);
-  tail.rotation.x = Math.PI / 2.2;
-
-  // Scale the unchanged model uniformly so it remains readable in the older,
-  // wider Brain Room camera while retaining Claude's proportions.
-  group.scale.setScalar(2.4);
-  const limbs: THREE.Group[] = [];
-  for (const x of [-.12,.12]) for (const z of [-.13,.13]) {
-    const leg = new THREE.Group(); leg.position.set(x,.13,z); group.add(leg);
-    part(leg,new THREE.CapsuleGeometry(.025,.07,4,8),white,[0,-.035,0]);
-    part(leg,new THREE.SphereGeometry(.027,8,6),pink,[0,-.085,.025],[1,.5,1.6]);
-    limbs.push(leg);
-  }
-  group.userData = { torso: body, head, limbs, kind: "rat", walk: 0, vy: 0 };
-  return group;
 }
-
-export function makeBrainCreature(kind: Exclude<BrainSubject, null>) {
-  const root = new THREE.Group();
-  const fur = material(kind === "pongo" ? 0x9b4a20 : 0xe8e1dc, kind === "pongo" ? 0x2b0903 : 0x291631);
-  const skin = material(kind === "pongo" ? 0x4b2114 : 0xf0aab9);
-  const dark = material(kind === "pongo" ? 0x24100d : 0x6a5362);
-  const torso = part(root, new THREE.SphereGeometry(1, 22, 18), fur, [0, 1.5, 0], kind === "pongo" ? [.62, .82, .5] : [.68, .38, .38]);
-  const head = new THREE.Group();
-  head.position.set(kind === "pongo" ? 0 : .68, kind === "pongo" ? 2.47 : 1.72, 0);
-  root.add(head);
-  part(head, new THREE.SphereGeometry(.5, 22, 18), fur, [0, 0, 0], kind === "pongo" ? [1, .92, .9] : [.72, .62, .62]);
-  part(head, new THREE.SphereGeometry(.3, 18, 12), skin, [kind === "pongo" ? 0 : .28, -.08, .36], kind === "pongo" ? [1.1, .66, .52] : [1.3, .72, .62]);
-  if (kind === "pongo") {
-    part(head,new THREE.SphereGeometry(.17,18,14),skin,[-.19,-.06,.38],[.9,.78,.65]);
-    part(head,new THREE.SphereGeometry(.17,18,14),skin,[.19,-.06,.38],[.9,.78,.65]);
-    part(head,new THREE.SphereGeometry(.09,16,12),dark,[0,-.02,.58],[1.18,.66,.7]);
-    part(head,new THREE.TorusGeometry(.105,.018,8,22,Math.PI),dark,[0,-.2,.55],[1,.72,1]).rotation.z=Math.PI;
-    part(head,new THREE.SphereGeometry(.2,18,14),fur,[-.46,.01,0],[.34,.82,.62]);
-    part(head,new THREE.SphereGeometry(.2,18,14),fur,[.46,.01,0],[.34,.82,.62]);
-    const browL=part(head,new THREE.CapsuleGeometry(.025,.14,5,9),dark,[-.18,.19,.4],[1,1,1]);browL.rotation.z=Math.PI/2-.16;
-    const browR=part(head,new THREE.CapsuleGeometry(.025,.14,5,9),dark,[.18,.19,.4],[1,1,1]);browR.rotation.z=Math.PI/2+.16;
-  }
-  for (const side of [-1, 1]) {
-    part(head, new THREE.SphereGeometry(.09, 12, 10), dark, [side * .2 + (kind === "rat" ? .08 : 0), .08, .39]);
-    if (kind === "rat") part(head, new THREE.SphereGeometry(.18, 14, 12), skin, [side * .24, .29, 0], [1, .35, 1]);
-  }
-  const limbs: THREE.Group[] = [];
-  for (const side of [-1, 1]) {
-    const shoulder = new THREE.Group();
-    shoulder.position.set(side * (kind === "pongo" ? .55 : .35), kind === "pongo" ? 1.9 : 1.48, 0);
-    root.add(shoulder);
-    part(shoulder, new THREE.CylinderGeometry(.12, .1, kind === "pongo" ? 1.35 : .62, 10), fur, [0, -.58, 0]);
-    const elbow = new THREE.Group(); elbow.position.y = kind === "pongo" ? -1.18 : -.55; shoulder.add(elbow);
-    part(elbow, new THREE.CylinderGeometry(.1, .07, kind === "pongo" ? 1.15 : .5, 10), fur, [0, -.5, 0]);
-    part(elbow, new THREE.SphereGeometry(.14, 12, 10), skin, [0, kind === "pongo" ? -1.05 : -.46, 0]);
-    if(kind==="pongo") for(let finger=-1;finger<=1;finger++){
-      const digit=part(elbow,new THREE.CapsuleGeometry(.025,.17,5,8),skin,[finger*.055,-1.17,.035]);digit.rotation.x=.45;
-    }
-    limbs.push(shoulder, elbow);
-    const hip = new THREE.Group(); hip.position.set(side * (kind === "pongo" ? .28 : .34), 1.05, 0); root.add(hip);
-    part(hip, new THREE.CylinderGeometry(.14, .11, kind === "pongo" ? .82 : .55, 10), fur, [0, -.34, 0]);
-    const knee = new THREE.Group(); knee.position.y = kind === "pongo" ? -.72 : -.5; hip.add(knee);
-    part(knee, new THREE.SphereGeometry(.14, 12, 10), skin, [0, 0, 0]);
-    part(knee, new THREE.CylinderGeometry(.1, .08, kind === "pongo" ? .7 : .45, 10), fur, [0, -.3, 0]);
-    limbs.push(hip, knee);
-  }
-  if (kind === "rat") {
-    const tail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-.55,1.45,0),new THREE.Vector3(-1.2,1.3,.1),new THREE.Vector3(-1.8,1.1,-.2),new THREE.Vector3(-2.2,1.25,.1)]),36,.055,8,false), skin);
-    root.add(tail);
-    root.scale.setScalar(.72);
-  } else {
-    const chest=part(root,new THREE.SphereGeometry(.52,26,20),skin,[0,1.48,.39],[.72,.82,.18]);
-    chest.material=(skin as THREE.MeshStandardMaterial).clone();
-    root.scale.setScalar(.62);
-  }
-  root.userData = { torso, head, limbs, kind, walk: 0, vy: 0 };
-  return kind === "rat" ? makeClaudeLabRat() : root;
-}
-
-

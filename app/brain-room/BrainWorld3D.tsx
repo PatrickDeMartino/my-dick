@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import * as T from 'three';
-import { makeBrainCreature, type BrainSubject } from './lib/creatures';
+import { makeBrainCreature, animateCreature, type BrainSubject } from './lib/creatures';
 import { makeLevel, collide, SPAWN } from './lib/level';
+import { stepCow } from './lib/cows';
 import { Ragdoll } from './lib/ragdoll';
 export { makeBrainCreature } from './lib/creatures';
 export type { BrainSubject } from './lib/creatures';
@@ -20,16 +21,17 @@ export default function BrainWorld3D(props:Controls) {
     mount.appendChild(renderer.domElement);
     const scene=new T.Scene();scene.background=new T.Color(0xcfacc1);scene.fog=new T.Fog(0xcfacc1,40,130);
     const level=makeLevel();scene.add(level.root);
-    scene.add(new T.HemisphereLight(0xffe5dd,0x786656,1.15));
+    scene.add(new T.HemisphereLight(0xffe5dd,0x786656,.85));
     const sun=new T.DirectionalLight(0xffd5a0,2.6);sun.position.set(-32,28,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-45;sun.shadow.camera.right=25;sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;sun.shadow.normalBias=.035;scene.add(sun);
     const windowGlow=new T.PointLight(0xe2bde9,24,16,2);windowGlow.position.set(-6,7,0);scene.add(windowGlow);
+    const roomFill=new T.PointLight(0xffd6c4,11,13,2);roomFill.position.set(1,7,3);scene.add(roomFill);
     const skySun=new T.Mesh(new T.SphereGeometry(5,24,16),new T.MeshBasicMaterial({color:0xffe3b4}));skySun.position.set(-75,22,10);scene.add(skySun);
     const camera=new T.PerspectiveCamera(62,1,.06,220);camera.position.set(3.8,6.5,4.3);
     const player={p:SPAWN.clone(),v:new T.Vector3(),grounded:false};const radius=.3;
     let current:BrainSubject=null,creature:T.Group|null=null,rag:Ragdoll|null=null,minY=0,height=1.5;
     let reset=settings.current.reset,yaw=.5,pitch=.22,dragging=false,lastX=0,lastY=0,walk=0,active=true;
     const keys=new Set<string>();const mouse=new T.Vector2(),ray=new T.Raycaster();let grabPlane:T.Plane|null=null;
-    const disposeObject=(object:T.Object3D)=>{const gs=new Set<T.BufferGeometry>(),ms=new Set<T.Material>();object.traverse(o=>{if(o instanceof T.Mesh){gs.add(o.geometry);(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>ms.add(m));}});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());object.removeFromParent();};
+    const disposeObject=(object:T.Object3D)=>{const gs=new Set<T.BufferGeometry>(),ms=new Set<T.Material>();object.traverse(o=>{if(o instanceof T.Mesh){gs.add(o.geometry);(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>ms.add(m));}});gs.forEach(g=>g.dispose());const textures=new Set<T.Texture>();ms.forEach(m=>{Object.values(m).forEach(v=>{if(v instanceof T.Texture)textures.add(v);});m.dispose();});textures.forEach(t=>t.dispose());object.removeFromParent();};
     function updateCreature(next:BrainSubject,at=player.p.clone()){
       if(rag){disposeObject(rag.root);rag=null;}if(creature)disposeObject(creature);
       creature=next?makeBrainCreature(next):null;current=next;
@@ -67,11 +69,12 @@ export default function BrainWorld3D(props:Controls) {
           for(const y of [height*.42,height*.76]){const upper=player.p.clone();upper.y+=y;const before=upper.clone();collide(upper,radius,level.solids,player.v);player.p.add(upper.sub(before));}
           player.p.x=T.MathUtils.clamp(player.p.x,-80,80);player.p.z=T.MathUtils.clamp(player.p.z,-80,80);if(player.p.y<-10)player.p.copy(SPAWN);
           creature.position.copy(player.p);creature.position.y+=.16-radius-minY;
-          if(Math.abs(x)+Math.abs(z)>.05){creature.rotation.y=Math.atan2(player.v.x,player.v.z);walk+=step*9;(creature.userData.limbs as T.Group[]).forEach((limb,i)=>{limb.rotation.x=Math.sin(walk+i*Math.PI*.7)*.35;});}
-          else (creature.userData.limbs as T.Group[]).forEach(l=>l.rotation.x*=.82);
+          const moving=Math.abs(x)+Math.abs(z)>.05;
+          if(moving)creature.rotation.y=Math.atan2(player.v.x,player.v.z);
+          walk+=step;animateCreature(creature,walk,moving,step);
         }
       }
-      for(const cow of level.cows){const a=time*.065+cow.phase;cow.root.position.set(cow.origin.x+Math.cos(a)*3.2,0,cow.origin.z+Math.sin(a)*2.4);cow.root.rotation.y=Math.atan2(-Math.sin(a)*3.2,Math.cos(a)*2.4);cow.legs.forEach((l,i)=>l.rotation.x=Math.sin(time*2.3+i*Math.PI)*.18);}
+      for(const cow of level.cows)stepCow(cow,time,dt);
       let focus:T.Vector3,desired:T.Vector3;
       if(creature){focus=rag?rag.center():player.p.clone().add(new T.Vector3(0,height*.58,0));
         if(state.walkMode&&!rag){desired=player.p.clone().add(new T.Vector3(0,height*.85,0));focus=desired.clone().add(new T.Vector3(-Math.sin(yaw)*Math.cos(pitch),-Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)));creature.visible=false;}

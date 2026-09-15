@@ -1,4 +1,5 @@
 import { buildLaunchIsland, cosmicOcean } from "./launch-island";
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {launchVelocity,predictFlight,sphereContact,PLANET_CENTER} from "./archery";
 /// <reference types="vite/client" />
 import type * as THREE_NS from "three";
@@ -74,6 +75,8 @@ export type Globe3DHandle = {
   cancelDraw: () => void;
   /** Multiply the extruded land vertex colours (0xffffff = original palette). */
   setLandColor: (hex: number) => void;
+  setOceanStyle: (style: number) => void;
+  setTerrainFinish: (finish: 'stone' | 'gloss' | 'crystal') => void;
   /** Swaps every land vertex to a red/white/blue "Old Glory" banding (baked
    * at build time, so this is a cheap attribute swap, not a rebuild). */
   setLandFlagMode: (enabled: boolean) => void;
@@ -101,7 +104,7 @@ export type Globe3DHandle = {
   dispose: () => void;
 };
 
-const GLOBE_RADIUS = 1;
+const GLOBE_RADIUS = 1.34;
 const LAND_HEIGHT = 0.043;
 const ICE_HEIGHT = 0.052;
 const LON_CELLS = 480;
@@ -125,7 +128,7 @@ const PHYSICS_STEP = 1 / 240;
 const IMPACT_RADIUS = GLOBE_RADIUS + 0.012;
 const STUCK_LIFETIME = 5;
 
-const ALIEN_SCALE = 0.76;
+const ALIEN_SCALE = 0.5;
 const WALK_SPEED = 0.42;
 /** The walkable slab is tilted toward the camera, so walking "back" also
  * walks up the screen — an isometric read that keeps depth legible under an
@@ -646,6 +649,11 @@ export async function createGlobe3D(
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
   const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const reflectionRoom = new RoomEnvironment();
+  const reflections = pmrem.fromScene(reflectionRoom, .035);
+  scene.environment = reflections.texture;
+  reflectionRoom.dispose(); pmrem.dispose();
   let starSeed=59;const rand=()=>{starSeed=(starSeed*1664525+1013904223)>>>0;return starSeed/4294967296;};
   const starPositions=[];for(let i=0;i<900;i++)starPositions.push((rand()-.5)*15,(rand()-.5)*10,-4-rand()*5);
   const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute("position",new THREE.Float32BufferAttribute(starPositions,3));scene.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xd5c3f6,size:.014,transparent:true,opacity:.65,sizeAttenuation:true})));
@@ -706,7 +714,7 @@ export async function createGlobe3D(
   );
   occluder.renderOrder = -1;
   planet.add(occluder);
-  const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.055,48,32),new THREE.MeshBasicMaterial({color:0x7ff9eb,transparent:true,opacity:.055,side:THREE.BackSide,depthWrite:false}));planet.add(atmosphere);
+  const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS*1.055,48,32),new THREE.MeshBasicMaterial({color:0x7ff9eb,transparent:true,opacity:.055,side:THREE.BackSide,depthWrite:false}));planet.add(atmosphere);
 
   // Per-cell terrain warp, in world-radius units added on top of the base
   // land/ice height — this is what the Cube panel's raise/lower brush edits.
@@ -718,7 +726,7 @@ export async function createGlobe3D(
   let flagModeActive = false;
   const landMesh = new THREE.Mesh(
     landGeometry,
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhysicalMaterial({
       vertexColors: true,
       flatShading: true,
       roughness: 0.88,
@@ -980,6 +988,25 @@ export async function createGlobe3D(
   // syncPlanetQuaternion, since the box can keep changing after applyView
   // last ran.
   const planetLocalQuaternion = new THREE.Quaternion();
+  const tumble = new THREE.Quaternion();
+  const tumbleStep = new THREE.Quaternion();
+  const tumbleAxis = new THREE.Vector3();
+  let tumbleTime = 0;
+  let terrainFinish: 'stone' | 'gloss' | 'crystal' = 'stone';
+  let landHex = 0xffffff;
+  const applyLandFinish = () => {
+    const m = landMesh.material as THREE_NS.MeshPhysicalMaterial;
+    const gold = landHex === 0xf1c86e && !flagModeActive;
+    m.color.setHex(gold ? 0xffd06a : landHex);
+    m.vertexColors = !gold;
+    m.metalness = gold ? 1 : terrainFinish === 'crystal' ? .35 : .04;
+    m.roughness = gold ? .055 : terrainFinish === 'stone' ? .88 : .16;
+    m.clearcoat = gold || terrainFinish !== 'stone' ? 1 : 0;
+    m.clearcoatRoughness = .045;
+    m.envMapIntensity = gold ? 2.3 : .65;
+    m.flatShading = terrainFinish !== 'gloss';
+    m.emissive.setHex(0); m.needsUpdate = true;
+  };
 
   const updateBoxQuaternion = () => {
     const yaw = new THREE.Quaternion().setFromAxisAngle(axisY, (-boxLon * Math.PI) / 180);
@@ -992,7 +1019,7 @@ export async function createGlobe3D(
    * frame so a box-rotate drag updates the globe (and the sky riding along
    * with it via worldSpin) immediately. */
   const syncPlanetQuaternion = () => {
-    planet.quaternion.copy(boxQuaternion).multiply(planetLocalQuaternion);
+    planet.quaternion.copy(boxQuaternion).multiply(tumble).multiply(planetLocalQuaternion);
     // The satellite/moon/UFOs/meteors are a separate sibling group (not a
     // child of `planet`, to avoid double-applying this rotation) that gets
     // the identical orientation, so dragging swings the whole sky along with
@@ -1345,6 +1372,14 @@ export async function createGlobe3D(
     const wall = Math.min(raw, 0.25);
     previous = now;
     const elapsed = now / 1000;
+    // A free tumble, with a gently wandering axis. Hold the surface still
+    // throughout drawing and flight so the preview remains the landing point.
+    if (!drawing && !arrows.some(a => !a.stuck) && aimMode && !terrainBrush) {
+      tumbleTime += delta;
+      tumbleAxis.set(.8 + .35*Math.sin(tumbleTime*.07), .45*Math.sin(tumbleTime*.11), .7 + .3*Math.cos(tumbleTime*.09)).normalize();
+      tumbleStep.setFromAxisAngle(tumbleAxis, delta*.115);
+      tumble.premultiply(tumbleStep).normalize();
+    }
 
     // The box tumble can change every frame during a cube-rotate drag, so
     // it's recomputed here rather than only when the view state changes.
@@ -1357,6 +1392,7 @@ export async function createGlobe3D(
     ).applyQuaternion(boxQuaternion);
     nebulaMaterial.uniforms.time.value=elapsed;
     worldSpin.position.copy(planet.position);
+    worldSpin.scale.setScalar(1.28);
     (occluder.material as THREE_NS.ShaderMaterial).uniforms.time.value=elapsed;
     occluder.position.set(editOffsets.ocean.x,editOffsets.ocean.y,editOffsets.ocean.z);
     planet.updateMatrixWorld(true);
@@ -1528,16 +1564,13 @@ export async function createGlobe3D(
       charge = 0;
     },
     setLandColor: (hex) => {
-      const material = landMesh.material as THREE_NS.MeshStandardMaterial;
-      material.color.setHex(hex);
-      const isGold = hex === 0xf1c86e;
-      material.metalness = isGold ? 0.96 : 0.04;
-      material.roughness = isGold ? 0.1 : 0.88;
-      material.emissive.setHex(isGold ? 0x5b2f00 : 0x000000);
-      material.emissiveIntensity = isGold ? 0.28 : 0;
+      landHex = hex; applyLandFinish();
     },
+    setOceanStyle: (style) => { (occluder.material as THREE_NS.ShaderMaterial).uniforms.style.value = clamp(Math.round(style),0,3); },
+    setTerrainFinish: (finish) => { terrainFinish = finish; applyLandFinish(); },
     setLandFlagMode: (enabled) => {
       flagModeActive = enabled;
+      applyLandFinish();
       const colorAttr = landGeometry.getAttribute("color") as THREE_NS.BufferAttribute;
       (colorAttr.array as Float32Array).set(enabled ? flagColors : landBaseColors);
       colorAttr.needsUpdate = true;
@@ -1606,8 +1639,7 @@ export async function createGlobe3D(
       window.removeEventListener("blur",clearInput);
       const geometries=new Set<THREE_NS.BufferGeometry>(),materials=new Set<THREE_NS.Material>();
       const collect=(root:THREE_NS.Object3D)=>root.traverse(o=>{const m=o as THREE_NS.Mesh;if(m.geometry)geometries.add(m.geometry);if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(v=>materials.add(v));});
-      collect(scene);retiredAliens.forEach(collect);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();
+      collect(scene);retiredAliens.forEach(collect);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());reflections.dispose();renderer.dispose();
     },
   };
 }
-

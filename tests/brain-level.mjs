@@ -5,9 +5,9 @@ import * as T from 'three';
 import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 
 await fs.mkdir(new URL('../work/brain-check/',import.meta.url),{recursive:true});
-for(const name of ['level','creatures','ragdoll']){
+for(const name of ['surface','cows','level','creatures','ragdoll']){
   const source=await fs.readFile(new URL(`../app/brain-room/lib/${name}.ts`,import.meta.url),'utf8');
-  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace("from './level'","from './level.mjs'");
+  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/from '\.\/(level|surface|cows)'/g, "from './$1.mjs'");
   await fs.writeFile(new URL(`../work/brain-check/${name}.mjs`,import.meta.url),output);
 }
 const {makeLevel,collide}=await import('../work/brain-check/level.mjs');
@@ -40,7 +40,7 @@ if(process.argv.includes('--export')){
   // Three's exporter uses FileReader even for a geometry-only binary glTF.
   globalThis.FileReader=class{result;onloadend;readAsArrayBuffer(blob){blob.arrayBuffer().then(result=>{this.result=result;this.onloadend?.();});}readAsDataURL(blob){blob.arrayBuffer().then(result=>{this.result=`data:${blob.type};base64,${Buffer.from(result).toString('base64')}`;this.onloadend?.();});}};
   const exporter=new GLTFExporter();
-  const binary=await exporter.parseAsync(level.room,{binary:true,onlyVisible:true});
+  const binary=await exporter.parseAsync(makeLevel({lightweight:true}).room,{binary:true,onlyVisible:true});
   assert(binary instanceof ArrayBuffer);const file=new URL('../public/brain-room/brain-room.glb',import.meta.url);await fs.writeFile(file,Buffer.from(binary));
   const bytes=await fs.readFile(file);assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);
   console.log(`Exported reusable brain room GLB: ${(bytes.length/1024/1024).toFixed(1)} MB`);

@@ -11,7 +11,7 @@ for(const name of ['archery','launch-island','grok/alien','grok/weapons','grok/c
 const {launchVelocity,predictFlight,sphereContact,PLANET_CENTER,SHOT_STEP,SHOT_GRAVITY}=await import('../work/urf-check/archery.mjs');
 const {buildLaunchIsland}=await import('../work/urf-check/launch-island.mjs');
 const {createAlien}=await import('../work/urf-check/grok/alien.mjs');
-const origin=new T.Vector3(-1.25,.38,1.65),radius=1.012;
+const origin=new T.Vector3(-1.25,.38,1.65),radius=1.352;
 let checks=0;
 for(const offset of [new T.Vector3(),new T.Vector3(.9,-.4,.7)]){
  const center=PLANET_CENTER.clone().add(offset);

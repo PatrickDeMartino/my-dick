@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { makeHerd } from './cows';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type Solid = { center: T.Vector3; half: T.Vector3 };
@@ -6,15 +7,22 @@ export const ROOM_FLOOR = 3;
 export const WINDOW = { x: -6, z: 0, halfWidth: 1.8, sill: 3.55, top: 8.4 };
 export const SPAWN = new T.Vector3(1, ROOM_FLOOR + .22, 2.5);
 
-export function makeLevel() {
+export function makeLevel(options:{lightweight?:boolean}={}) {
   const root = new T.Group(); root.name = 'Brain Room and Cow Meadow';
   const room = new T.Group(); room.name = 'Sculpted human brain room'; root.add(room);
   const solids: Solid[] = [];
   let seed = 1771;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   const mat = (color: number, roughness = .85) => new T.MeshStandardMaterial({ color, roughness });
-  const flesh = new T.MeshPhysicalMaterial({ color: 0x9a626e, roughness: .62, clearcoat: .18, clearcoatRoughness: .65 });
-  const darkFlesh = mat(0x573b49);
+  const flesh = new T.MeshPhysicalMaterial({ color: 0xe8c7bc, roughness: .43, clearcoat: .32, clearcoatRoughness: .3, sheen:.18, sheenColor:new T.Color(0xef9c94) });
+  flesh.name='Cortex tissue';
+  const darkFlesh = flesh.clone();darkFlesh.name='Cortex recesses';darkFlesh.color.setHex(0x8e6968);
+  if(typeof document!=='undefined'){
+    const cortex=new T.TextureLoader().load('/brain-room/cortex.png');cortex.colorSpace=T.SRGBColorSpace;cortex.wrapS=cortex.wrapT=T.RepeatWrapping;cortex.anisotropy=4;
+    flesh.map=cortex;flesh.bumpMap=cortex;flesh.bumpScale=.045;
+    const backing=cortex.clone();backing.repeat.set(2.7,1.8);backing.needsUpdate=true;
+    darkFlesh.map=backing;darkFlesh.bumpMap=backing;darkFlesh.bumpScale=.11;
+  }
   const wood = mat(0x49302b);
   const paleWood = mat(0xae8a63);
   const mesh = (g: T.BufferGeometry, m: T.Material, p: number[], parent: T.Object3D = root) => {
@@ -37,16 +45,20 @@ export function makeLevel() {
   box([0, 10, 0], [12.6, .45, 12.6], darkFlesh, room, true);
   const folds: T.BufferGeometry[] = [];
   function foldSurface(width: number, height: number, origin: T.Vector3, u: T.Vector3, v: T.Vector3, normal: T.Vector3, skip?: (x: number,y:number)=>boolean) {
-    const spacing = .68;
+    const spacing = options.lightweight ? .94 : .59;
     for (let ix = 0; ix < width/spacing; ix++) for (let iy = 0; iy < height/spacing; iy++) {
       const x = -width/2 + (ix+.5)*spacing, y = -height/2 + (iy+.5)*spacing;
       if (skip?.(x,y)) continue;
-      const angle = random()*Math.PI*2, phase = random()*6.28;
+      const angle = Math.sin(x*.8)*.8+Math.cos(y*.9)*1.2+(random()-.5)*.4, phase = random()*6.28;
       const points = Array.from({length: 10}, (_, k) => {
-        const a = (k/9-.5)*.68, b = Math.sin(k/9*Math.PI*2+phase)*.19;
+        const a = (k/9-.5)*.73, b = Math.sin(k/9*Math.PI*2+phase)*.18;
         return origin.clone().addScaledVector(u,x+a*Math.cos(angle)-b*Math.sin(angle)).addScaledVector(v,y+a*Math.sin(angle)+b*Math.cos(angle)).addScaledVector(normal,.06+Math.sin(k/9*Math.PI)*.065);
       });
-      folds.push(new T.TubeGeometry(new T.CatmullRomCurve3(points), 14, .135+random()*.025, 7, false));
+      const radius=.173+random()*.025;
+      const fold=new T.TubeGeometry(new T.CatmullRomCurve3(points),options.lightweight?8:18,radius,options.lightweight?6:10,false);
+      // Broader, tightly packed gyri with rounded ends instead of open tubes.
+      folds.push(fold);
+      for(const point of [points[0],points[points.length-1]]){const cap=new T.SphereGeometry(radius,options.lightweight?6:10,options.lightweight?4:8);cap.translate(point.x,point.y,point.z);folds.push(cap);}
     }
   }
   foldSurface(11.8,6.6,new T.Vector3(0,6.5,-5.69),new T.Vector3(1,0,0),new T.Vector3(0,1,0),new T.Vector3(0,0,1));
@@ -74,7 +86,7 @@ export function makeLevel() {
   const chairGeo=mergeGeometries(chairFolds);chairFolds.forEach(g=>g.dispose());if(chairGeo)mesh(chairGeo,flesh,[0,0,0],bag);
   solids.push({center:new T.Vector3(3.1,3.5,-3.1),half:new T.Vector3(1.4,.5,1.15)});
   const ottoman=mesh(new T.SphereGeometry(1,32,18),flesh,[-1.3,3.5,1],room);ottoman.scale.set(1,.45,.85);ottoman.name='Brain ottoman';
-  for(let i=0;i<14;i++){const a=i/14*Math.PI*2; const points=Array.from({length:14},(_,k)=>{const b=k/13*Math.PI;return new T.Vector3(-1.3+Math.cos(a)*Math.sin(b),3.5+Math.cos(b)*.45,1+Math.sin(a)*Math.sin(b)*.85);});mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),20,.1,7,false),flesh,[0,0,0],room);}
+  for(let i=0;i<24;i++){const a=i/24*Math.PI*2; const points=Array.from({length:14},(_,k)=>{const b=k/13*Math.PI;return new T.Vector3(-1.3+Math.cos(a)*Math.sin(b),3.5+Math.cos(b)*.45,1+Math.sin(a+.06*Math.sin(k*1.9))*Math.sin(b)*.85);});mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),28,.115,10,false),flesh,[0,0,0],room);}
   solids.push({center:new T.Vector3(-1.3,3.4,1),half:new T.Vector3(.95,.42,.8)});
   mesh(new T.CylinderGeometry(.95,.95,.13,40),wood,[-2.65,4.3,-3.65],room).name='Reading table';
   for(const x of [-.6,.6])for(const z of [-.5,.5])mesh(new T.CylinderGeometry(.055,.08,1.2,8),wood,[-2.65+x,3.65,-3.65+z],room);
@@ -88,6 +100,18 @@ export function makeLevel() {
   box([5.24,6.4,-2.5],[.05,2.42,1.72],mat(0x17131f),room);
   const neuronMat=new T.MeshBasicMaterial({color:0xe597cf});
   for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const pts=Array.from({length:7},(_,k)=>new T.Vector3(5.18,6.4+Math.sin(a)*k*.16+(random()-.5)*.14,-2.5+Math.cos(a)*k*.12+(random()-.5)*.14));mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),16,.009,4,false),neuronMat,[0,0,0],room);}
+
+  // Original reference, framed at its full 900:506 aspect ratio.
+  const painting=new T.Group();painting.name='Original brain room reference — framed';painting.position.set(2.4,6.6,-5.28);room.add(painting);
+  const artMaterial=new T.MeshStandardMaterial({color:0xffffff,roughness:.95});artMaterial.name='Reference painting';
+  if(typeof document!=='undefined'){artMaterial.map=new T.TextureLoader().load('/brain-room/reference-art.jpg');artMaterial.map.colorSpace=T.SRGBColorSpace;}
+  const art=mesh(new T.PlaneGeometry(3.2,3.2*506/900),artMaterial,[0,0,.07],painting);art.name='Brain room reference artwork';
+  box([0,0,0],[3.5,2.1,.1],wood,painting);
+  const trim=new T.MeshStandardMaterial({color:0xb69254,metalness:.65,roughness:.3});
+  for(const x of [-1.66,1.66])box([x,0,.1],[.14,2.05,.15],wood,painting);
+  for(const y of [-.965,.965])box([0,y,.1],[3.45,.14,.15],wood,painting);
+  for(const x of [-1.615,1.615])box([x,0,.15],[.018,1.83,.025],trim,painting);
+  for(const y of [-.911,.911])box([0,y,.15],[3.24,.018,.025],trim,painting);
 
   const grass=mat(0x758454); const land=box([0,-.35,0],[180,.7,180],grass,root,true);land.name='Walkable meadow';
   const dirt=mat(0xae9772);box([-13,.005,0],[14,.02,3.1],dirt);
@@ -110,19 +134,7 @@ export function makeLevel() {
   for(let i=0;i<340;i++){dummy.position.set(-45+random()*60,.32,-31+random()*62);dummy.scale.setScalar(1);dummy.rotation.set(0,0,0);dummy.updateMatrix();flowers.setMatrixAt(i,dummy.matrix);}root.add(flowers);
   for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if(x<-39&&z<0)continue;const tree=new T.Group();tree.position.set(x,0,z);root.add(tree);mesh(new T.CylinderGeometry(.13,.3,3.6,7),wood,[0,1.8,0],tree);for(let j=0;j<3;j++){const leaf=mesh(new T.IcosahedronGeometry(1.7,1),mat([0x566a49,0x748350,0x87945e][j]),[(j-1)*.75,3.6+j*.5,0],tree);leaf.scale.y=.8;}}
   for(let i=0;i<24;i++){const a=i/24*Math.PI*2;const mountain=mesh(new T.ConeGeometry(15+random()*12,13+random()*23,6),mat(i%2?0x8b7d99:0xa394a6),[Math.cos(a)*95,-2,Math.sin(a)*95]);mountain.rotation.y=random()*6.28;}
-  const cows: {root:T.Group;legs:T.Group[];phase:number;origin:T.Vector3}[]=[];
-  const cowWhite=mat(0xe8e2ce),cowBlack=mat(0x383538),pink=mat(0xc9978b);
-  for(let i=0;i<8;i++){
-    const cow=new T.Group();cow.name=`Wandering cow ${i+1}`;cow.position.set(-17-random()*23,0,-10+random()*27);cow.rotation.y=random()*6.28;root.add(cow);
-    const body=mesh(new T.SphereGeometry(1,16,12),cowWhite,[0,1.1,0],cow);body.scale.set(.65,.65,1.15);
-    for(let j=0;j<7;j++){const a=random()*6.28;const spot=mesh(new T.SphereGeometry(.24+random()*.15,10,8),cowBlack,[Math.cos(a)*.49,1.12+Math.sin(a)*.46,(random()-.5)*1.5],cow);spot.scale.set(1,.65,1.3);}
-    const head=mesh(new T.SphereGeometry(.4,14,10),cowWhite,[0,1.35,1.2],cow);head.scale.set(.85,1.15,1.05);
-    const nose=mesh(new T.SphereGeometry(.29,12,8),pink,[0,1.18,1.51],cow);nose.scale.set(1,.65,.6);
-    for(const side of [-1,1]){mesh(new T.SphereGeometry(.045,8,6),cowBlack,[side*.24,1.51,1.43],cow);const ear=mesh(new T.SphereGeometry(.2,10,8),cowWhite,[side*.42,1.64,1.1],cow);ear.scale.set(1,.3,.55);mesh(new T.ConeGeometry(.07,.24,8),paleWood,[side*.22,1.88,1.12],cow);}
-    const legs:T.Group[]=[];for(const x of [-.4,.4])for(const z of [-.66,.66]){const leg=new T.Group();leg.position.set(x,.94,z);cow.add(leg);mesh(new T.CylinderGeometry(.095,.075,.74,8),cowWhite,[0,-.36,0],leg);box([0,-.75,.025],[.18,.17,.24],cowBlack,leg);legs.push(leg);}
-    const tail=mesh(new T.CylinderGeometry(.025,.025,.8,6),cowBlack,[0,.95,-1.12],cow);tail.rotation.x=-.25;
-    cows.push({root:cow,legs,phase:random()*6.28,origin:cow.position.clone()});
-  }
+  const cows=makeHerd(random);cows.forEach(cow=>root.add(cow.root));
   return {root,room,solids,cows,lamp};
 }
 

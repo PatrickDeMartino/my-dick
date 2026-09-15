@@ -4,7 +4,7 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { makeHomeBrain } from "../lib/homeBrain";
-import { makeBrainCreature } from "../brain-room/BrainWorld3D";
+import { makeBrainCreature, animateCreature } from "../brain-room/lib/creatures";
 
 type CanLabel = "YOOHOO" | "PEPSI" | "MONSTER" | "RAT MEAT";
 type SpawnItem = CanLabel | "PONGO" | "WORMS";
@@ -477,9 +477,8 @@ export default function HomeRoom3D() {
         const moving = Math.abs(mx) + Math.abs(mz) > .1;
         if (moving && !pongo.swing) {
           pongo.mesh.rotation.y = Math.atan2(mx, mz);
-          pongo.mesh.userData.walk += dt * 8;
-          const limbs=pongo.mesh.userData.limbs as THREE.Group[];
-          limbs.forEach((limb,index)=>{limb.rotation.x=Math.sin(pongo.mesh.userData.walk+index*Math.PI/2)*(index%4<2?.64:.48);});
+          pongo.mesh.userData.walk += dt;
+          animateCreature(pongo.mesh,pongo.mesh.userData.walk,true,dt);
         }
         if(pongo===selectedPongo){
           if(!heldCan){heldCan=cans.find(can=>can.mesh.position.distanceTo(pongo.mesh.position)<1.35)??null;heldTime=0;}

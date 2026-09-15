@@ -92,6 +92,8 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   const [flash, setFlash] = useState<{ text: string; tone: string } | null>(null);
   const [selector, setSelector] = useState<{ name: string; unlocked: boolean; lon: number; lat: number } | null>(null);
   const [landPreset, setLandPreset] = useState("original");
+  const [oceanStyle,setOceanStyle]=useState(0);
+  const [terrainFinish,setTerrainFinish]=useState<'stone'|'gloss'|'crystal'>('stone');
   const [satelliteParts, setSatelliteParts] = useState<SatellitePartId[]>([]);
   const [terrainOpen, setTerrainOpen] = useState(false);
   const [cubeMode, setCubeMode] = useState(false);
@@ -267,6 +269,9 @@ function Globe({ onEnter }: { onEnter: () => void }) {
   useEffect(() => {
     worldRef.current?.setSatelliteLoadout(satelliteParts);
   }, [satelliteParts, world3d]);
+
+  useEffect(()=>{worldRef.current?.setOceanStyle(oceanStyle);},[oceanStyle,world3d]);
+  useEffect(()=>{worldRef.current?.setTerrainFinish(terrainFinish);},[terrainFinish,world3d]);
 
   useEffect(() => {
     worldRef.current?.setLandFlagMode(usaFlagMode);
@@ -739,6 +744,10 @@ function Globe({ onEnter }: { onEnter: () => void }) {
                   {preset.label}
                 </button>
               ))}
+              <span>LAND FINISH</span>
+              {(['stone','gloss','crystal'] as const).map(finish=><button key={finish} type="button" className={terrainFinish===finish?'is-active':''} aria-pressed={terrainFinish===finish} onClick={()=>setTerrainFinish(finish)}>{finish.toUpperCase()}</button>)}
+              <span>OCEAN</span>
+              {['COSMIC INK','LIQUID RAINBOW','NEON CELLS','ACID RIPPLES'].map((name,i)=><button key={name} type="button" className={oceanStyle===i?'is-active':''} aria-pressed={oceanStyle===i} onClick={()=>setOceanStyle(i)}>{name}</button>)}
               <span>SATELLITE</span>
               {SATELLITE_PARTS.map((part) => (
                 <button
