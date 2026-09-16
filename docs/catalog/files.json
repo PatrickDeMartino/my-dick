@@ -679,20 +679,20 @@
   },
   {
     "path": "public/library/flight/manifest.json",
-    "bytes": 8825,
-    "sha256": "ca987b940fc2528a7021f0b9d2b143017d9c630f2adc44871328674800dab86b",
+    "bytes": 8793,
+    "sha256": "9736ce89c49b1656f2c0469789d968e953c40edfb30dfc1fcaa2fbe247d32d5c",
     "kind": "Code / supporting file"
   },
   {
     "path": "public/library/flight/pages-0001-0001.pdf",
-    "bytes": 7714110,
-    "sha256": "f2176106bde9968396b0b7ae823ab139ccaec12de3f5373e9cec0f4e98e29133",
+    "bytes": 296657,
+    "sha256": "00e16a60745722eab2287607cfda6192d8bd56899c63944d145f30d148b69c3d",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0002-0002.pdf",
-    "bytes": 73928,
-    "sha256": "17799a0a19c20fd694420acd0f9e3153579cefcc62260b3a7895ad301d1e5381",
+    "bytes": 73907,
+    "sha256": "9e3ad9ea68140cf9d69be263daf331567b946bebdb525feded304b204b9233b0",
     "kind": "Book PDF"
   },
   {
@@ -709,374 +709,374 @@
   },
   {
     "path": "public/library/flight/pages-0011-0020.pdf",
-    "bytes": 523795,
-    "sha256": "22c16a1e958583a4e9076a22577888f09cdae2160ee2710c22d64369b2714711",
+    "bytes": 523163,
+    "sha256": "9a7f28d43fdce075acb93b5b277b2908bbbf0f3b17c5d8573931de31b5748d3f",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0021-0025.pdf",
-    "bytes": 6737684,
-    "sha256": "6a1cbb6576347dd0d96ab77b80707a8a2ae3d3b3803e91102d3fc49db29d2250",
+    "bytes": 1207233,
+    "sha256": "964d4e53f318d039f3e464bdf824c44f3dc8fd5ca76f84700bbd9d89dd7e69ae",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0026-0027.pdf",
-    "bytes": 5447261,
-    "sha256": "f5abf008f471ff95d36dc3b4f8e2a2df975316cafb5fb249e3c2672aa6ce60ac",
+    "bytes": 846392,
+    "sha256": "b72df32ccc21f1f191fe33103591880296ecfcd1947c1764d7ff051d7a4fcfb6",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0028-0030.pdf",
-    "bytes": 3367509,
-    "sha256": "28f40781ce9b715117bc0ce8d982384b68f71ee409224f4e8ecde2bfada7538d",
+    "bytes": 746720,
+    "sha256": "e00b7ebbdfd76736c82c7a258fdf692d755b9a17274976534b534b8c2d54e4cc",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0031-0032.pdf",
-    "bytes": 2026468,
-    "sha256": "de7fdd5cbcae882b9d7c7cd3aef0e7fd882005ecf567837a711f5c352944b0b8",
+    "bytes": 641719,
+    "sha256": "2deb206533e9ee358806b9f79f62a792d47a7f677d10315efc474c19453a7242",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0033-0035.pdf",
-    "bytes": 6746810,
-    "sha256": "bbfc465b90bca27154c067d11467f816badc288e7c65d35764cc785d346e0082",
+    "bytes": 1489766,
+    "sha256": "f6a0a1f151309036402fc7ada90ce928a2bc0a8d1f0eb27a81d2632a1c2534bb",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0036-0037.pdf",
-    "bytes": 4230733,
-    "sha256": "9c534ebb716f2a5a092b66e9a27d808e7ee0afc9fbbc0f2024aa15ace05046da",
+    "bytes": 961695,
+    "sha256": "ab48f1bf09ed0c90462f5281fb747aa79588cdf94a79ba411b067725da8d77aa",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0038-0040.pdf",
-    "bytes": 5926693,
-    "sha256": "05bcf867c0a0270db57bc46404d599285268481237e1564ce9605a61c2b3dd51",
+    "bytes": 1135989,
+    "sha256": "c50f317d64a8668a4b74647d1dad8798bfa16c601996681518d3cd8e045c1e5d",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0041-0050.pdf",
-    "bytes": 7156883,
-    "sha256": "6dd78921f69eefb17a9ce80eda056cd8e380965a746c18f8cc5bd6331b63f011",
+    "bytes": 1848006,
+    "sha256": "cbdee0a798bfba5e8c7f0545005f301de64af27babd2044ad973131cdab28957",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0051-0060.pdf",
-    "bytes": 6499211,
-    "sha256": "0d5c38632f6b92760f73c1d6b0147c0beeab1eeb1f8d0d341ba2f7e324d81920",
+    "bytes": 1495243,
+    "sha256": "d8d57f0cd542ce55a64b85ef751c08f341cc0cfe7436426bf214e2f0f6e3d6cb",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0061-0065.pdf",
-    "bytes": 6349370,
-    "sha256": "2d95b9df2540c40341ced616503bf04d18dc2f12cd5c46339b1702fded8687c8",
+    "bytes": 1180539,
+    "sha256": "adf3b1fb903fdf9d42d86452a51ef926826ed85330e598176996f607d8800758",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0066-0067.pdf",
-    "bytes": 3707969,
-    "sha256": "5e13bba58490bc08759df166c96f8d200828570283f7de88463439ab3096ef0c",
+    "bytes": 674095,
+    "sha256": "c5151bd325e284d3f58b3afd149283458475f8e1cf8cf466e439a50ca4a928d0",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0068-0068.pdf",
-    "bytes": 7925239,
-    "sha256": "3748a343f57bd6337a969b45082ea14580e7206e495ed16b78472b819fc89aba",
+    "bytes": 527257,
+    "sha256": "d40a3c7c15e68fd22378e125f3e8a013ab8800746a55f6a53c89777037de953b",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0069-0070.pdf",
-    "bytes": 4733724,
-    "sha256": "5ffb5c42c46d9444dddac368b6394ec8a50e104f447dede482bb924fd5b9956b",
+    "bytes": 544742,
+    "sha256": "f3c70a4c6d5441b3b7491934c78168050a06c66f047ff3e804332fbf452e9fa3",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0071-0072.pdf",
-    "bytes": 4373534,
-    "sha256": "960fcb796b5e73642d7219a08a4915383208c8f5f01be4d9ec30f2ec7bc686fc",
+    "bytes": 668483,
+    "sha256": "fbf1a03cf3f84bfae7ec3b8f1043bb4b584e5f88e60de10ba13953167d04c6a3",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0073-0075.pdf",
-    "bytes": 5967045,
-    "sha256": "1f7f8bf9e9f4f25e99a848679256ff9518f36ee5629b8538cae5840ce41c90e6",
+    "bytes": 820046,
+    "sha256": "6132aefeec0668dfa9b98bb2885a33a573e0782123938ef33c67d88fa71e7766",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0076-0077.pdf",
-    "bytes": 6110778,
-    "sha256": "9d753a119962947c7acc11f9a023e77c6b31808c174daac778b4ebf282c09830",
+    "bytes": 699492,
+    "sha256": "6eebad566eaa3c5ef20b9a185a95b0bb76b99440a5cd13286e50835f5cf4ac61",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0078-0080.pdf",
-    "bytes": 3056284,
-    "sha256": "554b5751dccd200b814cf528e78689cc2f71bb5b42970459c4f82337da81121a",
+    "bytes": 633724,
+    "sha256": "4e313ddadba0884f3b8b58e4fd3d0192f8a4c55f0ab7fc0fb11eb49a370449ce",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0081-0100.pdf",
-    "bytes": 6982977,
-    "sha256": "fc00071763e906e0b97d943f2205fa902d971bbb9610cabe00e04d93d376b7ff",
+    "bytes": 4212061,
+    "sha256": "af445c8df4735a141f8ea67298a14a8e89fef47d456ceab22c948091dec94683",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0101-0120.pdf",
-    "bytes": 5559675,
-    "sha256": "9c1194879f720724d775bb5f9905238b33dfda4b816aa0842211893b73eed818",
+    "bytes": 2735174,
+    "sha256": "904a37cf4c3de9863f91e04c1c038d2381e9f177c564bf8d6ec29aedc0799191",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0121-0130.pdf",
-    "bytes": 4106979,
-    "sha256": "818543b3a706444872d1fc48422bfa8d98ed3a54344a39244f1b6e7a2ddf7dee",
+    "bytes": 1472213,
+    "sha256": "46507416777f2a0a0f387e1b2f43a9624bfa5b8aa6903153affd86a791b3a82e",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0131-0140.pdf",
-    "bytes": 4306349,
-    "sha256": "0d8e74767fd8ce009cba40a2f2de77bd4f6d88569c937ed4b2424be5121ef720",
+    "bytes": 1562522,
+    "sha256": "21bec52af2c386e4ab95782d7459d8ed228fc6e551b8c417e20f98c736a740c5",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0141-0150.pdf",
-    "bytes": 6776007,
-    "sha256": "ddadfe0e26d2a9609939a966024a47e64224f4e13c5c420b4187d039367537e2",
+    "bytes": 1437805,
+    "sha256": "3439e275d726da9d0a4d520601f62fa0f24f1dcdf9b577e1792332325087454f",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0151-0155.pdf",
-    "bytes": 4959619,
-    "sha256": "ec8b55e98189c301579ba16729dbd321526cc4c838fedf845f9500d9394c304d",
+    "bytes": 1001729,
+    "sha256": "96af5f96b22b629ce84e4304dd581a22fcebe06eef56964ba22a600e83e2644f",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0156-0160.pdf",
-    "bytes": 5934798,
-    "sha256": "54e9dd76a98db52a553465c2a2d6bf2705f2c580a4835c2dd212376714d8aa74",
+    "bytes": 752438,
+    "sha256": "14e9e58d38a7133b5b0179f52a93927340ac14f02869fb136e5dbd6f7b85f3e6",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0161-0165.pdf",
-    "bytes": 5799843,
-    "sha256": "82b05dca1ee4657dff7813df15be1c55e1b7718e6b5221be913964ba2e8f912c",
+    "bytes": 1051116,
+    "sha256": "6e07c20bd17522d2c254a875027e0a401f557b30580dd8d2bca8598f75c23eda",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0166-0170.pdf",
-    "bytes": 5881817,
-    "sha256": "8c89e6b807395af322002bdfb9a1dbce1a1574a3a9052e7e610ecf02273e32f4",
+    "bytes": 697215,
+    "sha256": "7c0feea3d56052f57a70f551aa36ef5e73fe0b98cd8a577175ee999fb9ed7a9d",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0171-0180.pdf",
-    "bytes": 5285174,
-    "sha256": "fc3184c232ee5e7039b3a44208f82387b17c71e562e536457d10ff33f54f80f1",
+    "bytes": 1424223,
+    "sha256": "7248a0cbff01009b666fe549506520c1c740919b902b5364011237db752392e4",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0181-0190.pdf",
-    "bytes": 4137959,
-    "sha256": "6b50672ee550e8198cf7b9715e0c6d53cea4f79baec1e345bf12bd6fe05c1e3f",
+    "bytes": 1087791,
+    "sha256": "b59660fd9caebe0e2030ad4585a68c851eb8590da62a80f3be034479624117b6",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0191-0200.pdf",
-    "bytes": 6919996,
-    "sha256": "2dfe0f71632774293d9f1151ca2512856d169b84f28377bacf4959236bd31f61",
+    "bytes": 1322719,
+    "sha256": "580f9cd90754b4b06683c920bb4023ffb2d3ca1fc160d7b0196f2803bd817ff1",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0201-0210.pdf",
-    "bytes": 5768566,
-    "sha256": "5690630d5dd978d872cbf10243c5db226a494b9c59204f89d533dcca59dedb47",
+    "bytes": 1458332,
+    "sha256": "55734f6cf861f69db98a69b8deed5db465a08c7bc92487ce9812418436881fbd",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0211-0220.pdf",
-    "bytes": 5612681,
-    "sha256": "70d6829a34c27bc4033d18b0d6d5643f22124ed5e2b663147438ff6256275c30",
+    "bytes": 1442937,
+    "sha256": "efd9ca6c3a28833668a1421337281c9860f7419382559c0127aa096971a6fdce",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0221-0230.pdf",
-    "bytes": 4867642,
-    "sha256": "3b7ce34674d0f995128e010aa0aaf2ec269de3181c2bee5712786549e7f63558",
+    "bytes": 870388,
+    "sha256": "bf9869ecd4d34e43c0dbf5c27c56b06e25f184604b62df96c37442f2a2e3ecdf",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0231-0240.pdf",
-    "bytes": 5926871,
-    "sha256": "9c7fb9dd86647cfee874efe04038897a4da22dcab54afd2b2b86b3ece7bcefe3",
+    "bytes": 866593,
+    "sha256": "fd68f3d35bbe8f82424f5dd5621022c6ecca1722aed10c9444be0006f9591294",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0241-0245.pdf",
-    "bytes": 3068118,
-    "sha256": "bb19e60464ecdb7bf6d58bca94b73fa0d851f79bcd2c052dcb07758d77dca14b",
+    "bytes": 609625,
+    "sha256": "771cc724d11ff64deb91271f0780e45e24ac1495e40d58026371084ec1490f49",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0246-0250.pdf",
-    "bytes": 5516545,
-    "sha256": "24dbd55395c61a6cc37c7c97a9d9e39f65dfa3b360058fa6632d8f77ff08c673",
+    "bytes": 1275836,
+    "sha256": "c31bf940fdc5276b35b0a6e49a771e9ec142d5a9dda0d680a1e80a7f73ae1a39",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0251-0260.pdf",
-    "bytes": 5799950,
-    "sha256": "c0db1bd313609d683bbdf86b7bd68dfbfe896e6e5f7c999d41ca50eb21e832c9",
+    "bytes": 1328758,
+    "sha256": "c809243aa3035dbfe957ce03c1e7fada742c96dfd8e29e84e5149be0c1a64026",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0261-0270.pdf",
-    "bytes": 4180868,
-    "sha256": "d562f2414450f6fa3611f0529c2182808218684b6af29c68ac4aadeb4d56a604",
+    "bytes": 1139772,
+    "sha256": "1a76227e99278a02161f0586a2808e1613fb52153200409fb3c0f9f929abcf8b",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0271-0280.pdf",
-    "bytes": 6759752,
-    "sha256": "8802ad9e22147e1e01fa616d4981bff866c39405665fd85d96acd927523112e7",
+    "bytes": 1672379,
+    "sha256": "036bb06a4d414084b84718cb11b9d1d25ee93be4e5c5aa3169b41a35319e22f5",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0281-0290.pdf",
-    "bytes": 4154397,
-    "sha256": "7f40cf41298643b3865db580ad8cac8e510aafc889a5925b40aaf4c2b10fc6e6",
+    "bytes": 1406441,
+    "sha256": "487227ecdc863b13d2bf5d40c0f08ab8c8bc1c86d95c0ce38599ab8af8ac49e0",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0291-0295.pdf",
-    "bytes": 5044346,
-    "sha256": "3f8fc27ba93073306f3a7dde7570dd0ae72c092da3fe9aff1a4816f8e2a6d27b",
+    "bytes": 927900,
+    "sha256": "96078cc4438fbbc249a58f877fbb395fc9d55a5435d287cf57128210cb839c73",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0296-0300.pdf",
-    "bytes": 4533596,
-    "sha256": "56681f4dc63fe27e515f039c060efaafa431e4269d5c3bb4131b9da36346955b",
+    "bytes": 1252869,
+    "sha256": "8b3ab520d4960136a93297b549ab62443914293abd8d6609ed4ea4cc399de3d0",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0301-0305.pdf",
-    "bytes": 3732883,
-    "sha256": "a256c31573b7e68c39141a14792a04d46f903fc751b1456028f639f68d089318",
+    "bytes": 1071773,
+    "sha256": "8286ecf715ff2d67dcf4a374fb91f478e86087671d4152227e15c1786e62dc98",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0306-0310.pdf",
-    "bytes": 4820956,
-    "sha256": "f9008b7de94ca362498c1b4ffcc1174d07fb599785b73b6330c9e0d97a36d907",
+    "bytes": 755791,
+    "sha256": "ed605e603d6c1c2c90174ee0ae17bb0a506e07cf86cb1a60929429949caa2391",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0311-0315.pdf",
-    "bytes": 5148814,
-    "sha256": "c8d3b6667ee4ed4a28936fd702eeac68a278bab2cd39a14e20a60703d07f20b7",
+    "bytes": 965626,
+    "sha256": "d5fffe68620813fe972bb850ec59961b83f46003b570b9b1cb6071dcc6d14901",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0316-0320.pdf",
-    "bytes": 3884255,
-    "sha256": "5a96a832b8dfafa6d89e36e0e434ef18a8496d3db5a2fad45a529520202fa009",
+    "bytes": 803004,
+    "sha256": "a47232565ce98eb30487fd55eb7e99395e1d6ebd0bef6d636fcdf0d9cb0e0068",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0321-0330.pdf",
-    "bytes": 6761615,
-    "sha256": "21d3dad956190ab801c80c646041e654cf5066019017448e2debff96d4c988ef",
+    "bytes": 1294768,
+    "sha256": "7f73c6515ec983fb08f1eeedda2e5310ee833ecd001ba3cec8fe03374655ffb7",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0331-0335.pdf",
-    "bytes": 4495456,
-    "sha256": "8d6df38c68c110993018c5f54c8c755356aaccf07f8be7c9c5be21e0edc2211a",
+    "bytes": 975700,
+    "sha256": "bc9491e6863737a2fc06fa6721138899050f5ed1db1db009cb1e24d8ce91e925",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0336-0340.pdf",
-    "bytes": 5608388,
-    "sha256": "429838a571c4abc1cbecb8eae46a2104653b9f4e0fbe07acf2dd7ddc026d9634",
+    "bytes": 706514,
+    "sha256": "a9ace73adfdd1346fcae262a331438ca84712530e352238550b8e4751580404c",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0341-0342.pdf",
-    "bytes": 3676342,
-    "sha256": "012d92f9db268a854dcf0c841ecfecb2970e33c81eaca10c13b8ce64d2974a0f",
+    "bytes": 543405,
+    "sha256": "1f78cd25c3e558b2489e8cbf46e7bd4502c114a57294e48105bfcc67d23f2b6b",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0343-0345.pdf",
-    "bytes": 5748652,
-    "sha256": "46cce0a83bde734ca52c8d0b943edd8a9a05ef1dbb827a7fcf0302477d91c872",
+    "bytes": 645715,
+    "sha256": "fbd7ab97d7d65d1c96e6f61536675ed377c9a5830b17e3aab28c100a8f8f76ef",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0346-0350.pdf",
-    "bytes": 6569447,
-    "sha256": "0b83d42eb0aaaed9e15ddc5839750eb0e966648eb5659e7e521bd6bcba144e21",
+    "bytes": 1208627,
+    "sha256": "84fca6bf2192ad173de6b9fc57a872cf659ed21df7d8f60b4463948464b8f767",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0351-0352.pdf",
-    "bytes": 3618900,
-    "sha256": "90cbb4126b483898180b21898406c31a5eae19403d31b67461db22130e7e9161",
+    "bytes": 540675,
+    "sha256": "6a76b9ec1e9ffef3037a8bcd7381b2200689b851bbebd60f069e555c3ab67ce8",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0353-0355.pdf",
-    "bytes": 4716751,
-    "sha256": "26d696d57d9312cf095a5c832e1d0ea6cc1393bb22e225ccece3851288e32f81",
+    "bytes": 662918,
+    "sha256": "ff5b5a923b283c0a09d05e162e8aa5335cdd6fa059d7e00e19bbf3faac7c47c5",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0356-0360.pdf",
-    "bytes": 1394557,
-    "sha256": "3a4430d0812cf72d0e42c967f044d0310d2d39c170f68b47d65d6826a2c6f71d",
+    "bytes": 832365,
+    "sha256": "97c5b9cc7909d772126094f0a0b2b955126bf08c85791da5c39dfb4c6654fadf",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0361-0362.pdf",
-    "bytes": 1047587,
-    "sha256": "3469e0ebb5f11f2933c3abd645d98b803d27038f62e5adbabcd09f483e47bca3",
+    "bytes": 449684,
+    "sha256": "2c049e3a30cb4e665534e7ced117eee293941ee079cd46d3bb600036d24dddbc",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0363-0363.pdf",
-    "bytes": 1593946,
-    "sha256": "51c62bf7e5a4742f9dc8fa1e73e1b2f64f30e9efd47374942b1d8c24b8e71fbe",
+    "bytes": 428659,
+    "sha256": "5d520861618245459c93c86414401ad2c074a1a25af380c374c5ed4a65cf8c13",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0364-0365.pdf",
-    "bytes": 7412220,
-    "sha256": "8f1ad2722c6619417ac79ef7119f090d1d0dc53a1744f8b98e93cbce4f74d8c6",
+    "bytes": 749453,
+    "sha256": "aaf6337d420c78113fd11d5e8ef9c3011d7f2ea49379940a23f7dea9e42cb0c1",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0366-0370.pdf",
-    "bytes": 3370580,
-    "sha256": "033f665e176023ecc648aa776d67207f9fef3fb564ff406102f99ec9c219c5c8",
+    "bytes": 605574,
+    "sha256": "b059ccb16839d1bcc0f9f2928222df50a19fb407281813b91a32fec3a51187e2",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0371-0380.pdf",
-    "bytes": 1163645,
-    "sha256": "22dad11b5f64ca063bd5d49e9527a830f21bfe77a98539f9d496cb1ff663e927",
+    "bytes": 1162920,
+    "sha256": "dd23cf054bece45db364ba55f50d589937d3780aeda2c02ce6aaef0dd6d38cf2",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0381-0400.pdf",
-    "bytes": 1911323,
-    "sha256": "1348a502fd59fa1760baa73ac5501873af950784957229461e1415ddc20a8e7b",
+    "bytes": 1910746,
+    "sha256": "58651fdf5d996983604b213a79880a01425270c2b46e86aaa44c8f1339e727cc",
     "kind": "Book PDF"
   },
   {
     "path": "public/library/flight/pages-0401-0406.pdf",
-    "bytes": 596799,
-    "sha256": "f95ad0e176fc58f0c4091b89aa9e8277d25498bfa766661878cad40335d6b094",
+    "bytes": 596718,
+    "sha256": "6e3954933f9c7fea51eaffc32e9487c086c46aed7e88ec145d81eb83aab3ade3",
     "kind": "Book PDF"
   },
   {
