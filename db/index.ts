@@ -14,12 +14,17 @@ export async function getDb() {
   try {
     ({ env } = await import("cloudflare:workers"));
   } catch {
-    throw new Error(MISSING_DB_MESSAGE);
+    const offline=(globalThis as typeof globalThis & {__TRIP_OFFLINE_DB__?:D1Database}).__TRIP_OFFLINE_DB__;
+    if(!offline)throw new Error(MISSING_DB_MESSAGE);
+    env={DB:offline};
   }
 
   if (!env?.DB) {
-    throw new Error(MISSING_DB_MESSAGE);
+    const offline=(globalThis as typeof globalThis & {__TRIP_OFFLINE_DB__?:D1Database}).__TRIP_OFFLINE_DB__;
+    if(!offline)throw new Error(MISSING_DB_MESSAGE);
+    env={DB:offline};
   }
 
-  return drizzle(env.DB, { schema });
+  return drizzle(env.DB!, { schema });
 }
+

@@ -34,6 +34,7 @@ export function makeLab(solids:Solid[]){
  const artMat=new T.MeshStandardMaterial({roughness:1});if(typeof document!=='undefined'){artMat.map=new T.TextureLoader().load('/brain-room/primate-studies.png');artMat.map.colorSpace=T.SRGBColorSpace;}
  for(const z of [-6,5]){box([15.65,5.2,z],[.13,3.6,7],metal);const art=new T.Mesh(new T.PlaneGeometry(6.6,3.3),artMat);art.position.set(15.56,5.2,z);art.rotation.y=-Math.PI/2;root.add(art);}
  const specimens:T.Group[]=[];(['baboon','gorilla','chimpanzee','yeti'] as SpecimenKind[]).forEach((kind,i)=>{const specimen=makeSpecimen(kind,i);specimen.position.set(i<2?-10:10,.14,i%2?-1.5:6.2);specimen.rotation.y=i<2?Math.PI/2:-Math.PI/2;root.add(specimen);specimens.push(specimen);solids.push({center:specimen.position.clone().add(LAB_CENTER).add(new T.Vector3(0,.8,0)),half:new T.Vector3(1.3,.9,1.3)});});
+ const beforeMainframe=new Set(root.children);
  // Mainframe: glassy CRT, smiling face, keyboards, switches and server towers.
  box([0,2.8,-10],[7.2,5.2,1.7],dark,true);box([0,3.25,-9.1],[6.3,3.5,.16],metal);
  const screen=new T.Mesh(new T.PlaneGeometry(5.8,2.9),new T.MeshBasicMaterial({map:screenTexture()}));screen.position.set(0,3.35,-8.98);root.add(screen);
@@ -42,8 +43,9 @@ export function makeLab(solids:Solid[]){
  for(let r=0;r<4;r++)for(let c=0;c<18;c++){dummy.position.set((c-8.5)*.146,1.47,-7.15-r*.145);dummy.updateMatrix();keys.setMatrixAt(n++,dummy.matrix);}root.add(keys);
  for(const x of [-6,6]){box([x,2.4,-10],[2.5,4.7,2.1],metal,true);for(let j=0;j<9;j++){box([x,.5+j*.45,-8.92],[2.1,.3,.035],dark);for(let k=0;k<4;k++)box([x-.8+k*.16,.5+j*.45,-8.89],[.055,.055,.035],j%3===0?orange:glow);}}
  const computerHitbox=box([0,1.65,-7.5],[3.2,1.1,1],new T.MeshBasicMaterial({visible:false}));computerHitbox.name='Bongo keyboard interaction';
+ const mainframe=new T.Group();mainframe.name='Bongo supercomputer';root.children.filter(o=>!beforeMainframe.has(o)).forEach(o=>mainframe.add(o));root.add(mainframe);
  const bongo=makeDrBongo();bongo.position.set(4,.5,-6.6);bongo.rotation.y=-.3;root.add(bongo);
  sign(['DR. BONGO','NEURAL LINK / ONLINE'],[0,6.5,-12.68],9,2.2);
  const laser=makeEvilLaser();root.add(laser.root);solids.push({center:laser.root.position.clone().add(LAB_CENTER).add(new T.Vector3(0,1.6,0)),half:new T.Vector3(1.9,1.6,1.5)});
- batchParts(root,[laser.root,bongo,screen,computerHitbox,...breakables.pieces.map(p=>p.mesh)]);return {root,bongo,screen,specimens,computerHitbox,breakables,laser};
+ batchParts(root,[mainframe,laser.root,bongo,screen,computerHitbox,...breakables.pieces.map(p=>p.mesh)]);return {root,mainframe,bongo,screen,specimens,computerHitbox,breakables,laser};
 }

@@ -11,7 +11,8 @@ import { makeSandboxProp, type SpawnKind } from "./sandbox";
 const LOOK_SENS = 0.0024;
 const PITCH_MIN = -0.95;
 const PITCH_MAX = 0.72;
-const GRAVITY = -28;
+let GRAVITY = -9.81;
+try{GRAVITY=-Number(JSON.parse(localStorage.getItem('triptotropic.physics.v1')||'{}').gravity??9.81);}catch{}
 const JUMP_V = 10.5;
 const WALK = 6.4;
 const SPRINT = 9.2;
@@ -131,6 +132,7 @@ export class Game {
 
     this.onResize = () => this.resize();
     this.onSpawnMessage = (event) => {
+      if(event.origin===window.location.origin&&event.data?.type==='triptotropic-physics'){const g=Number(event.data.physics?.gravity);if(Number.isFinite(g))GRAVITY=-Math.max(-30,Math.min(50,g));return;}
       if (event.origin !== window.location.origin || event.data?.type !== "urf-spawn") return;
       const kind = String(event.data.kind || "");
       if (kind === "zix" || kind === "pip" || kind === "vex" || kind === "pongo") {
@@ -648,7 +650,7 @@ export class Game {
 
   private stepSpawned(dt: number) {
     for (const item of this.spawned) {
-      item.velocity.y += GRAVITY * .55 * dt;
+      item.velocity.y += GRAVITY * dt;
       item.root.position.addScaledVector(item.velocity, dt);
       item.root.rotation.x += item.spin.x * dt;
       item.root.rotation.y += item.spin.y * dt;

@@ -5,9 +5,10 @@ import * as T from 'three';
 const output=new URL('../work/urf-check/',import.meta.url);await fs.mkdir(output,{recursive:true});
 for(const name of ['archery','launch-island','grok/alien','grok/weapons','grok/characters','grok/outline']){
   const source=await fs.readFile(new URL(`../app/urf-3d/${name}.ts`,import.meta.url),'utf8');
-  const code=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/from "\.\/(characters|weapons|outline)"/g,'from "./$1.mjs"');
+  const code=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace("from '../world/physics'","from '../world/physics.mjs'").replace(/from "\.\/(characters|weapons|outline)"/g,'from "./$1.mjs"');
   await fs.mkdir(new URL(name.includes('/')?'grok/':'./',output),{recursive:true});await fs.writeFile(new URL(`${name}.mjs`,output),code);
 }
+await fs.mkdir(new URL('../world/',output),{recursive:true});await fs.writeFile(new URL('../world/physics.mjs',output),ts.transpileModule(await fs.readFile(new URL('../app/world/physics.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText);
 const {launchVelocity,predictFlight,sphereContact,PLANET_CENTER,SHOT_STEP,SHOT_GRAVITY}=await import('../work/urf-check/archery.mjs');
 const {buildLaunchIsland}=await import('../work/urf-check/launch-island.mjs');
 const {createAlien}=await import('../work/urf-check/grok/alien.mjs');

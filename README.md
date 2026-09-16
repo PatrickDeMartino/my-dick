@@ -1,51 +1,33 @@
-.....................  .. .... ...... ... ----- ---------- ------- - - -- ---------- -- ---------- ------ ----- --------- - -- ------------ -- - ------ -------- - - -
-triptoropic.com      ....   https://www.instagram.com/patrick_allan_demartino/   - - - -------   https://x.com/dose_the_online   -__-    bobo the chimpanzee ---------
-------------------- ---------------- ------------------------- -------------- ----------- --------------------- ----------------------------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Triptotropic NEWo69
 
-made mostly by codex ai.... a Open ai    product....     from the time when machines where  commoditity  .   value $$$  Ruled the Land ....   
-    if computers survive the appocolypse.... whenever it comes.... an acurate account of human history.... would be essentially impossible to preserve ....
+Open **docs/START HERE.html** for the plain-language map, controls, offline app instructions, book editions, and known limits.
 
-    ...................................
-    for this reason, and many others. I am starting my own agency of intelegence .... to gather information on members of the population.... 
-           FOR EVIL  INTENT
+## The important places
 
-DOOM industries,   Skynet  ,  go team .
+- `app/world/`: shared model factories, physics, catalog UI, reader and frame adapters.
+- `app/lib/assetRegistry.ts`: stable asset IDs. Scene saves depend on these IDs.
+- `app/brain-room/`: Brain World, Bongo's lab, animals, organs and crystal graveyard.
+- `app/urf-3d/`: the alien archer globe and terrain editor.
+- `app/components/HomeRoom3D.tsx`: the home world.
+- `app/penguin-town/`: Penguin Town.
+- `public/`: models, textures, complete local books and playable archived games.
+- `alien-archer-game-src/`: editable alien game with shared-world adapter.
+- `games/alien-archer/`: preserved earlier alien-game source; not the live build.
+- `desktop/`: standalone Windows app and local database server.
+- `docs/catalog/`: searchable asset catalog, file hashes, duplicate report and model-builder index.
+- `docs/archive/`: preserved earlier implementations and one-time migration scripts; do not run these on the current build.
+- `tests/`: model, physics, terrain and rendered-page checks.
 
+## Build and test
 
-# Planet Urf
+Use Node 24 or later. Install from the existing lockfile, then `npm run dev` or `npm run build`. The offline delivery includes Node and dependency files; use its Tools folder instead of installing anything.
 
-V1 of an interactive click-through adventure site.
+Shared-world checks: `node tests/compile-world.mjs`, then `node --test tests/unified-world.test.mjs`. Model inventory: `node tests/check-catalog.mjs`. Refresh the file catalog after compiling with `node scripts/catalog-files.mjs`.
 
-The landing page presents two animated paths:
+Cloud publishing uses the existing Sites project in `.openai/hosting.json`. Never publish the enclosing Pongo desktop project as this site. The offline app uses `desktop/server.mjs` and its own SQLite database instead of Cloudflare D1.
 
-- **Planet Urf** — the physical-world branch of the future maze.
-- **The unknown** — a working neural-link chat with Dr. Bongo, an orangutan whose brain was upgraded by aliens.
+## Physics contract for the future hex editor
 
-Dr. Bongo uses the OpenAI Responses API when `OPENAI_API_KEY` is available. Without a key, the character remains fully interactive through an included local personality engine.
+Scene JSON uses format `triptotropic-world`, version 1. Each object stores `assetId`, `role`, `scale`, `position: [x,y,z]` and `rotation: [x,y,z]` in radians. The scene also stores gravity, friction and bounce. Models are constructed by `buildAsset`; simulation uses a fixed 1/60-second step. Positive Y is up. Default gravity is 9.81. Keep IDs stable when adding variants.
 
-## Run locally
-
-Requires Node.js 22.13 or newer.
-
-```bash
-npm install
-npm run dev
-```
-
-Open the local URL printed in the terminal. The Dr. Bongo scene is also available directly at `/bongo`.
-
-## Production checks
-
-```bash
-npm run build
-npm test
-```
-
-To enable AI-generated replies, copy `.env.example` to `.env.local` and provide a server-side OpenAI API key. Never commit the key.
-
-## Stack
-
-- React 19
-- vinext
-- Vite
-- Cloudflare Workers
+The main scenes share WorldSimulation. Existing environment actors keep their specialized rigs and interactions. The archived HexTrip game retains Rapier for its native actors, receives the same gravity setting, and exposes its original model builders through the shared asset catalog. It is not yet the future merged hex world editor.

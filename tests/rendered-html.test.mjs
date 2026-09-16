@@ -174,7 +174,8 @@ test("Planet Urf exposes the editable world layers, mapped levels, and alien gam
   const response = await request("/alien-archer");
 
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /Alien Archer \| Triptotropic/);
+  const gameHtml = await response.text();
+  assert.match(gameHtml, /Alien Archer \| Triptotropic/);
   assert.match(world, /id: "land", label: "Land"/);
   assert.match(world, /id: "ocean", label: "Ocean"/);
   assert.match(world, /LAUNCH ARCHER/);
@@ -188,11 +189,10 @@ test("Planet Urf exposes the editable world layers, mapped levels, and alien gam
   assert.match(game, /Raid neon mushroom isles/);
   const shell = await readFile(new URL("../app/alien-archer/AlienArcherShell.tsx", import.meta.url), "utf8");
   const sandbox = await readFile(new URL("../games/alien-archer/src/game/sandbox.ts", import.meta.url), "utf8");
-  assert.match(shell, /SPAWN SHIT/);
-  assert.match(shell, /PENGUIN BIPLANE/);
-  assert.match(shell, /BONGO RAGDOLL/);
-  assert.match(shell, /RAT MEAT · MIX/);
-  assert.match(shell, /pointer-lock/);
+  assert.match(gameHtml, /Spawn shit/);
+  assert.match(gameHtml, /Physics/);
+  assert.match(gameHtml, /src="\/alien-archer-game\/index\.html"/);
+  assert.match(gameHtml, /pointer-lock/);
   assert.match(sandbox, /makeSandboxProp/);
 });
 

@@ -1,0 +1,59 @@
+{
+  "pages": 173,
+  "parts": [
+    {
+      "file": "/library/mkultra/pages-0001-0020.pdf",
+      "first": 1,
+      "last": 20,
+      "bytes": 1268646
+    },
+    {
+      "file": "/library/mkultra/pages-0021-0040.pdf",
+      "first": 21,
+      "last": 40,
+      "bytes": 1494146
+    },
+    {
+      "file": "/library/mkultra/pages-0041-0060.pdf",
+      "first": 41,
+      "last": 60,
+      "bytes": 1305331
+    },
+    {
+      "file": "/library/mkultra/pages-0061-0080.pdf",
+      "first": 61,
+      "last": 80,
+      "bytes": 1340450
+    },
+    {
+      "file": "/library/mkultra/pages-0081-0100.pdf",
+      "first": 81,
+      "last": 100,
+      "bytes": 1364715
+    },
+    {
+      "file": "/library/mkultra/pages-0101-0120.pdf",
+      "first": 101,
+      "last": 120,
+      "bytes": 914411
+    },
+    {
+      "file": "/library/mkultra/pages-0121-0140.pdf",
+      "first": 121,
+      "last": 140,
+      "bytes": 671238
+    },
+    {
+      "file": "/library/mkultra/pages-0141-0160.pdf",
+      "first": 141,
+      "last": 160,
+      "bytes": 548430
+    },
+    {
+      "file": "/library/mkultra/pages-0161-0173.pdf",
+      "first": 161,
+      "last": 173,
+      "bytes": 339034
+    }
+  ]
+}

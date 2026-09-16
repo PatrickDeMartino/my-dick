@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {SITE_ASSETS} from '../work/unified-check/lib/assetRegistry.mjs';
+const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(d=>d.isDirectory()?walk(path.join(dir,d.name)):[path.join(dir,d.name)]);
+const files=walk('public').map(file=>({path:file.replaceAll('\\','/'),bytes:fs.statSync(file).size,sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'),kind:/\.(glb|gltf|fbx|obj)$/i.test(file)?'3D model':/\.(png|jpe?g|webp|gif|svg)$/i.test(file)?'Image':/\.pdf$/i.test(file)?'Book PDF':/\.(mp3|wav|ogg|mp4|webm)$/i.test(file)?'Audio / video':'Code / supporting file'}));
+const grouped=new Map();for(const f of files){const a=grouped.get(f.sha256)||[];a.push(f.path);grouped.set(f.sha256,a);}
+fs.mkdirSync('docs/catalog',{recursive:true});
+fs.writeFileSync('docs/catalog/files.json',JSON.stringify(files,null,2));
+fs.writeFileSync('docs/catalog/models.json',JSON.stringify(SITE_ASSETS,null,2));
+fs.writeFileSync('docs/catalog/audit.json',JSON.stringify({generated:new Date().toISOString(),githubSource:'PatrickDeMartino/my-dick',recoveredFromRevision:'05f8cb5d381bbce7c2d88c5ba0e0e422ef9aaedf',counts:{files:files.length,spawnEntries:SITE_ASSETS.length},duplicates:[...grouped.values()].filter(x=>x.length>1),notes:['Hash-named files in game assets are generated code chunks. Their names are required by import references.','Original model variants retain their source and receive unique catalog IDs.','Original legacy sources are preserved in the offline Archive folder.','The hidden Israel territory is a locked selector entry; no separate room source was found.']},null,2));
+const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+const rows=SITE_ASSETS.map(a=>`<tr><td>${escape(a.id)}</td><td>${escape(a.label)}</td><td>${escape(a.category)}</td><td>${escape(a.source||'Shared world')}</td><td>${escape(a.model||a.builder||a.url||'')}</td></tr>`).join('');
+fs.writeFileSync('docs/catalog/ASSET CATALOG.html',`<!doctype html><meta charset="utf-8"><title>Triptotropic asset catalog</title><style>body{background:#140e20;color:#eae2ff;font:16px/1.5 system-ui;padding:35px}input{padding:12px;width:80%;font:inherit}table{border-collapse:collapse;width:100%;margin-top:25px}td,th{text-align:left;padding:10px;border-bottom:1px solid #523168}h1{color:#e6abff}</style><h1>${SITE_ASSETS.length} spawnable assets</h1><p>Search names, source worlds, categories or stable IDs. The same IDs are stored in exported scene files.</p><input id="search" placeholder="Search everything…"><table><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Source</th><th>Builder / file</th></tr></thead><tbody>${rows}</tbody></table><script>document.querySelector('#search').oninput=e=>document.querySelectorAll('tbody tr').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(e.target.value.toLowerCase()))</script>`);
+console.log(JSON.stringify({files:files.length,assets:SITE_ASSETS.length,bytes:files.reduce((n,f)=>n+f.bytes,0)}));

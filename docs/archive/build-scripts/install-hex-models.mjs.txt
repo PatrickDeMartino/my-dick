@@ -1,0 +1,21 @@
+import fs from 'node:fs';import ts from 'typescript';
+const info=JSON.parse(fs.readFileSync('work/hex-subset-info.json','utf8'));let source=fs.readFileSync('work/hex-model-subset.js','utf8');source=source.replace('function eT(e,t){','function eT(e,t){if(typeof document===\'undefined\')return new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);').replace('function ED(){',"function ED(){if(typeof document==='undefined')return new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);");
+const prelude=`// @ts-nocheck
+// Extracted from the user's archived HexTrip build by scripts/extract-hex-models.mjs.
+// Preserve original geometry/material definitions; adapt only the rendering interface.
+import * as THREE from 'three';
+let callbacks=[];const motion={speed:0,lookPitch:0};
+const hooks={useRef:value=>({current:value}),useMemo:fn=>fn(),useEffect:()=>{}};
+const jsx={jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})};
+const onFrame=fn=>callbacks.push(fn);
+${info.overrides.map(([name,value])=>'const '+name+'='+value+';').join('\n')}
+function construct(node){if(!node)return null;if(typeof node.type==='function')return construct(node.type(node.props||{}));const p=node.props||{},name=node.type;let object;if(name==='group')object=new THREE.Group();else if(name==='mesh')object=new THREE.Mesh();else if(name==='pointLight')object=new THREE.PointLight(...(p.args||[0xffffff,1]));else {const Constructor=THREE[name[0].toUpperCase()+name.slice(1)];if(!Constructor)throw Error('Unsupported Hex model node '+name);return name.endsWith('Geometry')?new Constructor(...(p.args||[])):new Constructor(p);}
+if(p.position)object.position.fromArray(p.position);if(p.rotation)object.rotation.set(...p.rotation);if(p.scale)typeof p.scale==='number'?object.scale.setScalar(p.scale):object.scale.fromArray(p.scale);if(p.material)object.material=p.material.clone();if(p.ref)p.ref.current=object;object.castShadow=p.castShadow??true;object.receiveShadow=p.receiveShadow??true;
+for(const child of [p.children].flat(Infinity)){const value=construct(child);if(value?.isBufferGeometry)object.geometry=value;else if(value?.isMaterial)object.material=value;else if(value?.isObject3D)object.add(value);}return object;}
+`;
+const end=`
+export function makeHexAsset(kind){callbacks=[];const model=construct(kind==='blimp'?jsx.jsx(DD,{}):jsx.jsx(HT,{kind,active:true,metal:'silver'})),root=new THREE.Group();if(model)root.add(model);const frames=callbacks;callbacks=[];return {root,update(time,dt,moving){motion.speed=moving?3:0;frames.forEach(fn=>fn({clock:{elapsedTime:time}},dt));}};}
+`;
+const sf=ts.createSourceFile('hex-legacy.ts',prelude+source+end,99,true);fs.writeFileSync('app/world/models/hex-legacy.ts',ts.createPrinter().printFile(sf));
+const p='app/lib/assetRegistry.ts';const s=fs.readFileSync(p,'utf8');const kinds=['penguin','gidog','robot','panda','alien','motorcycle','biplane','helicopter','airfield','container','barracks','tree','palm','boulder','fern','pepsiCan','brick','reefer','shroom','revolver','ak47','blimp'];const rows=kinds.map(kind=>({id:'hex-'+kind,label:'HexTrip '+({gidog:'G.I. dog',pepsiCan:'Pepsi can',reefer:'reefer prop',shroom:'mushroom'}[kind]||kind),category:['penguin','gidog','robot','panda','alien'].includes(kind)?'CHARACTERS':['motorcycle','biplane','helicopter','blimp'].includes(kind)?'VEHICLES':['airfield','container','barracks'].includes(kind)?'BUILDINGS':['revolver','ak47'].includes(kind)?'WEAPONS':'PROPS',builder:'world',model:'hex:'+kind,source:'Original HexTrip game'}));fs.writeFileSync(p,s.replace('  ...(media as SiteAsset[]),','  ...'+JSON.stringify(rows,null,2)+' as SiteAsset[],\n  ...(media as SiteAsset[]),'));
+const f='app/world/assetFactory.ts';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(" else if(model.startsWith('brain:'))"," else if(model.startsWith('hex:')){const {makeHexAsset}=await import('./models/hex-legacy');const handle=makeHexAsset(model.slice(4));root=handle.root;update=handle.update;}\n else if(model.startsWith('brain:'))"));

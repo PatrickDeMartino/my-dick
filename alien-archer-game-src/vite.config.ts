@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
+      "three": fileURLToPath(new URL("./node_modules/three", import.meta.url)),
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },

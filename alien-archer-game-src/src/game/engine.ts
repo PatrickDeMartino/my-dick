@@ -1,3 +1,4 @@
+import {attachWorld} from '../shared-world';
 import * as THREE from "three";
 import { Input } from "./input";
 import { GameAudio } from "./audio";
@@ -10,7 +11,8 @@ import { CHARACTERS, WEAPONS, type AlienId, type WeaponId } from "./characters";
 const LOOK_SENS = 0.0024;
 const PITCH_MIN = -0.95;
 const PITCH_MAX = 0.72;
-const GRAVITY = -28;
+let GRAVITY = -9.81;
+try{GRAVITY=-Number(JSON.parse(localStorage.getItem('triptotropic.physics.v1')||'{}').gravity??9.81);}catch{}
 const JUMP_V = 10.5;
 const WALK = 6.4;
 const SPRINT = 9.2;
@@ -55,6 +57,7 @@ function makeCan(kind: "rat-meat" | "rat-meat-silver" | "rat-meat-gold" | "yooho
 }
 
 export class Game {
+  shared:ReturnType<typeof attachWorld>;
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -150,6 +153,7 @@ export class Game {
 
     this.pos.set(0, sampleGround(0, 0).y, 2);
     this.alien.root.position.copy(this.pos);
+    this.shared=attachWorld(this.scene,this.camera,canvas,()=>this.alien.root,(x,z)=>sampleGround(x,z).y);
     this.camYaw = 0;
     this.facingYaw = 0;
 
@@ -158,6 +162,7 @@ export class Game {
       if (document.visibilityState === "visible") this.audio.resume();
     };
     this.onSpawnMessage = (event) => {
+      if(event.origin===window.location.origin&&event.data?.type==='triptotropic-physics'){const g=Number(event.data.physics?.gravity);if(Number.isFinite(g))GRAVITY=-Math.max(-30,Math.min(50,g));return;}
       if (event.origin !== window.location.origin || event.data?.type !== "urf-spawn") return;
       const requested = String(event.data.kind || "");
       if (["zix", "pip", "vex"].includes(requested)) {
@@ -329,10 +334,11 @@ export class Game {
       this.fixed(FIXED);
       this.acc -= FIXED;
     }
-    this.present(raw);
+    this.shared.world.update(raw);this.present(raw);
   }
 
   private fixed(dt: number) {
+    if(this.shared.world.controlled)return;
     const st = useGameStore.getState();
     const phase = st.phase;
     this.justShot = false;
@@ -773,7 +779,7 @@ export class Game {
       }
     });
 
-    this.renderer.render(this.scene, this.camera);
+    this.shared.world.followCamera();this.renderer.render(this.scene, this.camera);
   }
 
   private syncHud(force: boolean) {
@@ -819,6 +825,7 @@ export class Game {
   }
 
   dispose() {
+    this.shared.dispose();
     this.running = false;
     this.renderer.setAnimationLoop(null);
     window.removeEventListener("resize", this.onResize);

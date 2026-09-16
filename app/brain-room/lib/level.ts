@@ -1,3 +1,4 @@
+import {makeGraveyard} from './graveyard';
 import {makeLivingSkin} from './living-skin';
 import {makeHomeBrain} from '../../lib/homeBrain';
 import {woodMaterial,detailFence} from './environment-detail';
@@ -15,7 +16,7 @@ export const ROOM_FLOOR = 3;
 export const WINDOW = { x: -6, z: 0, halfWidth: 1.8, sill: 3.55, top: 8.4 };
 export const SPAWN = new T.Vector3(1, ROOM_FLOOR + .22, 2.5);
 
-export function makeLevel(options:{lightweight?:boolean}={}) {
+export function makeLevel(options:{lightweight?:boolean;catalog?:boolean}={}) {
   const root = new T.Group(); root.name = 'Brain Room and Cow Meadow';
   const room = new T.Group(); room.name = 'Sculpted human brain room'; root.add(room);
   const solids: Solid[] = [];
@@ -95,15 +96,15 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   }
   const chairGeo=mergeGeometries(chairFolds);chairFolds.forEach(g=>g.dispose());if(chairGeo)mesh(chairGeo,flesh,[0,0,0],bag);
   solids.push({center:new T.Vector3(3.1,3.5,-3.1),half:new T.Vector3(1.4,.5,1.15)});
-  const ottoman=mesh(new T.SphereGeometry(1,32,18),flesh,[-1.3,3.5,1],room);ottoman.scale.set(1,.45,.85);ottoman.name='Brain ottoman';
-  for(let i=0;i<24;i++){const a=i/24*Math.PI*2; const points=Array.from({length:14},(_,k)=>{const b=k/13*Math.PI;return new T.Vector3(-1.3+Math.cos(a)*Math.sin(b),3.5+Math.cos(b)*.45,1+Math.sin(a+.06*Math.sin(k*1.9))*Math.sin(b)*.85);});mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),28,.115,10,false),flesh,[0,0,0],room);}
+  const ottoman=new T.Group();ottoman.name='Brain ottoman';room.add(ottoman);const ottomanBody=mesh(new T.SphereGeometry(1,32,18),flesh,[-1.3,3.5,1],ottoman);ottomanBody.scale.set(1,.45,.85);
+  for(let i=0;i<24;i++){const a=i/24*Math.PI*2; const points=Array.from({length:14},(_,k)=>{const b=k/13*Math.PI;return new T.Vector3(-1.3+Math.cos(a)*Math.sin(b),3.5+Math.cos(b)*.45,1+Math.sin(a+.06*Math.sin(k*1.9))*Math.sin(b)*.85);});mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),28,.115,10,false),flesh,[0,0,0],ottoman);}
   solids.push({center:new T.Vector3(-1.3,3.4,1),half:new T.Vector3(.95,.42,.8)});
-  mesh(new T.CylinderGeometry(.95,.95,.13,40),wood,[-2.65,4.3,-3.65],room).name='Reading table';
-  for(const x of [-.6,.6])for(const z of [-.5,.5])mesh(new T.CylinderGeometry(.055,.08,1.2,8),wood,[-2.65+x,3.65,-3.65+z],room);
+  const readingTable=new T.Group();readingTable.name='Reading table';room.add(readingTable);mesh(new T.CylinderGeometry(.95,.95,.13,40),wood,[-2.65,4.3,-3.65],readingTable);
+  for(const x of [-.6,.6])for(const z of [-.5,.5])mesh(new T.CylinderGeometry(.055,.08,1.2,8),wood,[-2.65+x,3.65,-3.65+z],readingTable);
   solids.push({center:new T.Vector3(-2.65,3.7,-3.65),half:new T.Vector3(.9,.65,.9)});
-  for(let i=0;i<3;i++)box([-2.3,4.42+i*.12,-3.8],[.55,.105,.43],mat([0x886957,0x453942,0xb49d7c][i]),room);
-  mesh(new T.CylinderGeometry(.24,.27,.13,24),wood,[-3.03,4.44,-3.55],room);
-  mesh(new T.SphereGeometry(.29,24,16),new T.MeshStandardMaterial({color:0xffe7b2,emissive:0xffbc73,emissiveIntensity:2.4}),[-3.03,4.8,-3.55],room).name='Warm globe lamp';
+  for(let i=0;i<3;i++)box([-2.3,4.42+i*.12,-3.8],[.55,.105,.43],mat([0x886957,0x453942,0xb49d7c][i]),readingTable);
+  const readingLamp=new T.Group();readingLamp.name='Warm globe lamp';room.add(readingLamp);mesh(new T.CylinderGeometry(.24,.27,.13,24),wood,[-3.03,4.44,-3.55],readingLamp);
+  mesh(new T.SphereGeometry(.29,24,16),new T.MeshStandardMaterial({color:0xffe7b2,emissive:0xffbc73,emissiveIntensity:2.4}),[-3.03,4.8,-3.55],readingLamp);
   const lamp = new T.PointLight(0xffbe85,42,12,2);lamp.position.set(-3.03,4.9,-3.4);room.add(lamp);
   // Framed branching neuron, made of geometry so the exported room remains self-contained.
   box([5.35,6.4,-2.5],[.16,2.75,2.05],wood,room);
@@ -123,6 +124,7 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
   for(const x of [-1.615,1.615])box([x,0,.15],[.018,1.83,.025],trim,painting);
   for(const y of [-.911,.911])box([0,y,.15],[3.24,.018,.025],trim,painting);
 
+  const catalogParts:Record<string,T.Group>={};if(options.catalog){for(const [id,object] of [['chair',bag],['painting',painting],['ottoman',ottoman],['lamp',room.getObjectByName('Warm globe lamp')],['table',room.getObjectByName('Reading table')]] as [string,T.Object3D][]){const clone=object.clone(true);clone.traverse(o=>{if(o instanceof T.Mesh)o.geometry=o.geometry.clone();});const group=new T.Group();group.add(clone);catalogParts[id]=group;}}
   // Merge tissue into world coordinates so its deformation and crawler contact agree.
   const roomSkin=makeLivingSkin(.065,2.5),exteriorSkin=makeLivingSkin(.035,5);
   room.updateMatrixWorld(true);
@@ -160,12 +162,13 @@ export function makeLevel(options:{lightweight?:boolean}={}) {
     const scale=.45+random()*1.2;dummy.position.set(x,.25*scale,z);dummy.rotation.set((random()-.5)*.3,random()*6.28,(random()-.5)*.4);dummy.scale.set(.7,scale,.7);dummy.updateMatrix();blades.setMatrixAt(i,dummy.matrix);blades.setColorAt(i,new T.Color(crystalColors[random()<.66?Math.floor(random()*3):3+Math.floor(random()*5)]));}root.add(blades);
   const flowers=new T.InstancedMesh(new T.IcosahedronGeometry(.065,0),mat(0xf4d9ac),340);
   for(let i=0;i<340;i++){dummy.position.set(-45+random()*60,.32,-31+random()*62);dummy.scale.setScalar(1);dummy.rotation.set(0,0,0);dummy.updateMatrix();flowers.setMatrixAt(i,dummy.matrix);}root.add(flowers);
-  const trees:T.Group[]=[];for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if((x<-39&&z<0)||(x>-31&&x<8&&z<-36))continue;const tree=makeDreamTree(i);tree.position.set(x,0,z);root.add(tree);trees.push(tree);}
+  const trees:T.Group[]=[];for(let i=0;i<20;i++){const x=-58+random()*90,z=(i%2?1:-1)*(24+random()*22);if((x<-39&&z<0)||(x>-31&&x<8&&z<-36)||(x>9&&x<44&&z<-35))continue;const tree=makeDreamTree(i);tree.position.set(x,0,z);root.add(tree);trees.push(tree);}
   for(let i=0;i<24;i++){const a=i/24*Math.PI*2;const mountain=mesh(new T.ConeGeometry(15+random()*12,13+random()*23,6),mat(i%2?0x8b7d99:0xa394a6),[Math.cos(a)*95,-2,Math.sin(a)*95]);mountain.rotation.y=random()*6.28;}
   const cows=makeHerd(random);cows.forEach(cow=>root.add(cow.root));
   const lab=makeLab(solids);root.add(lab.root);
+  const graveyard=makeGraveyard(solids);root.add(graveyard.root);
   const dreamscape=makeDreamscape();root.add(dreamscape.root);
-  return {root,room,solids,cows,lamp,lab,dreamscape,barnWalls,spawnBrainWorm(p:T.Vector3){return (Math.abs(p.x)<6&&Math.abs(p.z)<6?roomLife:exteriorLife)?.spawnWorm();},disposeBrainLife(){roomLife?.dispose();exteriorLife?.dispose();},updateAmbience:(time:number)=>{const dt=Math.max(0,Math.min(.05,time-lastAmbience));lastAmbience=time;roomLife?.update(dt);exteriorLife?.update(dt);trees.forEach((tree,i)=>{tree.rotation.z=Math.sin(time*.4+i)*.012;tree.rotation.x=Math.sin(time*.31+i*2)*.009;});exterior.scale.y=4.8+Math.sin(time*.43)*.015;crystalWind.value=time;}};
+  return {root,room,catalogParts,graveyard,solids,cows,lamp,lab,dreamscape,barnWalls,spawnBrainWorm(p:T.Vector3){return (Math.abs(p.x)<6&&Math.abs(p.z)<6?roomLife:exteriorLife)?.spawnWorm();},disposeBrainLife(){roomLife?.dispose();exteriorLife?.dispose();},updateAmbience:(time:number)=>{const dt=Math.max(0,Math.min(.05,time-lastAmbience));lastAmbience=time;graveyard.update(time,dt);roomLife?.update(dt);exteriorLife?.update(dt);trees.forEach((tree,i)=>{tree.rotation.z=Math.sin(time*.4+i)*.012;tree.rotation.x=Math.sin(time*.31+i*2)*.009;});exterior.scale.y=4.8+Math.sin(time*.43)*.015;crystalWind.value=time;}};
 }
 
 /** Resolve a sphere against the same boxes that describe the visible level. */

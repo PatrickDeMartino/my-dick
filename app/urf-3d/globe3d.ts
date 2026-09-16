@@ -1,7 +1,9 @@
+import {WorldSimulation} from '../world/WorldSimulation';
+import {gravityAcceleration} from '../world/physics';
 import {organicTerrain,gridSample,loadElevation,retroLandMaterial,makeCityLights,type Elevation} from './organic-terrain';
 import { buildLaunchIsland, cosmicOcean } from "./launch-island";
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import {launchVelocity,predictFlight,sphereContact,reliefContact,PLANET_CENTER} from "./archery";
+import {launchVelocity,predictFlight,sphereContact,reliefContact,PLANET_CENTER,shotGravity} from "./archery";
 /// <reference types="vite/client" />
 import type * as THREE_NS from "three";
 import { geoEquirectangular, geoPath } from "d3-geo";
@@ -119,7 +121,7 @@ const QUIVER_MAX = 12;
 const RELOAD_SECONDS = 1.35;
 const ARROW_MIN_SPEED = 2.4;
 const ARROW_MAX_SPEED = 5.6;
-const GRAVITY = -1.55;
+
 const AIR_DRAG = 0;
 const ARROW_LIFETIME = 7;
 /** A full draw, in wall-clock milliseconds. */
@@ -297,7 +299,7 @@ type AlienRig = {
 };
 
 /** The exact current grokMADEthis character and recurve bow, with selector IK anchors. */
-function buildAlien(THREE: typeof THREE_NS, kind: AlienType = "original"): AlienRig {
+export function buildAlien(THREE: typeof THREE_NS, kind: AlienType = "original"): AlienRig {
   const shared=createSharedAlien(kind==="doop"?"pip":kind==="zorp"?"vex":"zix");
   const bow=shared.bow.root;shared.root.add(bow);bow.scale.setScalar(.9);
   const oldString=bow.children.find(o=>o instanceof THREE.Line);oldString?.removeFromParent();
@@ -316,7 +318,7 @@ function buildAlien(THREE: typeof THREE_NS, kind: AlienType = "original"): Alien
     bow,quiver,revolver:shared.revolver.root,ak47:shared.ak.root,muzzle:shared.bow.muzzle,stringUpper,stringLower,nockedArrow,nock};
 }
 
-function buildSatellite(THREE: typeof THREE_NS) {
+export function buildSatellite(THREE: typeof THREE_NS) {
   const group = new THREE.Group();
   const hull = new THREE.MeshStandardMaterial({ color: 0xd8e6f2, flatShading: true, roughness: 0.42, metalness: 0.55 });
   const panel = new THREE.MeshStandardMaterial({ color: 0x1f6ad0, flatShading: true, roughness: 0.3, metalness: 0.65 });
@@ -354,7 +356,7 @@ function buildPlatform(_THREE: typeof THREE_NS) { return buildLaunchIsland(); }
 
 /** A bolt-on satellite part. Added into a dedicated upgrade slot on the
  * stock satellite so the base model never has to be rebuilt or torn down. */
-function buildSatelliteUpgrade(THREE: typeof THREE_NS, id: SatellitePartId): THREE_NS.Object3D {
+export function buildSatelliteUpgrade(THREE: typeof THREE_NS, id: SatellitePartId): THREE_NS.Object3D {
   const hull = new THREE.MeshStandardMaterial({ color: 0xd8e6f2, flatShading: true, roughness: 0.42, metalness: 0.55 });
   const panel = new THREE.MeshStandardMaterial({ color: 0xffa23c, flatShading: true, roughness: 0.3, metalness: 0.6 });
   const thrusterMat = new THREE.MeshStandardMaterial({
@@ -392,7 +394,7 @@ function buildSatelliteUpgrade(THREE: typeof THREE_NS, id: SatellitePartId): THR
 }
 
 /** A cratered, slow-spinning moon on its own wide orbit around the scene. */
-function buildMoon(THREE: typeof THREE_NS) {
+export function buildMoon(THREE: typeof THREE_NS) {
   const surface = new THREE.MeshStandardMaterial({ color: 0xcfd3d8, flatShading: true, roughness: 1, metalness: 0 });
   const craterMat = new THREE.MeshStandardMaterial({ color: 0x9a9ea4, flatShading: true, roughness: 1 });
 
@@ -419,7 +421,7 @@ function buildMoon(THREE: typeof THREE_NS) {
 
 /** A little flying saucer with a downward tractor-beam cone. Purely
  * decorative — it never interacts with the archer or the territories. */
-function buildUfo(THREE: typeof THREE_NS) {
+export function buildUfo(THREE: typeof THREE_NS) {
   const hull = new THREE.MeshStandardMaterial({ color: 0x8fa6b8, flatShading: true, roughness: 0.35, metalness: 0.7 });
   const dome = new THREE.MeshStandardMaterial({
     color: 0x9be8ff,
@@ -447,7 +449,7 @@ function buildUfo(THREE: typeof THREE_NS) {
 
 /** A fiery meteor with a tapered tail. Spawned off-screen, flies a straight
  * line through the scene, and is discarded after a few seconds. */
-function buildMeteorTrail(THREE: typeof THREE_NS) {
+export function buildMeteorTrail(THREE: typeof THREE_NS) {
   const rockMat = new THREE.MeshStandardMaterial({
     color: 0x5a3a2a,
     flatShading: true,
@@ -559,6 +561,7 @@ export async function createGlobe3D(
   const camera = new THREE.OrthographicCamera(-1.16, 1.16, 1.16, -1.16, 0.1, 24);
   camera.position.set(0, 0, 8);
   camera.lookAt(0, 0, 0);
+  const universe=new WorldSimulation(scene,camera,canvas,{ground:-1.5,bounds:6,spawnPoint:()=>new THREE.Vector3(-.5,1,2)});
 
   scene.add(new THREE.AmbientLight(0x93c9f2, 0.38));
   const key = new THREE.DirectionalLight(0xfff6e2, 1.75);
@@ -1057,7 +1060,7 @@ export async function createGlobe3D(
         remaining -= step;
 
         previousPoint.copy(arrow.mesh.position);
-        arrow.velocity.y += GRAVITY * step;
+        arrow.velocity.y += shotGravity() * step;
         arrow.mesh.position.addScaledVector(arrow.velocity,step);
         const contact=contactWithRelief(previousPoint,arrow.mesh.position);
         if(contact){arrow.mesh.position.copy(contact);landed=true;}
@@ -1133,7 +1136,7 @@ export async function createGlobe3D(
     const inputX=clamp(move.x+Number(keys.right)-Number(keys.left),-1,1),inputZ=clamp(move.y+Number(keys.up)-Number(keys.down),-1,1);
     walker.vx+=(inputX*WALK_SPEED-walker.vx)*Math.min(1,delta*8);walker.vz+=(inputZ*WALK_SPEED-walker.vz)*Math.min(1,delta*8);
     walker.x=clamp(walker.x+walker.vx*delta,-.54*platformScale,.54*platformScale);walker.z=clamp(walker.z+walker.vz*delta,0,platformScale);
-    walker.vy-=2.8*delta;walker.y=Math.max(0,walker.y+walker.vy*delta);if(walker.y===0)walker.vy=0;
+    walker.vy-=gravityAcceleration()*.2854*delta;walker.y=Math.max(0,walker.y+walker.vy*delta);if(walker.y===0)walker.vy=0;
     walker.ragdoll=Math.max(0,walker.ragdoll-delta);walker.spin+=walker.ragdoll>0?delta*8:0;
     alien.group.position.set(walker.x+editOffsets.alien.x,walker.z*SLAB_RISE+walker.y+editOffsets.alien.y,-walker.z*SLAB_DEPTH+editOffsets.alien.z);
     alien.group.getWorldPosition(bowWorld);aimDirection.copy(worldFromScreen(aim.x,aim.y)).sub(bowWorld);aimDirection.y-=.9;
@@ -1175,6 +1178,7 @@ export async function createGlobe3D(
   let archerActive = true;
 
   const onKeyDown = (event: KeyboardEvent) => {
+    if(universe.controlled)return;
     if (!archerActive || (event.target as HTMLElement)?.closest("input,textarea,select")) return;
     const code = event.code;
     if (code === "KeyW" || code === "ArrowUp") keys.up = true;
@@ -1412,7 +1416,7 @@ export async function createGlobe3D(
       events.onQuiver(quiver);
     }
 
-    renderer.render(scene, camera);
+    universe.update(delta);renderer.render(scene, camera);
   };
 
   applyView();
@@ -1539,6 +1543,7 @@ export async function createGlobe3D(
       sculptTerrain(lon, lat, terrainBrush === "raise" ? 0.03 : -0.03, 10);
     },
     dispose: () => {
+      universe.dispose();
       disposed = true;
       window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);

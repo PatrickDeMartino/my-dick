@@ -1,5 +1,7 @@
 import {Vector3} from 'three';
+import {gravityAcceleration} from '../world/physics';
 export const SHOT_GRAVITY=-1.55;
+export const shotGravity=()=>SHOT_GRAVITY*gravityAcceleration()/9.81;
 export const SHOT_STEP=1/240;
 export const PLANET_CENTER=new Vector3(1.12,.23,-.5);
 export function launchVelocity(origin:Vector3,target:Vector3,charge:number){
@@ -7,7 +9,7 @@ export function launchVelocity(origin:Vector3,target:Vector3,charge:number){
   const flight=Math.max(.16,origin.distanceTo(target)/speed*(1.6-.3*charge));
   const v=target.clone().sub(origin).divideScalar(flight);
   // Compensate the fixed-step semi-implicit gravity used by both preview and flight.
-  v.y-=.5*SHOT_GRAVITY*(flight+SHOT_STEP);
+  v.y-=.5*shotGravity()*(flight+SHOT_STEP);
   return v;
 }
 export function sphereContact(from:Vector3,to:Vector3,center:Vector3,radius:number){
@@ -21,7 +23,7 @@ export function sphereContact(from:Vector3,to:Vector3,center:Vector3,radius:numb
 export function predictFlight(origin:Vector3,velocity:Vector3,center:Vector3,radius:number,contact?:(from:Vector3,to:Vector3)=>Vector3|null){
   const p=origin.clone(),v=velocity.clone(),points=[p.clone()];let hit:Vector3|null=null;
   for(let i=0;i<1680;i++){
-    const before=p.clone();v.y+=SHOT_GRAVITY*SHOT_STEP;p.addScaledVector(v,SHOT_STEP);
+    const before=p.clone();v.y+=shotGravity()*SHOT_STEP;p.addScaledVector(v,SHOT_STEP);
     hit=contact?contact(before,p):sphereContact(before,p,center,radius);if(hit){points.push(hit);break;}
     if(i%12===0)points.push(p.clone());if(p.length()>14)break;
   }

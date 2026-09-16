@@ -1,0 +1,1994 @@
+[
+  {
+    "path": "public/alien-archer-game/assets/BufferGeometryUtils-BwBNjDO-.js",
+    "bytes": 4770,
+    "sha256": "fa2f3d5ab03c4c39f0d0080c76f4280610e94a5a31b38c6bb971d7a8d542b817",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/dreamscape-DDfj6jQB.js",
+    "bytes": 37990,
+    "sha256": "401fb4c667f39c5dc997d9b1185114e431f2097f93bcf2833473994df6883290",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/engine-D5wcn7Eo.js",
+    "bytes": 130054,
+    "sha256": "e6556c55fb6e1c9e249a85796429c9f704ff63d74759a6209fd021ba2acb137a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/FBXLoader-DUqwDexu.js",
+    "bytes": 49199,
+    "sha256": "3493d88b601ccf6ab88dc61ab269c0c5fc5356f7dae0145851fc9310c6a94ce8",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/globe3d-DRU43G2N.js",
+    "bytes": 32497,
+    "sha256": "e27b4c2af7703ad343cb4e8046fc10b1abc39a48c2472d0aca9eb2484123148e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/GLTFLoader-i4T0vptg.js",
+    "bytes": 43322,
+    "sha256": "2b9f6a2ab2d81d572eca27c8757494e442e99039e5d61de9f1d1c096820c6d5e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/hex-legacy-CwElzHdl.js",
+    "bytes": 34030,
+    "sha256": "dea37c854202438c6e1f0695a821ac8cb9f316afa37837f2a24a5ff1ac4b4703",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/index-COAlLWLh.js",
+    "bytes": 242283,
+    "sha256": "9fb20a7a5a9745e5c4fd1cec064f1264cf5ec3c76ecd35328b2badba37958a3e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/index-Pl-MwIgJ.css",
+    "bytes": 29140,
+    "sha256": "0538caa085a417b49a627e8b29dfb1d1709475aa3f66ba03c8e3d301a6e5ff7b",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/laboratory-B6bSHTsf.js",
+    "bytes": 21504,
+    "sha256": "aa1e14cb9bbb6c1ef83b43d223d3b5c24593cf9e272843da115bb67ced707dfc",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/launch-island-BJB_KPaE.js",
+    "bytes": 4514,
+    "sha256": "d49308b0a6fa5a0070c8d9763210b03363ba01086d1ddf9d9d9483542a234b2e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/legacy-brain-C6iOWbnG.js",
+    "bytes": 7279,
+    "sha256": "88bd54241f76816e68bd33c7b0da03c0ef7f06aaf018d4ebf26cfe0913233f22",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/legacy-sandbox-D7fqtzrL.js",
+    "bytes": 2985,
+    "sha256": "000e5940bdc707a1375c8dfc519d419224e53f754363cbdb540735ce43a08f65",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/level-C0Eyhk4T.js",
+    "bytes": 47709,
+    "sha256": "9b647849b69c817eec16a7c5ba8d0dc2c0748040d9b3b472333ec3b40d8ed694",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/rolldown-runtime-hePW80VL.js",
+    "bytes": 716,
+    "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/three.module-CSQtq1Jp.js",
+    "bytes": 725191,
+    "sha256": "f9c4e579521f79f198c77a3e5a1bca1379e6a710106a2fec7099e42cb6ba5344",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/town-TD0a48dx.js",
+    "bytes": 11937,
+    "sha256": "2e8da077f54b542fc570dd365864ad692b6df1f7b0e5af5f449ce4c3ebdbcf04",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/assets/weapons-Ba7fx7q5.js",
+    "bytes": 7479,
+    "sha256": "5eea37b0f998489bef37dec0cc2b3eb3ec251453af28e595aeb577ca72b88eba",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/favicon.svg",
+    "bytes": 319,
+    "sha256": "e2c3d37906418454c9d0fa8cced735e9dc73d8929939080a5c58462670cf7213",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/index.html",
+    "bytes": 1179,
+    "sha256": "ecf380ae3e3d22e04c9ced7cd1d61bff2798f6bb7bfa7a7e6101a51b89e57c82",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-archer-game/land_mask.jpg",
+    "bytes": 65995,
+    "sha256": "24f1e5e92690729e722d278cbdd156036089ec2f7c6a80b49473902fda135bb4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/og.jpg",
+    "bytes": 167850,
+    "sha256": "fcff35f09753b3065ed84288eb845828f5494cd99ff1835f2b7d6e8a4c8fc580",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/rat-meat-gold-label.jpg",
+    "bytes": 747622,
+    "sha256": "127ed8da7f8291b2654914a707da6873c9882c4f846725aec807ed0be3266e68",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/rat-meat-label.jpg",
+    "bytes": 690673,
+    "sha256": "18ab241625ce1b12ecd2be3bfc51a8e24bc54377c98f371b40afc7c5ca7792cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/rat-meat-silver-label.jpg",
+    "bytes": 692786,
+    "sha256": "7f8ffd2b48901433a16d31d9077404b3ea186380a67074fc8f2b2840e8791180",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-archer-game/yoohoo-label.png",
+    "bytes": 64004,
+    "sha256": "5546b93ed40973913746f34a84ef2f50498721369ac3b16287cf0eb7972c8f21",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-game/assets/engine-C5HGTN0s.js",
+    "bytes": 590917,
+    "sha256": "6577a1d9d96c0a11c5b10012044349801d653f523a3bba2ce8d4521574d464b8",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/assets/engine-DSVAN9CI.js",
+    "bytes": 590832,
+    "sha256": "2db64b143dca61a59dd43223238a40486138f1475c9b20794aa3a2d38db468d4",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/assets/index-Bwx4JAKp.css",
+    "bytes": 27689,
+    "sha256": "e6575bcb67f3d8b8727d4562e68209fec1f0019154ba1c8a445d41776684466b",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/assets/index-D6fSkN-0.js",
+    "bytes": 213961,
+    "sha256": "a9c8f2ce7224d3edfc241f9cf7817376fe6bc517a16ed08fcbf76cab586b6f44",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/assets/index-tiGeFkbf.js",
+    "bytes": 213960,
+    "sha256": "9cda6019ad314683d839d6950e7a4cacdee8bdf88634eb26be8b72663955a380",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/favicon.svg",
+    "bytes": 319,
+    "sha256": "e2c3d37906418454c9d0fa8cced735e9dc73d8929939080a5c58462670cf7213",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-game/index.html",
+    "bytes": 1153,
+    "sha256": "e49349e4d8a22a9c0551faf4c36569e543c1e5709b38e4c77aaf1742402fe866",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/alien-game/land_mask.jpg",
+    "bytes": 65995,
+    "sha256": "24f1e5e92690729e722d278cbdd156036089ec2f7c6a80b49473902fda135bb4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/alien-game/og.jpg",
+    "bytes": 167850,
+    "sha256": "fcff35f09753b3065ed84288eb845828f5494cd99ff1835f2b7d6e8a4c8fc580",
+    "kind": "Image"
+  },
+  {
+    "path": "public/anubis-room/assets/anubis-smokes.mp4",
+    "bytes": 17635294,
+    "sha256": "9b0090a32c91a9555b1a766f3daadf8d1aa8a2971bdc7c21c432c51cb99d7d2d",
+    "kind": "Audio / video"
+  },
+  {
+    "path": "public/anubis-room/assets/tv-room.jpg",
+    "bytes": 928062,
+    "sha256": "9b7283e798d6f564229b398135e54932ededbc2066138897a0ad9e9267cd75b8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/anubis-room/index.html",
+    "bytes": 3623,
+    "sha256": "a388a151d6c322cda633dfa67e52a7163501a1125255ad3a4ff456fb9838ce00",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/anubis-room/script.js",
+    "bytes": 11349,
+    "sha256": "5c2500f79cce69df6498037e419b12cce584318773b532efec3898bcfb8962cb",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/anubis-room/social-core.js",
+    "bytes": 1099,
+    "sha256": "f47a4f5c284e51ae36541846d5384229ce77b31bef3687878fb523b597c650e1",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/anubis-room/social-posts.json",
+    "bytes": 844,
+    "sha256": "3b358c0e5357caf931697d381a3ef2a98ea802d44d9018cd08339507a73a3168",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/anubis-room/social-tvs.js",
+    "bytes": 8331,
+    "sha256": "9950b5d47b36885f295a2eb53b124c74df7f548bc0932910d8f60ef32315fb21",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/anubis-room/styles.css",
+    "bytes": 9873,
+    "sha256": "1781d4db9f99ff458e1e94c6520967c3fe61fe4b915299c2b7158584e2ed198e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/brain-room/brain-room-desktop.jpg",
+    "bytes": 290430,
+    "sha256": "d505df865d251bce91e62ad16ded5e74ec016ab4700bd549d069ae47b51396d6",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room-mobile.jpg",
+    "bytes": 45617,
+    "sha256": "85b0466ec322ca2e74924841a9597441d7e53556d1650695529727ead7144da7",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room-overlay-mobile.jpg",
+    "bytes": 45617,
+    "sha256": "85b0466ec322ca2e74924841a9597441d7e53556d1650695529727ead7144da7",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room-overlay-tablet.jpg",
+    "bytes": 91526,
+    "sha256": "9171bcc37ac805edcae40228282b5d60eb5f5e44d6a33b22dc1aae5d416c215d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room-overlay-wide.jpg",
+    "bytes": 290430,
+    "sha256": "d505df865d251bce91e62ad16ded5e74ec016ab4700bd549d069ae47b51396d6",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room-wide.jpg",
+    "bytes": 91526,
+    "sha256": "9171bcc37ac805edcae40228282b5d60eb5f5e44d6a33b22dc1aae5d416c215d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/brain-room.glb",
+    "bytes": 8814904,
+    "sha256": "855ab43096243f628910bf95f2234f48858e728e8ebe63efd1091856c4cbe511",
+    "kind": "3D model"
+  },
+  {
+    "path": "public/brain-room/cortex.png",
+    "bytes": 2343639,
+    "sha256": "1d3e2eafbee1f85bf03ae8604affd3c339912c0fdfb28003ea37fff7f6695b2a",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/primate-studies.png",
+    "bytes": 3375498,
+    "sha256": "62039eba54f5148cf6249ac5b3b5cde8979935a5caafa500c1353a8508059992",
+    "kind": "Image"
+  },
+  {
+    "path": "public/brain-room/reference-art.jpg",
+    "bytes": 91526,
+    "sha256": "9171bcc37ac805edcae40228282b5d60eb5f5e44d6a33b22dc1aae5d416c215d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/cargo-ship-v2.png",
+    "bytes": 1681887,
+    "sha256": "b070fc10365656dfdb002cfda44272b33cbceb8f9f6dc1e97cc674877956c5cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/circus.png",
+    "bytes": 1486952,
+    "sha256": "777f34e690f7eaf03407473933750111934e33a72d8ad3b8e26d1d3d139ce482",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/dogfight-arena.png",
+    "bytes": 1571835,
+    "sha256": "0644c667e3cc88fba887e753b1f58e17b61226d751901404d204d2ad03f50ee0",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/igloo.png",
+    "bytes": 1414123,
+    "sha256": "5697f0fb05c7197ef5a934e33d5bfad1ee38cff5433789cbbec80f78b72bfec1",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/plane.png",
+    "bytes": 1103346,
+    "sha256": "b3651e8b8cced3bc4925fcb8b238e3a4d848ff8af59aede0477010e07766e7f2",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/sweatshop.png",
+    "bytes": 1105800,
+    "sha256": "4cc6984852094788daf69a1506020215380a306e3ecd4b3a6856520fc0e7c3d9",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/telescope-metal.png",
+    "bytes": 1306489,
+    "sha256": "99383b41fbc46208663a18cb231359eb5acd42b930f67781e1c730138216692e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/buildings/telescope-wood.png",
+    "bytes": 1210583,
+    "sha256": "bbb26512ebc745cedbc948f4b21a61ea6c44a1783808c4c5cc561f1c87088d3e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/dog-fighting/arena.jpg",
+    "bytes": 636295,
+    "sha256": "f437e07d18d953c703e705611851204f74a67c64c13283fd4e643565b161c351",
+    "kind": "Image"
+  },
+  {
+    "path": "public/dog-fighting/assets/index-C6Ek0MLA.js",
+    "bytes": 264349,
+    "sha256": "bf3640fcdfe92caaaae164fa801d8675dc62421bb5c77985360c45f0cf64440a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/dog-fighting/assets/index-CkSpTFet.css",
+    "bytes": 45856,
+    "sha256": "c77d44ed9c779efedec2dbb857054f0752785cbfffe107d4f5ff9d8d4d6cc53f",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/dog-fighting/favicon.svg",
+    "bytes": 370,
+    "sha256": "d06f484e9d76e787ca136024da2f13327001cb14b6bd503f7ec1adecdd80af31",
+    "kind": "Image"
+  },
+  {
+    "path": "public/dog-fighting/index.html",
+    "bytes": 1109,
+    "sha256": "c2051c3fc2198940326a8317547a230121816cfc3963e9aa934bac65b31e12fd",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/dog-fighting/rat-meat-bridge.js",
+    "bytes": 1402,
+    "sha256": "7022e51a99f4ca3236f9d51bda935b8059a5ff2876ea21d9a4cc050d8a0cf104",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/evil-penguin.jpg",
+    "bytes": 59660,
+    "sha256": "e315281cef6d57b1709504a045bd1db6827506b43523b86a39b6198babbebc2e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/favicon.svg",
+    "bytes": 718,
+    "sha256": "3e8863288c2d43dd33d2a71de317dcf9198f09932ea8d61e0def1b846a865435",
+    "kind": "Image"
+  },
+  {
+    "path": "public/file.svg",
+    "bytes": 393,
+    "sha256": "81a9ce5ca9bc60870c1d72c0fd5b98b2bc5c8c02b0e04fefeab9efcc11277228",
+    "kind": "Image"
+  },
+  {
+    "path": "public/globe.svg",
+    "bytes": 1037,
+    "sha256": "13187c071b4d369df3a7a179f69a927165bf624e1a524ee6c93b7d3be75d6fc8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/hextrip-game/assets/GameApp-MF-8CgVh.js",
+    "bytes": 3241602,
+    "sha256": "5abb28251961b5db9daa5a179d9458034b4e4a9f8e502e52eb657e3f8cb030cd",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/assets/index-BfhDIEjx.js",
+    "bytes": 400955,
+    "sha256": "e3ddb89d7de4e900610910b62ce4a809df7d7e434e2c93e99234f87918c86c32",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/assets/rapier-DHRFIdtd.js",
+    "bytes": 2679,
+    "sha256": "aa498b2b04becba0ab21a33b309c0bdcd4e824a02dbeb3f691e5a9860b2cfeb5",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/assets/routes-QVnE24UO.js",
+    "bytes": 74543,
+    "sha256": "a10e2c26d66c5c6dc81110bd7e7b2fd93211506717cc26d2444dee11a697c066",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/assets/styles-CDn9ExS3.css",
+    "bytes": 31271,
+    "sha256": "fed93fd366a3520a5c1177d6997b049ba2241380eacf1b7772454ec6b192cc10",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/favicon.svg",
+    "bytes": 297,
+    "sha256": "93dc6e44345be2c754410d3bac61e9e0bf208b935feb41ce5d7c2cc425e918e3",
+    "kind": "Image"
+  },
+  {
+    "path": "public/hextrip-game/fonts/anton-OFL.txt",
+    "bytes": 4484,
+    "sha256": "ee67e6ee22790b7929f1a3769ca2801d565c64b5a9096942c1adf5596de9c9e4",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/figtree-OFL.txt",
+    "bytes": 4388,
+    "sha256": "140d37233e7f3ce7313798befa9600893bcceaf41a55fa0fa5ad52f7f657a268",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-1.woff2",
+    "bytes": 130324,
+    "sha256": "fd9301f2837c99df2be07cc7f0be66e9470f5354d8fcf1606027c67fcd637a53",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-2.woff2",
+    "bytes": 36036,
+    "sha256": "b2a0df13c8a787824047f29997ad4dcb7fd229fc75a8cbd5b8c5c2fb686f18f8",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-3.woff2",
+    "bytes": 35976,
+    "sha256": "81f3fc9d8d4e307e5ae0dd43a03d22eb90d50b6cc72241552c460a59b6731b31",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-4.woff2",
+    "bytes": 35996,
+    "sha256": "f8a90c01bc4c31aa84be5cbff3e80784bfc0da37e5aaa23eb9e05108b9ba0ece",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-5.woff2",
+    "bytes": 36216,
+    "sha256": "b5d3fe714f8283b072579c9318c6cbe9e028ca51d6ba33eed0412a828ec331da",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/font-6.woff2",
+    "bytes": 36164,
+    "sha256": "88aad0bfccf47bc631abd1351a0c815be98edf58c2c8706f72deb24a531639d6",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/fonts/fonts.css",
+    "bytes": 1018,
+    "sha256": "b361d1319676161693bba92c120de355ad8070debff52c5222733ea5f73649f3",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/index.html",
+    "bytes": 5611,
+    "sha256": "39052d9158dc7b5822d784083676700eeffe90a5bc821064360b3bba8ee0fdee",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/manifest.webmanifest",
+    "bytes": 122,
+    "sha256": "f61f9ec5973be7d4b0fa0c2ad8bfde8885b39a085d6c1420777186bc9756a35a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/media/psychedelic-earth-texture-v1.jpg",
+    "bytes": 411876,
+    "sha256": "a7045a6b1860503dd9b888bb13894eddb095dd58112a2b9a1a97ab8823a06d92",
+    "kind": "Image"
+  },
+  {
+    "path": "public/hextrip-game/physics-bridge.js",
+    "bytes": 448,
+    "sha256": "c765625d4a2ee5901afbd63305ecb7c0f82c6a5bc80b0bb791c6e3fd4beaa3ac",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/hextrip-game/__grok/icon-180.png",
+    "bytes": 2100,
+    "sha256": "3cf5d17d294b51c6cca6c86070309b88554b7ad702b0412e8e2709a01990bc8a",
+    "kind": "Image"
+  },
+  {
+    "path": "public/legacy/my-dick/media/rat-meat-label.jpg",
+    "bytes": 692786,
+    "sha256": "7f8ffd2b48901433a16d31d9077404b3ea186380a67074fc8f2b2840e8791180",
+    "kind": "Image"
+  },
+  {
+    "path": "public/legacy/my-dick/media/yoohoo-label.png",
+    "bytes": 42098,
+    "sha256": "da3b84d2204f7702450ef8201846901b5081e088b56a4cf7f5d496ad8a867ba4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/alice/index.html",
+    "bytes": 192778,
+    "sha256": "d8fa9e9de25bee0e1fa1f8d16e875c9e28441dfb5ae1c8a364feec5c1c809d1d",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/alice/media-1-cover.jpg",
+    "bytes": 102933,
+    "sha256": "564bb7bfd78effc8793378a55ebb18500fcd959829441682286a11da748bd40e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/alice/source.json",
+    "bytes": 212,
+    "sha256": "95cbac6e3fb0799ab22c72ab13c488331d5b8938789c78885793d2b4db0ff208",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/enoch/index.html",
+    "bytes": 377419,
+    "sha256": "bf50c7c360edce48445d8c85fd6d7131230b6311d48e77d3c56c6b166caeba83",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/enoch/media-1-cover.jpg",
+    "bytes": 103355,
+    "sha256": "99e7a8d0802a599be6855abf9414fa57c537ef1441309f2cbeb1e584afe5b6bc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/enoch/source.json",
+    "bytes": 218,
+    "sha256": "b3b029325b62ddc46011c7fead26146c15a81f1b58c6c68143f260ae2c0be6e1",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/flatland/index.html",
+    "bytes": 235219,
+    "sha256": "5792bdecfa216e02cd76afc8ea776971da941750ad21c501ca7c86a92c54bdf3",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/flatland/media-1-ill_intro.png",
+    "bytes": 33258,
+    "sha256": "c9e95b4cde3ec7a2ff8b399456850f23227272bec16fbd46f8e9f4a60f48e235",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-10-ill_009.png",
+    "bytes": 14918,
+    "sha256": "bcaebc0c5adcfbb044eccdd1adb9c9599d73a8c01109bc074e3875478767edc4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-11-ill_010.png",
+    "bytes": 14613,
+    "sha256": "aa7bf1722c95b4163608b08850378c91bed63171de489a5061588383f8a1ee89",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-12-ill_ending.png",
+    "bytes": 12862,
+    "sha256": "55fa8278ff4739ee4150256ce9fff549bd60bfec7bd072d680d5fcef940a6318",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-2-ill_001.png",
+    "bytes": 2112,
+    "sha256": "cb77174faf73dfded1066ec87b53783a992ead8ce4501d314dcc8782d0bf0485",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-3-ill_002.png",
+    "bytes": 4706,
+    "sha256": "546c99df6d917edd0836894f03c20c1be9782bf77c4a3d4ee426a572de8b13d7",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-4-ill_003.png",
+    "bytes": 10630,
+    "sha256": "9eea754290747df736aed026231911265320abc50189fc371143becfdca5da61",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-5-ill_004.png",
+    "bytes": 3895,
+    "sha256": "3177ca6f3f828cbf3c8e8042951fe8204fb12e4921326a30fcbf55bc6b88bb0b",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-6-ill_005.png",
+    "bytes": 4299,
+    "sha256": "3f767b04d06186bff00ea713d56eb793122579192b868820bb2599977076ea7b",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-7-ill_006.png",
+    "bytes": 15268,
+    "sha256": "ab23ef856def28c6da3eaca1c5a87837018a63d4e44b65db2d29e241b4d34cac",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-8-ill_007.png",
+    "bytes": 6880,
+    "sha256": "94dd0ee97988b5fc7d3277669241d71cc00745c15c9719a3b4a0bbd6bc2357fd",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/media-9-ill_008.png",
+    "bytes": 10617,
+    "sha256": "3497783d857da1fec13ab937d46b3b55f081badb60239cd64eea5dc7772e392f",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/flatland/source.json",
+    "bytes": 217,
+    "sha256": "34943578651307901ff34ecbea1f110ec72b13b5e02b84940e5f04649322cc34",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/flight/manifest.json",
+    "bytes": 8825,
+    "sha256": "ca987b940fc2528a7021f0b9d2b143017d9c630f2adc44871328674800dab86b",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/flight/pages-0001-0001.pdf",
+    "bytes": 7714110,
+    "sha256": "f2176106bde9968396b0b7ae823ab139ccaec12de3f5373e9cec0f4e98e29133",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0002-0002.pdf",
+    "bytes": 73928,
+    "sha256": "17799a0a19c20fd694420acd0f9e3153579cefcc62260b3a7895ad301d1e5381",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0003-0005.pdf",
+    "bytes": 178535,
+    "sha256": "f1840057bd93de3c2c217032e1b61d1acbc3bcd68cf91cdadb6c2cd20bf80d52",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0006-0010.pdf",
+    "bytes": 484937,
+    "sha256": "fc1feeff1919391d78f8a3f17a7e3be24197eea2f52c6fac9512a4d666322d1a",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0011-0020.pdf",
+    "bytes": 523795,
+    "sha256": "22c16a1e958583a4e9076a22577888f09cdae2160ee2710c22d64369b2714711",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0021-0025.pdf",
+    "bytes": 6737684,
+    "sha256": "6a1cbb6576347dd0d96ab77b80707a8a2ae3d3b3803e91102d3fc49db29d2250",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0026-0027.pdf",
+    "bytes": 5447261,
+    "sha256": "f5abf008f471ff95d36dc3b4f8e2a2df975316cafb5fb249e3c2672aa6ce60ac",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0028-0030.pdf",
+    "bytes": 3367509,
+    "sha256": "28f40781ce9b715117bc0ce8d982384b68f71ee409224f4e8ecde2bfada7538d",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0031-0032.pdf",
+    "bytes": 2026468,
+    "sha256": "de7fdd5cbcae882b9d7c7cd3aef0e7fd882005ecf567837a711f5c352944b0b8",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0033-0035.pdf",
+    "bytes": 6746810,
+    "sha256": "bbfc465b90bca27154c067d11467f816badc288e7c65d35764cc785d346e0082",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0036-0037.pdf",
+    "bytes": 4230733,
+    "sha256": "9c534ebb716f2a5a092b66e9a27d808e7ee0afc9fbbc0f2024aa15ace05046da",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0038-0040.pdf",
+    "bytes": 5926693,
+    "sha256": "05bcf867c0a0270db57bc46404d599285268481237e1564ce9605a61c2b3dd51",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0041-0050.pdf",
+    "bytes": 7156883,
+    "sha256": "6dd78921f69eefb17a9ce80eda056cd8e380965a746c18f8cc5bd6331b63f011",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0051-0060.pdf",
+    "bytes": 6499211,
+    "sha256": "0d5c38632f6b92760f73c1d6b0147c0beeab1eeb1f8d0d341ba2f7e324d81920",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0061-0065.pdf",
+    "bytes": 6349370,
+    "sha256": "2d95b9df2540c40341ced616503bf04d18dc2f12cd5c46339b1702fded8687c8",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0066-0067.pdf",
+    "bytes": 3707969,
+    "sha256": "5e13bba58490bc08759df166c96f8d200828570283f7de88463439ab3096ef0c",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0068-0068.pdf",
+    "bytes": 7925239,
+    "sha256": "3748a343f57bd6337a969b45082ea14580e7206e495ed16b78472b819fc89aba",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0069-0070.pdf",
+    "bytes": 4733724,
+    "sha256": "5ffb5c42c46d9444dddac368b6394ec8a50e104f447dede482bb924fd5b9956b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0071-0072.pdf",
+    "bytes": 4373534,
+    "sha256": "960fcb796b5e73642d7219a08a4915383208c8f5f01be4d9ec30f2ec7bc686fc",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0073-0075.pdf",
+    "bytes": 5967045,
+    "sha256": "1f7f8bf9e9f4f25e99a848679256ff9518f36ee5629b8538cae5840ce41c90e6",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0076-0077.pdf",
+    "bytes": 6110778,
+    "sha256": "9d753a119962947c7acc11f9a023e77c6b31808c174daac778b4ebf282c09830",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0078-0080.pdf",
+    "bytes": 3056284,
+    "sha256": "554b5751dccd200b814cf528e78689cc2f71bb5b42970459c4f82337da81121a",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0081-0100.pdf",
+    "bytes": 6982977,
+    "sha256": "fc00071763e906e0b97d943f2205fa902d971bbb9610cabe00e04d93d376b7ff",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0101-0120.pdf",
+    "bytes": 5559675,
+    "sha256": "9c1194879f720724d775bb5f9905238b33dfda4b816aa0842211893b73eed818",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0121-0130.pdf",
+    "bytes": 4106979,
+    "sha256": "818543b3a706444872d1fc48422bfa8d98ed3a54344a39244f1b6e7a2ddf7dee",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0131-0140.pdf",
+    "bytes": 4306349,
+    "sha256": "0d8e74767fd8ce009cba40a2f2de77bd4f6d88569c937ed4b2424be5121ef720",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0141-0150.pdf",
+    "bytes": 6776007,
+    "sha256": "ddadfe0e26d2a9609939a966024a47e64224f4e13c5c420b4187d039367537e2",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0151-0155.pdf",
+    "bytes": 4959619,
+    "sha256": "ec8b55e98189c301579ba16729dbd321526cc4c838fedf845f9500d9394c304d",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0156-0160.pdf",
+    "bytes": 5934798,
+    "sha256": "54e9dd76a98db52a553465c2a2d6bf2705f2c580a4835c2dd212376714d8aa74",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0161-0165.pdf",
+    "bytes": 5799843,
+    "sha256": "82b05dca1ee4657dff7813df15be1c55e1b7718e6b5221be913964ba2e8f912c",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0166-0170.pdf",
+    "bytes": 5881817,
+    "sha256": "8c89e6b807395af322002bdfb9a1dbce1a1574a3a9052e7e610ecf02273e32f4",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0171-0180.pdf",
+    "bytes": 5285174,
+    "sha256": "fc3184c232ee5e7039b3a44208f82387b17c71e562e536457d10ff33f54f80f1",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0181-0190.pdf",
+    "bytes": 4137959,
+    "sha256": "6b50672ee550e8198cf7b9715e0c6d53cea4f79baec1e345bf12bd6fe05c1e3f",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0191-0200.pdf",
+    "bytes": 6919996,
+    "sha256": "2dfe0f71632774293d9f1151ca2512856d169b84f28377bacf4959236bd31f61",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0201-0210.pdf",
+    "bytes": 5768566,
+    "sha256": "5690630d5dd978d872cbf10243c5db226a494b9c59204f89d533dcca59dedb47",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0211-0220.pdf",
+    "bytes": 5612681,
+    "sha256": "70d6829a34c27bc4033d18b0d6d5643f22124ed5e2b663147438ff6256275c30",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0221-0230.pdf",
+    "bytes": 4867642,
+    "sha256": "3b7ce34674d0f995128e010aa0aaf2ec269de3181c2bee5712786549e7f63558",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0231-0240.pdf",
+    "bytes": 5926871,
+    "sha256": "9c7fb9dd86647cfee874efe04038897a4da22dcab54afd2b2b86b3ece7bcefe3",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0241-0245.pdf",
+    "bytes": 3068118,
+    "sha256": "bb19e60464ecdb7bf6d58bca94b73fa0d851f79bcd2c052dcb07758d77dca14b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0246-0250.pdf",
+    "bytes": 5516545,
+    "sha256": "24dbd55395c61a6cc37c7c97a9d9e39f65dfa3b360058fa6632d8f77ff08c673",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0251-0260.pdf",
+    "bytes": 5799950,
+    "sha256": "c0db1bd313609d683bbdf86b7bd68dfbfe896e6e5f7c999d41ca50eb21e832c9",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0261-0270.pdf",
+    "bytes": 4180868,
+    "sha256": "d562f2414450f6fa3611f0529c2182808218684b6af29c68ac4aadeb4d56a604",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0271-0280.pdf",
+    "bytes": 6759752,
+    "sha256": "8802ad9e22147e1e01fa616d4981bff866c39405665fd85d96acd927523112e7",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0281-0290.pdf",
+    "bytes": 4154397,
+    "sha256": "7f40cf41298643b3865db580ad8cac8e510aafc889a5925b40aaf4c2b10fc6e6",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0291-0295.pdf",
+    "bytes": 5044346,
+    "sha256": "3f8fc27ba93073306f3a7dde7570dd0ae72c092da3fe9aff1a4816f8e2a6d27b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0296-0300.pdf",
+    "bytes": 4533596,
+    "sha256": "56681f4dc63fe27e515f039c060efaafa431e4269d5c3bb4131b9da36346955b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0301-0305.pdf",
+    "bytes": 3732883,
+    "sha256": "a256c31573b7e68c39141a14792a04d46f903fc751b1456028f639f68d089318",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0306-0310.pdf",
+    "bytes": 4820956,
+    "sha256": "f9008b7de94ca362498c1b4ffcc1174d07fb599785b73b6330c9e0d97a36d907",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0311-0315.pdf",
+    "bytes": 5148814,
+    "sha256": "c8d3b6667ee4ed4a28936fd702eeac68a278bab2cd39a14e20a60703d07f20b7",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0316-0320.pdf",
+    "bytes": 3884255,
+    "sha256": "5a96a832b8dfafa6d89e36e0e434ef18a8496d3db5a2fad45a529520202fa009",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0321-0330.pdf",
+    "bytes": 6761615,
+    "sha256": "21d3dad956190ab801c80c646041e654cf5066019017448e2debff96d4c988ef",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0331-0335.pdf",
+    "bytes": 4495456,
+    "sha256": "8d6df38c68c110993018c5f54c8c755356aaccf07f8be7c9c5be21e0edc2211a",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0336-0340.pdf",
+    "bytes": 5608388,
+    "sha256": "429838a571c4abc1cbecb8eae46a2104653b9f4e0fbe07acf2dd7ddc026d9634",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0341-0342.pdf",
+    "bytes": 3676342,
+    "sha256": "012d92f9db268a854dcf0c841ecfecb2970e33c81eaca10c13b8ce64d2974a0f",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0343-0345.pdf",
+    "bytes": 5748652,
+    "sha256": "46cce0a83bde734ca52c8d0b943edd8a9a05ef1dbb827a7fcf0302477d91c872",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0346-0350.pdf",
+    "bytes": 6569447,
+    "sha256": "0b83d42eb0aaaed9e15ddc5839750eb0e966648eb5659e7e521bd6bcba144e21",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0351-0352.pdf",
+    "bytes": 3618900,
+    "sha256": "90cbb4126b483898180b21898406c31a5eae19403d31b67461db22130e7e9161",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0353-0355.pdf",
+    "bytes": 4716751,
+    "sha256": "26d696d57d9312cf095a5c832e1d0ea6cc1393bb22e225ccece3851288e32f81",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0356-0360.pdf",
+    "bytes": 1394557,
+    "sha256": "3a4430d0812cf72d0e42c967f044d0310d2d39c170f68b47d65d6826a2c6f71d",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0361-0362.pdf",
+    "bytes": 1047587,
+    "sha256": "3469e0ebb5f11f2933c3abd645d98b803d27038f62e5adbabcd09f483e47bca3",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0363-0363.pdf",
+    "bytes": 1593946,
+    "sha256": "51c62bf7e5a4742f9dc8fa1e73e1b2f64f30e9efd47374942b1d8c24b8e71fbe",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0364-0365.pdf",
+    "bytes": 7412220,
+    "sha256": "8f1ad2722c6619417ac79ef7119f090d1d0dc53a1744f8b98e93cbce4f74d8c6",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0366-0370.pdf",
+    "bytes": 3370580,
+    "sha256": "033f665e176023ecc648aa776d67207f9fef3fb564ff406102f99ec9c219c5c8",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0371-0380.pdf",
+    "bytes": 1163645,
+    "sha256": "22dad11b5f64ca063bd5d49e9527a830f21bfe77a98539f9d496cb1ff663e927",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0381-0400.pdf",
+    "bytes": 1911323,
+    "sha256": "1348a502fd59fa1760baa73ac5501873af950784957229461e1415ddc20a8e7b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/flight/pages-0401-0406.pdf",
+    "bytes": 596799,
+    "sha256": "f95ad0e176fc58f0c4091b89aa9e8277d25498bfa766661878cad40335d6b094",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/frankenstein/index.html",
+    "bytes": 468609,
+    "sha256": "991fd762602902e436cc9d7a9071bbcd716149af0974dcda74709e2be42a6d57",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/frankenstein/media-1-cover.jpg",
+    "bytes": 635371,
+    "sha256": "dcf5d3297e9a8700c7c803fb1645d445ab1aa18eb572d99ed8144c272d857da8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/frankenstein/source.json",
+    "bytes": 219,
+    "sha256": "b3be35d98ded16af30d2b8199e2f16d3ab816db649f7ad6ac5a672314739304c",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/illuminati/companion.html",
+    "bytes": 2694,
+    "sha256": "8a4da8d00e8a5babc4c5700d9357f7aa4808aa8db4ce69088060c48040d201bc",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/illuminati/conspiracy-beliefs-research.html",
+    "bytes": 155623,
+    "sha256": "c58fe97075154282719f21d6d4dd3d064f5f55a1a94098a711fd05940ddd17f3",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/illuminati/index.html",
+    "bytes": 804443,
+    "sha256": "010443efcf61c69380ab7d52aa9b00e386616da125339445f60e99b8edbee7af",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/illuminati/media-1-coverpage.jpg",
+    "bytes": 79115,
+    "sha256": "b0a22e790be5e56d62047224a6e47b847ca013f259f3bf2bd26718641f1a3ebc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/illuminati/psychology-of-conspiracy-theories.html",
+    "bytes": 64861,
+    "sha256": "782ff72f956b0ca0828a41a5ced01986a86e9175cc249dd6bd70d4f5e564b2fb",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/illuminati/source.json",
+    "bytes": 223,
+    "sha256": "0d84f1695f8d56a0d70f48a06d297662fdf67e47f41703f25d0a500b8e6585ba",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/mkultra/manifest.json",
+    "bytes": 1240,
+    "sha256": "d9ecf334d92816ea7f3e46603e1afbe61788c4349d5f578186db2d22a7bf26da",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/mkultra/pages-0001-0020.pdf",
+    "bytes": 1268646,
+    "sha256": "efdffd652be82c0799773f7084b3028efdd4d2d546ca31f47d1e6f409c4a9a41",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0021-0040.pdf",
+    "bytes": 1494146,
+    "sha256": "c617f11eec54663ebba4f45b10f129ff7efb908234f69b9ede476700b564e343",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0041-0060.pdf",
+    "bytes": 1305331,
+    "sha256": "74f19f24425810dad1b6e056c238180ba4159c6964c72948f605c2ff2deb057c",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0061-0080.pdf",
+    "bytes": 1340450,
+    "sha256": "00076f32a996478126f0cddb0b4ede79142ffaabb56abbf13e010fad7e03c9bb",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0081-0100.pdf",
+    "bytes": 1364715,
+    "sha256": "de7ef86f5b1609e23a1b2ca95f3a828ab883d19e2dcf23972590410bb02bf5c5",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0101-0120.pdf",
+    "bytes": 914411,
+    "sha256": "24322e889d19ec0d30ef92f552e772707e871a2d5dbcdb63586f0e28c61fcadf",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0121-0140.pdf",
+    "bytes": 671238,
+    "sha256": "b18edd0feb309fc60010ea772ed84c54158a1ea48d7ecc17f3be0f15193bcca9",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0141-0160.pdf",
+    "bytes": 548430,
+    "sha256": "5a60bd1b3b0a2ebed1000b58eb1a09402701b2d6803996ab5745a5321fc48e8b",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/mkultra/pages-0161-0173.pdf",
+    "bytes": 339034,
+    "sha256": "ec3299ab6fcc361ea99304ef85d6e44f27c8fe5c5600ad9c702a4f09191611d7",
+    "kind": "Book PDF"
+  },
+  {
+    "path": "public/library/necronomicon/companion.html",
+    "bytes": 1779,
+    "sha256": "f82057338eb7f86ba43dbdd4e85d2ae4cfc327b083a43d98bfb5d66e2e5f06a4",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/necronomicon/index.html",
+    "bytes": 100387,
+    "sha256": "0fe761ad50b7d4e3be923e4365550da5d79f1d0d06f76caa9b9ffad60713c959",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/necronomicon/media-1-cover.jpg",
+    "bytes": 220867,
+    "sha256": "907d52dbb9457a8c8bb09958127deeef30dfaea4dbbb9b18087423592591dbff",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/necronomicon/media-2-illus.jpg",
+    "bytes": 137226,
+    "sha256": "e259a259f2023dfe5254a910d0fbc3774a490ce3bf71ac6b9d826d53bb4cfef0",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/necronomicon/source.json",
+    "bytes": 225,
+    "sha256": "8c29c99fed0d88d01ab5d5ef1c5f7e3098fe210a5c0a988359a46981c6e9aca9",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/occult/companion.html",
+    "bytes": 882,
+    "sha256": "73216c4d70fd11752635815bf5d5329edc40deb4ab8ec0bcd99a0d1f17b5d499",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/occult/index.html",
+    "bytes": 2381939,
+    "sha256": "3d47ade05808424227165554eb52384dc08cf982149ac465312ffcc07353d673",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/occult/source.json",
+    "bytes": 217,
+    "sha256": "f3a174cf18cd27d49fd1c382b10d5e7c1e379c5732638f9d59383b063f0058c4",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/occult-spells/index.html",
+    "bytes": 806952,
+    "sha256": "4ce849a2b0ab9a33062044d75b9cbb6d5b9a000a085b41ecf68624a8115bb52e",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/occult-spells/media-1-new-cover.jpg",
+    "bytes": 64311,
+    "sha256": "7f1a8c1a914ed98f07e2f533800bf8c29ccb9dfac90669efd47eeabea6a4bffc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-10-p080.png",
+    "bytes": 2547,
+    "sha256": "4e169665ffeec536344f9c93023a4275cafdb12e8be16ce9ba7b8afc4d38df12",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-11-o099.png",
+    "bytes": 47072,
+    "sha256": "daf715011f989530c44b479bd7d3df95ec83b5e69c870687afa0cc19fb32fdfa",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-12-o100.png",
+    "bytes": 17076,
+    "sha256": "0af224f4f5a047ca7573e443226e5745dd20d29717314c7fe11c4a2a03b4356e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-13-p103.png",
+    "bytes": 23974,
+    "sha256": "b32fcf3b747930cdde7a23ede2bb786ce586c33df2fb155081cf82cba49b6518",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-14-o107.png",
+    "bytes": 22960,
+    "sha256": "0b5fafcb0d2ffcfdab5253e27e709fc53fa7f2dba754e56cc2df83f1f042b697",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-15-o121.png",
+    "bytes": 47259,
+    "sha256": "922825b8d2f00ebecbee3c812ff11da0ad67505ade68795a26e0715cdfa447cc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-16-o122.png",
+    "bytes": 35075,
+    "sha256": "b7346234049c19c74801b86d6b5cd6aec48bec57765c6fb0b01ac84346328675",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-17-o141.png",
+    "bytes": 44266,
+    "sha256": "68907e8af507d6ea68fae8026da8de9a0b170304796355e7dce136aaf59fa8ae",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-18-o142.png",
+    "bytes": 44757,
+    "sha256": "d6f07b1593f76382501f856f219896a49faea0616ddfe81c60db641ad356a655",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-19-o151.png",
+    "bytes": 15799,
+    "sha256": "f9e3c20c77a4fbf8a9cb6839809903fc296877fc40c134f6252a3e38f1b0eda8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-2-frontispiece.png",
+    "bytes": 69651,
+    "sha256": "8f1864b24e5ae96564f901e45d6d05c645299f2c2c0f9e5372142ed509660d0c",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-20-o152.png",
+    "bytes": 36228,
+    "sha256": "d772a433f69d3bf001046f4d10145ce5bba7023f7f00d05b1a808476458d1fef",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-21-p153.png",
+    "bytes": 5205,
+    "sha256": "c705f033e8344872e92615987484c40f84b57fdf2471aa29fa4ae68ee5a2e7fc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-22-o162.png",
+    "bytes": 37659,
+    "sha256": "e8321411eef5388749dae41446361a1e848e4760a74182123c81561245e33126",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-23-o186.png",
+    "bytes": 39516,
+    "sha256": "bb9540ecd21d9ebef5890ee23f7b172edde620cd6e9bce99d73477a8bfce91b2",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-24-rbrace4.png",
+    "bytes": 213,
+    "sha256": "ef416e9e0bba75d8ad5f383a5e9c270a9f25bff386d912b77fab91023ea424a7",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-25-o208.png",
+    "bytes": 47394,
+    "sha256": "2de13b3fe77338689d1029be145b714dbcb35b21fac819e46b92dc2c2d4363b8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-26-o229.png",
+    "bytes": 25034,
+    "sha256": "1873feb1e6c3de0010cfc0cd1e5dd1f43c1fce251e59916d2fcfaee4b617d145",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-27-o230.png",
+    "bytes": 23045,
+    "sha256": "3d60fe51830814dd251dffe3c2c9b32d7ce4b306afd77bbf9076d0f352d2aa70",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-28-p246.png",
+    "bytes": 9300,
+    "sha256": "3754700caf28ec97ae09a662fc8a21b46f71d602000df4b393e0be118b046dd0",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-29-o254.png",
+    "bytes": 49445,
+    "sha256": "c473efee4af7a75956545431087f7becceaf5bf47c7cf6a5faf5692d63a4ffd2",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-3-titlepage.png",
+    "bytes": 7818,
+    "sha256": "ec14dae405b12db357f737b6f8bb9daaec41e0fae01081f0d5528a149b95dfcc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-30-o255.png",
+    "bytes": 38633,
+    "sha256": "9fbe799ab18b2e3f10ed156d39f2f130f2b14b27d4a6fe9670b0dc6a91ee1665",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-31-o260.png",
+    "bytes": 43552,
+    "sha256": "cc34548ac95fc0201356b0cde8085c45bb4125ec9757a01687b5368fe349ac8a",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-4-o001.png",
+    "bytes": 28304,
+    "sha256": "eb12f18541d990324a7c023339811a5567d55fde787993380ee0a762ff7c626f",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-5-o012.png",
+    "bytes": 25029,
+    "sha256": "93da47f8bdf1ea5d4fe070dedf590c736e571560b984c120e350dc7608a36a01",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-6-o040.png",
+    "bytes": 25204,
+    "sha256": "8713f72d468525fe1a6f27e3d902f51ef201baadd585fe283ef29f1de7fe576e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-7-o041.png",
+    "bytes": 25346,
+    "sha256": "3f35d1c3f64eab5090266a8896ef97aa6a1fc65a09702a64d806568f32e90e39",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-8-o065.png",
+    "bytes": 30695,
+    "sha256": "c005efff8ea2d00a80e366a3174217873ed4ad9da7364a9531b73e65fe66fb34",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/media-9-p079.png",
+    "bytes": 31598,
+    "sha256": "83269c04230557d67706ab0e2d9b6c805aa4eb63590a13a9b1fef1cd7195063d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/occult-spells/source.json",
+    "bytes": 226,
+    "sha256": "653f62eb463ddd6277fa363bb9d3a94d8a1f02bc5d94fab64aab3e27871209f6",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/origin/index.html",
+    "bytes": 1045350,
+    "sha256": "124781f08538b33db630fbf64fbf2158d52883254081c1ea865c8b01d7b7a856",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/origin/source.json",
+    "bytes": 217,
+    "sha256": "aecbc1ba938f0cdcd59c81e7ed6e01b5f0ed5fedb94d27eb78f747ce2a65e82a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/programming/index.html",
+    "bytes": 14707,
+    "sha256": "bf659bbd18de457cf39fc07081d4e2f2858ef262b4337705c75bcf4e77415cd9",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/solomon/index.html",
+    "bytes": 184882,
+    "sha256": "6add85a0d1789fb82229885b074b13f140be1dd946aae5c7bcea1f7a2e05929b",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/solomon/media-1-cover.jpg",
+    "bytes": 892363,
+    "sha256": "d7776296a5df66f1042229910e09b1f23c81ac586f270f48815c6ef6d23bb2ae",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-10-front-5-large.jpg",
+    "bytes": 992430,
+    "sha256": "8e1ac43890d23d46b6653f8a2346a069b4647c08320edb5f00ac9b6d4315e338",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-11-front-5.jpg",
+    "bytes": 237025,
+    "sha256": "ca9c7ed083db8ea779190f06133e308a2be59394a59a2cfcce7d0c572015066a",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-12-front-6-large.jpg",
+    "bytes": 998310,
+    "sha256": "bd1fa604947c00de2a0c29b77ba25bc8761a2b8a3e15c62f5086b275d7482558",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-13-front-6.jpg",
+    "bytes": 242195,
+    "sha256": "8327deac47540c9c766de4d0a09dc156c8767c78b4c12de32c0e6192c25b9f15",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-14-front-7-large.jpg",
+    "bytes": 996310,
+    "sha256": "a279657f78666375a617ec8cf9bccfa5a3e2f8097a95c4651198823c082439f6",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-15-front-7.jpg",
+    "bytes": 242811,
+    "sha256": "fa6fde93526b4905dd80dd7702ddec61aad291e995411928510c579eac7349fc",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-2-front-1-large.jpg",
+    "bytes": 744869,
+    "sha256": "e534375e358718708f54abc4a722484f65d6c6fe5b438439afc6b9706172b527",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-3-front-1.jpg",
+    "bytes": 244666,
+    "sha256": "92c3d8b794ce91a5adc5c1b0270bd11db5ce93e29eeb568c75104e2dee0c9e2f",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-4-front-2-large.jpg",
+    "bytes": 926915,
+    "sha256": "3df8ff44c11130764e97c979e0fd06d245c83fb1b02d7b0065439b939bc3b1f8",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-5-front-2.jpg",
+    "bytes": 247995,
+    "sha256": "41dec3d098ed85ca36b5a3c32451d51ad7a716a6780afbf54cf1a80330269d53",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-6-front-3-large.jpg",
+    "bytes": 992584,
+    "sha256": "a70032492848d5576ce19675a9da38ef2c9e5bac21e9ac3546c94ab9fc019ddb",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-7-front-3.jpg",
+    "bytes": 248722,
+    "sha256": "6d0becb97af5f9debb8a65a08cf68b55b7136397b7699da5f9326f9794eee7c3",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-8-front-4-large.jpg",
+    "bytes": 974792,
+    "sha256": "01b1eb3f8a9672c48f6a35902d8d24035de71d510ba3edde1bf752029f403175",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/media-9-front-4.jpg",
+    "bytes": 240637,
+    "sha256": "57f7cbfbb911f30aee7d58d929264500f6d2b2c90b43eeae6d514601d7901599",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/solomon/source.json",
+    "bytes": 220,
+    "sha256": "68f85982b6caeb85146e0b91458dcd41f24f49b9ebc5d21ebc483865763f201b",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/wwii/index.html",
+    "bytes": 2871180,
+    "sha256": "24502ae31d71befd3cf7c94bd713647a651562020a03bed38e70090c3891aec2",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/library/wwii/media-1-cover.jpg",
+    "bytes": 74590,
+    "sha256": "a1c0e8754487ef9b15ef1ee9cf0997f5206314c592de273533b48585cb196acb",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-2-title.jpg",
+    "bytes": 11088,
+    "sha256": "708a0c2243c68bb2f37952643349131e36b8e4e4a4711addbb074e856e49433b",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-3-illo-358a.jpg",
+    "bytes": 65272,
+    "sha256": "5857f7fdfd961eacb3e23e646bbaedea5478cbdf6e4f580068b262b14751e296",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-4-illo-358c.jpg",
+    "bytes": 65151,
+    "sha256": "9abca367f23f28773db9a17f8ed6585ddce63d45940f64d4e8fc0c02ff89cd18",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-5-illo-358b.jpg",
+    "bytes": 150422,
+    "sha256": "a77c2edb3604aae7dd658e6c0450da539e46ec78284c40f293e2fc1fb4d480e1",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-6-illo-358d.jpg",
+    "bytes": 139556,
+    "sha256": "95db3f783902044a41f5e7f406220ded85aa052a2698c0124f7ad94c7b2a89b2",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-7-illo-536.jpg",
+    "bytes": 189410,
+    "sha256": "cce39c0d3ab8c3a7dac429a268daeaf3c2ba3562d60b79411fbd67460727a586",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/media-8-illo-680.jpg",
+    "bytes": 173973,
+    "sha256": "ba70059689e0c926391bfb4289577ef0a44ba20c8f6df349e4defd77557c1926",
+    "kind": "Image"
+  },
+  {
+    "path": "public/library/wwii/source.json",
+    "bytes": 217,
+    "sha256": "1e74a2e494bf14080d735c821908f592b23fe9a935bb86abf2720cd2bdccd019",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/media/alien-astronomer-v1.png",
+    "bytes": 1260312,
+    "sha256": "0661e88ec28a216269f3e5432915262cb1fc271750aa1225b5a8ca5aea71e031",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/bongo-banana-cutout-v1.png",
+    "bytes": 1266164,
+    "sha256": "e2d6b12b8835ce5d64ca4838621733553490db81443a42e0f7b34fc4126d412e",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/bongo-bat-cutout-v1.png",
+    "bytes": 1303220,
+    "sha256": "e1f7be842762c35806fdf2eff46b365053cc6db24a9b25b76827cfff94e2a117",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/brain-crop.png",
+    "bytes": 714831,
+    "sha256": "646aa43187be7883f11037b9c1da5a70f54c2b115412ea35b489a660fa5e60cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/brain-cutout.png",
+    "bytes": 710621,
+    "sha256": "0d7f1206c1423f9c5abe1a9938da26336fbf513034e7648250bf6895bcf023ad",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/brain-earth.jpg",
+    "bytes": 522357,
+    "sha256": "08fdc03cd8612fab9ccce7047781a1bbda01cd694a3e8d31c8f6219c3bd984c7",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/brain.jpg",
+    "bytes": 795559,
+    "sha256": "fefd7bc694ac2ef4ba1292dbf80fd08fc5e5732bf590cbbd14eb983c0a35e6be",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/monster-energy.png",
+    "bytes": 40209,
+    "sha256": "c95a75ea9e31eba3c0f9da2b029f91aca54aa7cb4f1a35b64821a17b8eb76548",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/pepsi.png",
+    "bytes": 152542,
+    "sha256": "842838f31757d0fcb5e713b3403fa89ddce4d8ed8c1cef14df2a85bb60a26a63",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/rat-meat-classic.jpg",
+    "bytes": 690673,
+    "sha256": "18ab241625ce1b12ecd2be3bfc51a8e24bc54377c98f371b40afc7c5ca7792cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/rat-meat-gold.jpg",
+    "bytes": 747622,
+    "sha256": "127ed8da7f8291b2654914a707da6873c9882c4f846725aec807ed0be3266e68",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/rat-meat-silver.jpg",
+    "bytes": 692786,
+    "sha256": "7f8ffd2b48901433a16d31d9077404b3ea186380a67074fc8f2b2840e8791180",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/yoohoo-bottle.png",
+    "bytes": 42098,
+    "sha256": "da3b84d2204f7702450ef8201846901b5081e088b56a4cf7f5d496ad8a867ba4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/can-labels/yoohoo-yellow.png",
+    "bytes": 64004,
+    "sha256": "5546b93ed40973913746f34a84ef2f50498721369ac3b16287cf0eb7972c8f21",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/cia-seal.svg",
+    "bytes": 25819,
+    "sha256": "7bac6ea2ef9e35142d1d7f145b6407ef8ea84b49c2dc855fdec703c5dff8394d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/dr-bongo-model-icon-v1.png",
+    "bytes": 72186,
+    "sha256": "b0a09a232f03b9b560692f70c317876c927c15f50d5ffd0ee73c25b61f46fc83",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/earth.jpg",
+    "bytes": 654068,
+    "sha256": "643784e38f90c026774a4c0dccfa0860a33f3e76d8c8f2901bb10f2dda37488f",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/lab-rat-ragdoll-v2.png",
+    "bytes": 391112,
+    "sha256": "54060cacb329af04cef85866c191d1605402d98cecdf1c1259ac666caf7dd4a6",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/lab-rat-v1.png",
+    "bytes": 1638074,
+    "sha256": "64765949a934d0ef265a7f3e6cdaf40d8270f3023b4da2894d0d36096cbc3196",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/loading-art.webp",
+    "bytes": 454896,
+    "sha256": "297a4be3b2794571b0706444b92866c391bb44fe1fdeaf489e0070d4ed065d13",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/mountains-nature.png",
+    "bytes": 424382,
+    "sha256": "202d67ae1cabc4e907f97f3341d97e53e9c1d99f6a32007e2886c192cea63984",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/orangutan-aliens.jpg",
+    "bytes": 741834,
+    "sha256": "fabf2e0e2f253828e6bf7776e651981500b32d0ca7b6b16efb9677aa4dfa0b2d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/planet-urf-crop.png",
+    "bytes": 894231,
+    "sha256": "66e7ca8433764201c7b28809e47dcabfaafc3fd754e5e7dab957a906a3407d83",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/planet-urf-cutout.png",
+    "bytes": 799132,
+    "sha256": "dc7e68350b60c60f79f452b3037ea2abc06feeaf0d312f9feefa26436aa3a2c4",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/psychedelic-earth-texture-v1.png",
+    "bytes": 3890621,
+    "sha256": "7e858133bf43b7ba314037cc56db94439f933df46ff2d5d4a9d4e1248a031204",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/rat-meat-can-v2.png",
+    "bytes": 1443935,
+    "sha256": "4dbd14847e99ac86f36badd7d5880e341b90e15e0f10de4f27608cf3ad01b3b1",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/rat-meat-can.jpg",
+    "bytes": 690673,
+    "sha256": "18ab241625ce1b12ecd2be3bfc51a8e24bc54377c98f371b40afc7c5ca7792cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/rat-meat-gold-label.jpg",
+    "bytes": 747622,
+    "sha256": "127ed8da7f8291b2654914a707da6873c9882c4f846725aec807ed0be3266e68",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/rat-meat-label.jpg",
+    "bytes": 690673,
+    "sha256": "18ab241625ce1b12ecd2be3bfc51a8e24bc54377c98f371b40afc7c5ca7792cf",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/rat-meat-silver-label.jpg",
+    "bytes": 692786,
+    "sha256": "7f8ffd2b48901433a16d31d9077404b3ea186380a67074fc8f2b2840e8791180",
+    "kind": "Image"
+  },
+  {
+    "path": "public/media/yoohoo-label.png",
+    "bytes": 64004,
+    "sha256": "5546b93ed40973913746f34a84ef2f50498721369ac3b16287cf0eb7972c8f21",
+    "kind": "Image"
+  },
+  {
+    "path": "public/models/index.json",
+    "bytes": 42,
+    "sha256": "3edd86b7adcd0fca99a82c781c92b72cb700a89991fe09c0d92822350eb2c757",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/models/monkey-centipede.fbx",
+    "bytes": 3008268,
+    "sha256": "e861a2349c0fd01c1f52178d3fb3de6e55207a521134bf0c014088e23890f603",
+    "kind": "3D model"
+  },
+  {
+    "path": "public/models/urf-can-ratmeat.glb",
+    "bytes": 11912,
+    "sha256": "fa300878c0331f6d73caaf5fa627d8f7019a4ff70f230c914f715b31adc2419e",
+    "kind": "3D model"
+  },
+  {
+    "path": "public/models/urf-can-yoohoo.glb",
+    "bytes": 11908,
+    "sha256": "6297f70784f1fdc7baeded34a58a380c06f7d7b42357bde2accc43d6470fe000",
+    "kind": "3D model"
+  },
+  {
+    "path": "public/ne-110m-land.geojson",
+    "bytes": 138161,
+    "sha256": "3d34c10cebfdba17f5f97180dd7c5100c8c5e05f2f583061aa8de2e9f942a904",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/penguin-building-sprites-alpha-v2.png",
+    "bytes": 2056503,
+    "sha256": "e78fd2df12ae3e568170b299e3f460e65d029d7446b51aa00930106446beac2b",
+    "kind": "Image"
+  },
+  {
+    "path": "public/penguin-town-clean.webp",
+    "bytes": 270706,
+    "sha256": "2243a2d8bc8654668e77299db92a7369b1ef388cf07e58d7fde2145dd5a41d83",
+    "kind": "Image"
+  },
+  {
+    "path": "public/penguin-town-ground-v4.png",
+    "bytes": 2466195,
+    "sha256": "9636b946043cc5ef452df29b8b38cf22bd15dd418d717865b866e7107dd8265d",
+    "kind": "Image"
+  },
+  {
+    "path": "public/penguinaroo.png",
+    "bytes": 919954,
+    "sha256": "43227eab70d00bbec93181134e26574dbdf4ffa77f0dfb14ae592e1ba62da5a2",
+    "kind": "Image"
+  },
+  {
+    "path": "public/screen-reference.js",
+    "bytes": 1924,
+    "sha256": "060618a4960e3d9afbc5c92b76d74dae88a7999961530cb241e9c7a755c41017",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/BufferGeometryUtils-nus3RdMX.js",
+    "bytes": 5661,
+    "sha256": "3935bb5595d9be08e96dc355fa08a1abeb15216e37db9765525237ec786cfd30",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/dreamscape-BAEaW25a.js",
+    "bytes": 51830,
+    "sha256": "0bc951d652f3817b84d605bda8e1a0c8f38fced04c5b86e35a22cae04844b742",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/FBXLoader-B9Ja9Byb.js",
+    "bytes": 63759,
+    "sha256": "e3e864758f52df85aabae81af44cff00212843d93d0e678fb7baa12681ed674a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/globe3d-C83BSiGa.js",
+    "bytes": 8640,
+    "sha256": "c884428a3179621de605256473454709949b667a43dccc8a9de5da59a1e43ffc",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/GLTFLoader-Bvxb0hnq.js",
+    "bytes": 53604,
+    "sha256": "61324d902cbe76155473e2daf4f61891ee47dd231b51ab1ddf0f5b71be1632bb",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/hex-bridge.js",
+    "bytes": 1498,
+    "sha256": "4e1f96452da149803ea9b6b41b0c70aafecb0d226a7e4d86da3d82d1fae900e2",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/hex-legacy-69hO0ser.js",
+    "bytes": 53516,
+    "sha256": "57a05f7544e7fde7d3ad244c4d06b656454d39d1b56a615fab4b9731f9088acb",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/laboratory-DcZUDm9z.js",
+    "bytes": 29463,
+    "sha256": "de3a9eaddf9a80bcc80faa497c7be5a9808bf714e98fc7e356845f124a37f506",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/launch-island-C-6Fzddt.js",
+    "bytes": 5429,
+    "sha256": "96270bf780d12a31d6fc8e115f57afd022aa6e46b366783f219236bb09b11006",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/legacy-brain-CoXdpFBi.js",
+    "bytes": 8915,
+    "sha256": "d0941653b5581425930cb523742c8f8305e9017634d81b3c4d605157d7f91b43",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/legacy-sandbox-BlXFpEBD.js",
+    "bytes": 3763,
+    "sha256": "b5d155231b9b9f04c2b9d60e0850468151abe240e1f3e8fef6cb347a84716d95",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/level-q_dnIQR3.js",
+    "bytes": 64836,
+    "sha256": "f5f35b8c0f60ed8d83972b6088d1b81fb84af8b046f065519d188976d0a9ba6d",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/three.module-h2PuqYDi.js",
+    "bytes": 875283,
+    "sha256": "ac6093d9a09b890c39572823e15372ac2447e65aa9c52cc844518c3cabe423ca",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/town-CrZ8El6z.js",
+    "bytes": 15691,
+    "sha256": "cb717958bc30ebaf090c07732f6a2dbee931d60a269d0c36f467a936a757097a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/weapons-_dchzrq5.js",
+    "bytes": 9438,
+    "sha256": "69a5e95b2af7afff7c7d48b8486da659e49e39cfe5dcc2834c704f6a7fbad48a",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/shared-world/WorldSimulation-O9Gd1zEA.js",
+    "bytes": 88782,
+    "sha256": "3bbfab93af68d5652b6091edb5cb72f7983be6e252758e75f8c22149422f80fc",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/urf-data/cities.json",
+    "bytes": 108537,
+    "sha256": "5c25cae37a1a20b1b2f16b43c14be8d827bb78b87537189a4440d9ee69861dac",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/urf-data/elevation.jpg",
+    "bytes": 1244508,
+    "sha256": "97828a87bcb6549a527232455e478c5f9e4556f761b37d620a46446da17593ab",
+    "kind": "Image"
+  },
+  {
+    "path": "public/urf-data/sources.txt",
+    "bytes": 470,
+    "sha256": "0102c7415654c7d44107bb472fb702c8408e6349bca0e4ab51a77e6194342029",
+    "kind": "Code / supporting file"
+  },
+  {
+    "path": "public/vicheal-nic.jpg",
+    "bytes": 482968,
+    "sha256": "b2214086fd315b6c4205077771b1959715dcb81a2d54be0d05eb38762cab4847",
+    "kind": "Image"
+  },
+  {
+    "path": "public/window.svg",
+    "bytes": 387,
+    "sha256": "d3cd4bf0c1123258fcc266409856e28c93d4fc1cf8476702225e17842900ca63",
+    "kind": "Image"
+  }
+]

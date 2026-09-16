@@ -1,0 +1,2399 @@
+[
+  {
+    "id": "can001-ratmeat-glb",
+    "label": "Can001 — original Rat Meat GLB",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "model": "glb:/models/urf-can-ratmeat.glb",
+    "source": "GitHub original model file"
+  },
+  {
+    "id": "can002-yoohoo-glb",
+    "label": "Can002 — original Yoo-hoo GLB",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "model": "glb:/models/urf-can-yoohoo.glb",
+    "source": "GitHub original model file"
+  },
+  {
+    "id": "goopy",
+    "label": "Goopy",
+    "category": "CHARACTERS",
+    "builder": "alien",
+    "character": "zix",
+    "source": "Alien Game",
+    "scale": 0.9
+  },
+  {
+    "id": "doopy",
+    "label": "Doopy",
+    "category": "CHARACTERS",
+    "builder": "alien",
+    "character": "pip",
+    "source": "Alien Game",
+    "scale": 0.82
+  },
+  {
+    "id": "doorp",
+    "label": "Doorp",
+    "category": "CHARACTERS",
+    "builder": "alien",
+    "character": "vex",
+    "source": "Alien Game",
+    "scale": 0.9
+  },
+  {
+    "id": "tongo001",
+    "label": "Tongo001 — original alien-game Pongo",
+    "category": "CHARACTERS",
+    "builder": "alien",
+    "character": "pongo",
+    "source": "Home + Alien Game",
+    "scale": 0.85
+  },
+  {
+    "id": "penguin",
+    "label": "Penguin",
+    "category": "CHARACTERS",
+    "builder": "shared-prop",
+    "prop": "penguin",
+    "source": "Penguin Town",
+    "scale": 1.1
+  },
+  {
+    "id": "rat-meat",
+    "label": "Rat Meat Can",
+    "category": "COLLECTIBLES",
+    "builder": "shared-prop",
+    "prop": "rat-meat",
+    "source": "Site Economy"
+  },
+  {
+    "id": "rat-meat-gold",
+    "label": "Gold Rat Meat",
+    "category": "COLLECTIBLES",
+    "builder": "shared-prop",
+    "prop": "rat-meat-gold",
+    "source": "Site Economy"
+  },
+  {
+    "id": "yoohoo",
+    "label": "Yoo-hoo",
+    "category": "COLLECTIBLES",
+    "builder": "shared-prop",
+    "prop": "yoohoo",
+    "source": "Yoo-hoo Room"
+  },
+  {
+    "id": "pepsi",
+    "label": "Pepsi Ammo",
+    "category": "COLLECTIBLES",
+    "builder": "sandbox",
+    "sandbox": "pepsi",
+    "source": "Alien Game"
+  },
+  {
+    "id": "monster",
+    "label": "Monster Can",
+    "category": "COLLECTIBLES",
+    "builder": "sandbox",
+    "sandbox": "monster",
+    "source": "Alien Game"
+  },
+  {
+    "id": "banana",
+    "label": "Banana",
+    "category": "COLLECTIBLES",
+    "builder": "shared-prop",
+    "prop": "banana",
+    "source": "Bongo Lab"
+  },
+  {
+    "id": "revolver",
+    "label": "Revolver",
+    "category": "WEAPONS",
+    "builder": "sandbox",
+    "sandbox": "revolver",
+    "source": "Alien Game",
+    "scale": 1.4
+  },
+  {
+    "id": "ak47",
+    "label": "AK-47",
+    "category": "WEAPONS",
+    "builder": "sandbox",
+    "sandbox": "ak47",
+    "source": "Alien Game",
+    "scale": 1.25
+  },
+  {
+    "id": "bow",
+    "label": "Bow",
+    "category": "WEAPONS",
+    "builder": "sandbox",
+    "sandbox": "bow",
+    "source": "Urf Archer",
+    "scale": 1.1
+  },
+  {
+    "id": "arrow",
+    "label": "Arrow",
+    "category": "WEAPONS",
+    "builder": "sandbox",
+    "sandbox": "arrow",
+    "source": "Urf Archer",
+    "scale": 0.9
+  },
+  {
+    "id": "biplane",
+    "label": "Penguin Biplane",
+    "category": "VEHICLES",
+    "builder": "sandbox",
+    "sandbox": "biplane",
+    "source": "Penguin Town",
+    "scale": 0.55
+  },
+  {
+    "id": "urf-rover",
+    "label": "Urf Rover",
+    "category": "VEHICLES",
+    "builder": "sandbox",
+    "sandbox": "vehicle",
+    "source": "HexTrip",
+    "scale": 0.65
+  },
+  {
+    "id": "jetpack",
+    "label": "Jetpack",
+    "category": "PROPS",
+    "builder": "sandbox",
+    "sandbox": "jetpack",
+    "source": "Alien Game",
+    "scale": 0.85
+  },
+  {
+    "id": "oil-drum",
+    "label": "Oil Drum",
+    "category": "PROPS",
+    "builder": "shared-prop",
+    "prop": "oil-drum",
+    "source": "Planet Urf"
+  },
+  {
+    "id": "zongo001",
+    "label": "Zongo001 — original ragdoll",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "sandbox-old:bongo",
+    "source": "Original assets room",
+    "scale": 0.75
+  },
+  {
+    "id": "pongo",
+    "label": "Pongo",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "brain:pongo",
+    "source": "Brain world + Home"
+  },
+  {
+    "id": "rat",
+    "label": "Lab Rat",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "brain:rat",
+    "source": "Brain world"
+  },
+  {
+    "id": "bongo",
+    "label": "Dr. Bongo",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "brain:bongo",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "mongo",
+    "label": "Mongo — gorilla",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "specimen:gorilla",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "gongo",
+    "label": "Gongo — chimpanzee",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "specimen:chimpanzee",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "baboogoo",
+    "label": "Baboogoo — baboon",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "specimen:baboon",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "yongo001",
+    "label": "Yongo001 — yeti",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "specimen:yeti",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "longo001",
+    "label": "Longo001 — legacy Bongo",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildBongo",
+    "source": "GitHub original"
+  },
+  {
+    "id": "rat001",
+    "label": "Lab Rat001 — original",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildLabRat",
+    "source": "GitHub original"
+  },
+  {
+    "id": "cow",
+    "label": "Cow001 — meadow",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "cow",
+    "source": "Brain world"
+  },
+  {
+    "id": "cow002",
+    "label": "Cow002 — original",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildCow",
+    "source": "GitHub original"
+  },
+  {
+    "id": "pig001",
+    "label": "Pig001",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildPig",
+    "source": "GitHub original"
+  },
+  {
+    "id": "sheep001",
+    "label": "Sheep001",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildSheep",
+    "source": "GitHub original"
+  },
+  {
+    "id": "alien001",
+    "label": "Alien001 — original scout",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildAlienScout",
+    "source": "GitHub original"
+  },
+  {
+    "id": "penguin002",
+    "label": "Penguin002 — town",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "town:penguin",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "penguin003",
+    "label": "Penguin003 — original scout",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "legacy:buildPenguinCharacter",
+    "source": "GitHub original"
+  },
+  {
+    "id": "monkey-centipede",
+    "label": "Longo096 — monkey centipede",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "fbx:/models/monkey-centipede.fbx",
+    "source": "Home brain"
+  },
+  {
+    "id": "brain001",
+    "label": "Brain001worminfested",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "living-brain",
+    "source": "Home brain"
+  },
+  {
+    "id": "brain069",
+    "label": "Brain069room",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "glb:/brain-room/brain-room.glb",
+    "source": "Brain world"
+  },
+  {
+    "id": "brain",
+    "label": "Brain002organ",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:brain",
+    "source": "Brain world"
+  },
+  {
+    "id": "beanbag001",
+    "label": "Brain003beanbag",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "legacy:buildBeanbag",
+    "source": "GitHub original"
+  },
+  {
+    "id": "cortex-eraser",
+    "label": "Cortex Eraser",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "evil-laser",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "alien-laser",
+    "label": "Alien laser gun",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "fixture:alien-laser",
+    "source": "Unified armory"
+  },
+  {
+    "id": "cannon",
+    "label": "Cannon",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "fixture:cannon",
+    "source": "Unified armory"
+  },
+  {
+    "id": "anti-air",
+    "label": "Anti-aircraft gun",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "fixture:anti-air",
+    "source": "Unified armory"
+  },
+  {
+    "id": "warship",
+    "label": "Warship",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "fixture:warship",
+    "source": "Unified armory"
+  },
+  {
+    "id": "ammo",
+    "label": "Ammo001 — rounds",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "model": "fixture:ammo",
+    "source": "Unified armory"
+  },
+  {
+    "id": "satellite",
+    "label": "Satellite001",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "fixture:satellite",
+    "source": "Urf sky"
+  },
+  {
+    "id": "crystal",
+    "label": "Crystal001 — garden cluster",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "fixture:crystal",
+    "source": "Crystal graveyard"
+  },
+  {
+    "id": "crystal002",
+    "label": "Crystal002 — home glass",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "home:crystal",
+    "source": "Home"
+  },
+  {
+    "id": "jungle-tree",
+    "label": "Tree001 — jungle",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "home:tree",
+    "source": "Home"
+  },
+  {
+    "id": "dream-tree",
+    "label": "Tree002 — dream tree",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "dream-tree",
+    "source": "Brain world"
+  },
+  {
+    "id": "fence",
+    "label": "Fence001 — pasture section",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "fixture:fence",
+    "source": "Cow field"
+  },
+  {
+    "id": "tombstone",
+    "label": "Tombstone001",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "fixture:tombstone",
+    "source": "Crystal graveyard"
+  },
+  {
+    "id": "altar",
+    "label": "Altar001 — polished gold",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "fixture:altar",
+    "source": "Crystal graveyard"
+  },
+  {
+    "id": "book",
+    "label": "Book001 — haunted volume",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "fixture:book",
+    "source": "Crystal graveyard"
+  },
+  {
+    "id": "island",
+    "label": "Island001 — archer platform",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "island",
+    "source": "Urf world select"
+  },
+  {
+    "id": "barn",
+    "label": "Barn001 — red meadow barn",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "level:barn",
+    "source": "Cow field"
+  },
+  {
+    "id": "lab",
+    "label": "Lab001 — Bongo warehouse",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "level:lab",
+    "source": "Brain world"
+  },
+  {
+    "id": "mushroom",
+    "label": "Mushroom001 — psychedelic",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "mushroom",
+    "source": "Brain world"
+  },
+  {
+    "id": "lungs",
+    "label": "Lungs",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:lungs",
+    "source": "Brain world"
+  },
+  {
+    "id": "heart",
+    "label": "Heart",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:heart",
+    "source": "Brain world"
+  },
+  {
+    "id": "liver",
+    "label": "Liver",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:liver",
+    "source": "Brain world"
+  },
+  {
+    "id": "bones",
+    "label": "Bones",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:bones",
+    "source": "Brain world"
+  },
+  {
+    "id": "stomach",
+    "label": "Stomach",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:stomach",
+    "source": "Brain world"
+  },
+  {
+    "id": "dentures",
+    "label": "Dentures",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:dentures",
+    "source": "Brain world"
+  },
+  {
+    "id": "eyes",
+    "label": "Eyes",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "loose:eyes",
+    "source": "Brain world"
+  },
+  {
+    "id": "rock",
+    "label": "Rock",
+    "category": "NATURE",
+    "builder": "world",
+    "model": "loose:rock",
+    "source": "Brain world"
+  },
+  {
+    "id": "worm",
+    "label": "Worm",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "loose:worm",
+    "source": "Brain world"
+  },
+  {
+    "id": "rat-meat-silver",
+    "label": "Silver Rat Meat",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "model": "loose:rat-meat-silver",
+    "source": "Brain world"
+  },
+  {
+    "id": "bone-skull",
+    "label": "Bone050 — skull",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-skull",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-ribcage",
+    "label": "Bone051 — ribcage",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-ribcage",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-spine",
+    "label": "Bone052 — spine",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-spine",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-pelvis",
+    "label": "Bone053 — pelvis",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-pelvis",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-humerus",
+    "label": "Bone054 — humerus",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-humerus",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-forearm",
+    "label": "Bone055 — forearm",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-forearm",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-femur",
+    "label": "Bone056 — femur",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-femur",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-hand",
+    "label": "Bone057 — hand",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-hand",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "bone-foot",
+    "label": "Bone058 — foot",
+    "category": "ANATOMY",
+    "builder": "world",
+    "model": "fixture:bone-foot",
+    "source": "Anatomy garden"
+  },
+  {
+    "id": "town-plane",
+    "label": "Town biplane",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "town:plane",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-telescope",
+    "label": "Telescope — wood",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:telescope",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-telescope-metal",
+    "label": "Telescope — metal",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:telescope-metal",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-magic",
+    "label": "Circus",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:magic",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-igloo",
+    "label": "Igloo",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:igloo",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-sweatshop",
+    "label": "Sweatshop",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:sweatshop",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-docks",
+    "label": "Cargo ship",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "town:docks",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "town-arena",
+    "label": "Arena",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "town:arena",
+    "source": "Penguin Town"
+  },
+  {
+    "id": "chair-baboon",
+    "label": "baboon neural study chair",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "chair:baboon",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "chair-gorilla",
+    "label": "gorilla neural study chair",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "chair:gorilla",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "chair-chimpanzee",
+    "label": "chimpanzee neural study chair",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "chair:chimpanzee",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "chair-yeti",
+    "label": "yeti neural study chair",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "chair:yeti",
+    "source": "Bongo lab"
+  },
+  {
+    "id": "book-solomon",
+    "label": "The Lesser Key of Solomon",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:solomon",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-necronomicon",
+    "label": "The Necronomicon shelf",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:necronomicon",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-enoch",
+    "label": "The Book of Enoch",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:enoch",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-illuminati",
+    "label": "Illuminati: the historical record",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:illuminati",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-mkultra",
+    "label": "MKULTRA",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:mkultra",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-wwii",
+    "label": "The Doctors’ Trial",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:wwii",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-programming",
+    "label": "From First Line to Your Own World",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:programming",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-flight",
+    "label": "Learning to Fly",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:flight",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-occult",
+    "label": "Ritual, Charms & the Golden Bough",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:occult",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-frankenstein",
+    "label": "Frankenstein",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:frankenstein",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-alice",
+    "label": "Alice in Wonderland",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:alice",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-flatland",
+    "label": "Flatland",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:flatland",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "book-origin",
+    "label": "On the Origin of Species",
+    "category": "LIBRARY",
+    "builder": "world",
+    "model": "book:origin",
+    "source": "Crystal library garden"
+  },
+  {
+    "id": "urf-globe",
+    "label": "Planet Urf — geographic globe",
+    "model": "urf-globe",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "archer001",
+    "label": "Archer001 — Urf selector",
+    "model": "selector:alien",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "satellite002",
+    "label": "Satellite002 — original orbital",
+    "model": "selector:satellite",
+    "category": "VEHICLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-moon",
+    "label": "moon",
+    "model": "selector:moon",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-ufo",
+    "label": "ufo",
+    "model": "selector:ufo",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-meteor",
+    "label": "meteor",
+    "model": "selector:meteor",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-thrusters",
+    "label": "thrusters",
+    "model": "selector:thrusters",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-big-dish",
+    "label": "big-dish",
+    "model": "selector:big-dish",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "orbital-extra-panels",
+    "label": "extra-panels",
+    "model": "selector:extra-panels",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "computer",
+    "label": "Bongo smiling supercomputer",
+    "model": "computer",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "brain-furniture-chair",
+    "label": "Brain room chair",
+    "model": "furniture:chair",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "brain-furniture-ottoman",
+    "label": "Brain room ottoman",
+    "model": "furniture:ottoman",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "brain-furniture-table",
+    "label": "Brain room table",
+    "model": "furniture:table",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "brain-furniture-lamp",
+    "label": "Brain room lamp",
+    "model": "furniture:lamp",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "brain-furniture-painting",
+    "label": "Brain room painting",
+    "model": "furniture:painting",
+    "category": "PROPS",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-mag",
+    "label": "Alien-game mag pickup",
+    "model": "pickup:mag",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-round",
+    "label": "Alien-game round pickup",
+    "model": "pickup:round",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-banana",
+    "label": "Alien-game banana pickup",
+    "model": "pickup:banana",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-monster",
+    "label": "Alien-game monster pickup",
+    "model": "pickup:monster",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-pepsi",
+    "label": "Alien-game pepsi pickup",
+    "model": "pickup:pepsi",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "pickup-goldcan",
+    "label": "Alien-game goldcan pickup",
+    "model": "pickup:goldcan",
+    "category": "COLLECTIBLES",
+    "builder": "world",
+    "source": "Recovered site model"
+  },
+  {
+    "id": "hex-penguin",
+    "label": "HexTrip penguin",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "hex:penguin",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-gidog",
+    "label": "HexTrip G.I. dog",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "hex:gidog",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-robot",
+    "label": "HexTrip robot",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "hex:robot",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-panda",
+    "label": "HexTrip panda",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "hex:panda",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-alien",
+    "label": "HexTrip alien",
+    "category": "CHARACTERS",
+    "builder": "world",
+    "model": "hex:alien",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-motorcycle",
+    "label": "HexTrip motorcycle",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "hex:motorcycle",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-biplane",
+    "label": "HexTrip biplane",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "hex:biplane",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-helicopter",
+    "label": "HexTrip helicopter",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "hex:helicopter",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-airfield",
+    "label": "HexTrip airfield",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "hex:airfield",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-container",
+    "label": "HexTrip container",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "hex:container",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-barracks",
+    "label": "HexTrip barracks",
+    "category": "BUILDINGS",
+    "builder": "world",
+    "model": "hex:barracks",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-tree",
+    "label": "HexTrip tree",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:tree",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-palm",
+    "label": "HexTrip palm",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:palm",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-boulder",
+    "label": "HexTrip boulder",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:boulder",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-fern",
+    "label": "HexTrip fern",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:fern",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-pepsiCan",
+    "label": "HexTrip Pepsi can",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:pepsiCan",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-brick",
+    "label": "HexTrip brick",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:brick",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-reefer",
+    "label": "HexTrip reefer prop",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:reefer",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-shroom",
+    "label": "HexTrip mushroom",
+    "category": "PROPS",
+    "builder": "world",
+    "model": "hex:shroom",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-revolver",
+    "label": "HexTrip revolver",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "hex:revolver",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-ak47",
+    "label": "HexTrip ak47",
+    "category": "WEAPONS",
+    "builder": "world",
+    "model": "hex:ak47",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "hex-blimp",
+    "label": "HexTrip blimp",
+    "category": "VEHICLES",
+    "builder": "world",
+    "model": "hex:blimp",
+    "source": "Original HexTrip game"
+  },
+  {
+    "id": "original-vehicle",
+    "label": "Original sandbox vehicle",
+    "builder": "world",
+    "model": "sandbox-old:vehicle",
+    "source": "Original asset sandbox",
+    "category": "VEHICLES"
+  },
+  {
+    "id": "original-jetpack",
+    "label": "Original sandbox jetpack",
+    "builder": "world",
+    "model": "sandbox-old:jetpack",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-bow",
+    "label": "Original sandbox bow",
+    "builder": "world",
+    "model": "sandbox-old:bow",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-arrow",
+    "label": "Original sandbox arrow",
+    "builder": "world",
+    "model": "sandbox-old:arrow",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-pepsi",
+    "label": "Original sandbox pepsi",
+    "builder": "world",
+    "model": "sandbox-old:pepsi",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-yoohoo",
+    "label": "Original sandbox yoohoo",
+    "builder": "world",
+    "model": "sandbox-old:yoohoo",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-monster",
+    "label": "Original sandbox monster",
+    "builder": "world",
+    "model": "sandbox-old:monster",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-rat-meat",
+    "label": "Original sandbox rat-meat",
+    "builder": "world",
+    "model": "sandbox-old:rat-meat",
+    "source": "Original asset sandbox",
+    "category": "PROPS"
+  },
+  {
+    "id": "original-biplane",
+    "label": "Original sandbox biplane",
+    "builder": "world",
+    "model": "sandbox-old:biplane",
+    "source": "Original asset sandbox",
+    "category": "VEHICLES"
+  },
+  {
+    "id": "original-penguin",
+    "label": "Original sandbox penguin",
+    "builder": "world",
+    "model": "sandbox-old:penguin",
+    "source": "Original asset sandbox",
+    "category": "CHARACTERS"
+  },
+  {
+    "id": "image-001",
+    "label": "land_mask · 001",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/land_mask.jpg"
+  },
+  {
+    "id": "image-002",
+    "label": "og · 002",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/og.jpg"
+  },
+  {
+    "id": "image-003",
+    "label": "rat meat gold label · 003",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/rat-meat-gold-label.jpg"
+  },
+  {
+    "id": "image-004",
+    "label": "rat meat label · 004",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/rat-meat-label.jpg"
+  },
+  {
+    "id": "image-005",
+    "label": "rat meat silver label · 005",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/rat-meat-silver-label.jpg"
+  },
+  {
+    "id": "image-006",
+    "label": "yoohoo label · 006",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-archer-game",
+    "url": "/alien-archer-game/yoohoo-label.png"
+  },
+  {
+    "id": "image-007",
+    "label": "land_mask · 007",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-game",
+    "url": "/alien-game/land_mask.jpg"
+  },
+  {
+    "id": "image-008",
+    "label": "og · 008",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "alien-game",
+    "url": "/alien-game/og.jpg"
+  },
+  {
+    "id": "image-009",
+    "label": "tv room · 009",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "anubis-room",
+    "url": "/anubis-room/assets/tv-room.jpg"
+  },
+  {
+    "id": "image-010",
+    "label": "brain room desktop · 010",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-desktop.jpg"
+  },
+  {
+    "id": "image-011",
+    "label": "brain room mobile · 011",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-mobile.jpg"
+  },
+  {
+    "id": "image-012",
+    "label": "brain room overlay mobile · 012",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-overlay-mobile.jpg"
+  },
+  {
+    "id": "image-013",
+    "label": "brain room overlay tablet · 013",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-overlay-tablet.jpg"
+  },
+  {
+    "id": "image-014",
+    "label": "brain room overlay wide · 014",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-overlay-wide.jpg"
+  },
+  {
+    "id": "image-015",
+    "label": "brain room wide · 015",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/brain-room-wide.jpg"
+  },
+  {
+    "id": "image-016",
+    "label": "cortex · 016",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/cortex.png"
+  },
+  {
+    "id": "image-017",
+    "label": "primate studies · 017",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/primate-studies.png"
+  },
+  {
+    "id": "image-018",
+    "label": "reference art · 018",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "brain-room",
+    "url": "/brain-room/reference-art.jpg"
+  },
+  {
+    "id": "image-019",
+    "label": "cargo ship v2 · 019",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/cargo-ship-v2.png"
+  },
+  {
+    "id": "image-020",
+    "label": "circus · 020",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/circus.png"
+  },
+  {
+    "id": "image-021",
+    "label": "dogfight arena · 021",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/dogfight-arena.png"
+  },
+  {
+    "id": "image-022",
+    "label": "igloo · 022",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/igloo.png"
+  },
+  {
+    "id": "image-023",
+    "label": "plane · 023",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/plane.png"
+  },
+  {
+    "id": "image-024",
+    "label": "sweatshop · 024",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/sweatshop.png"
+  },
+  {
+    "id": "image-025",
+    "label": "telescope metal · 025",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/telescope-metal.png"
+  },
+  {
+    "id": "image-026",
+    "label": "telescope wood · 026",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "buildings",
+    "url": "/buildings/telescope-wood.png"
+  },
+  {
+    "id": "image-027",
+    "label": "arena · 027",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "dog-fighting",
+    "url": "/dog-fighting/arena.jpg"
+  },
+  {
+    "id": "image-028",
+    "label": "evil penguin · 028",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "evil-penguin.jpg",
+    "url": "/evil-penguin.jpg"
+  },
+  {
+    "id": "image-029",
+    "label": "psychedelic earth texture v1 · 029",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "hextrip-game",
+    "url": "/hextrip-game/media/psychedelic-earth-texture-v1.jpg"
+  },
+  {
+    "id": "image-030",
+    "label": "rat meat label · 030",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "legacy",
+    "url": "/legacy/my-dick/media/rat-meat-label.jpg"
+  },
+  {
+    "id": "image-031",
+    "label": "yoohoo label · 031",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "legacy",
+    "url": "/legacy/my-dick/media/yoohoo-label.png"
+  },
+  {
+    "id": "image-032",
+    "label": "alien astronomer v1 · 032",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/alien-astronomer-v1.png"
+  },
+  {
+    "id": "image-033",
+    "label": "bongo banana cutout v1 · 033",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/bongo-banana-cutout-v1.png"
+  },
+  {
+    "id": "image-034",
+    "label": "bongo bat cutout v1 · 034",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/bongo-bat-cutout-v1.png"
+  },
+  {
+    "id": "image-035",
+    "label": "brain crop · 035",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/brain-crop.png"
+  },
+  {
+    "id": "image-036",
+    "label": "brain cutout · 036",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/brain-cutout.png"
+  },
+  {
+    "id": "image-037",
+    "label": "brain earth · 037",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/brain-earth.jpg"
+  },
+  {
+    "id": "image-038",
+    "label": "brain · 038",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/brain.jpg"
+  },
+  {
+    "id": "image-039",
+    "label": "monster energy · 039",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/monster-energy.png"
+  },
+  {
+    "id": "image-040",
+    "label": "pepsi · 040",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/pepsi.png"
+  },
+  {
+    "id": "image-041",
+    "label": "rat meat classic · 041",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/rat-meat-classic.jpg"
+  },
+  {
+    "id": "image-042",
+    "label": "rat meat gold · 042",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/rat-meat-gold.jpg"
+  },
+  {
+    "id": "image-043",
+    "label": "rat meat silver · 043",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/rat-meat-silver.jpg"
+  },
+  {
+    "id": "image-044",
+    "label": "yoohoo bottle · 044",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/yoohoo-bottle.png"
+  },
+  {
+    "id": "image-045",
+    "label": "yoohoo yellow · 045",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/can-labels/yoohoo-yellow.png"
+  },
+  {
+    "id": "image-046",
+    "label": "cia seal · 046",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/cia-seal.svg"
+  },
+  {
+    "id": "image-047",
+    "label": "earth · 047",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/earth.jpg"
+  },
+  {
+    "id": "image-048",
+    "label": "lab rat ragdoll v2 · 048",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/lab-rat-ragdoll-v2.png"
+  },
+  {
+    "id": "image-049",
+    "label": "lab rat v1 · 049",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/lab-rat-v1.png"
+  },
+  {
+    "id": "image-050",
+    "label": "loading art · 050",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/loading-art.webp"
+  },
+  {
+    "id": "image-051",
+    "label": "mountains nature · 051",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/mountains-nature.png"
+  },
+  {
+    "id": "image-052",
+    "label": "orangutan aliens · 052",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/orangutan-aliens.jpg"
+  },
+  {
+    "id": "image-053",
+    "label": "planet urf crop · 053",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/planet-urf-crop.png"
+  },
+  {
+    "id": "image-054",
+    "label": "planet urf cutout · 054",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/planet-urf-cutout.png"
+  },
+  {
+    "id": "image-055",
+    "label": "psychedelic earth texture v1 · 055",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/psychedelic-earth-texture-v1.png"
+  },
+  {
+    "id": "image-056",
+    "label": "rat meat can v2 · 056",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/rat-meat-can-v2.png"
+  },
+  {
+    "id": "image-057",
+    "label": "rat meat can · 057",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/rat-meat-can.jpg"
+  },
+  {
+    "id": "image-058",
+    "label": "rat meat gold label · 058",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/rat-meat-gold-label.jpg"
+  },
+  {
+    "id": "image-059",
+    "label": "rat meat label · 059",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/rat-meat-label.jpg"
+  },
+  {
+    "id": "image-060",
+    "label": "rat meat silver label · 060",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/rat-meat-silver-label.jpg"
+  },
+  {
+    "id": "image-061",
+    "label": "yoohoo label · 061",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "media",
+    "url": "/media/yoohoo-label.png"
+  },
+  {
+    "id": "image-062",
+    "label": "penguin building sprites alpha v2 · 062",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "penguin-building-sprites-alpha-v2.png",
+    "url": "/penguin-building-sprites-alpha-v2.png"
+  },
+  {
+    "id": "image-063",
+    "label": "penguin town clean · 063",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "penguin-town-clean.webp",
+    "url": "/penguin-town-clean.webp"
+  },
+  {
+    "id": "image-064",
+    "label": "penguin town ground v4 · 064",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "penguin-town-ground-v4.png",
+    "url": "/penguin-town-ground-v4.png"
+  },
+  {
+    "id": "image-065",
+    "label": "penguinaroo · 065",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "penguinaroo.png",
+    "url": "/penguinaroo.png"
+  },
+  {
+    "id": "image-066",
+    "label": "elevation · 066",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "urf-data",
+    "url": "/urf-data/elevation.jpg"
+  },
+  {
+    "id": "image-067",
+    "label": "vicheal nic · 067",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "vicheal-nic.jpg",
+    "url": "/vicheal-nic.jpg"
+  },
+  {
+    "id": "book-art-001",
+    "label": "media 1 cover · book-art-001",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · alice",
+    "url": "/library/alice/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-002",
+    "label": "media 1 cover · book-art-002",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · enoch",
+    "url": "/library/enoch/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-003",
+    "label": "media 1 ill_intro · book-art-003",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-1-ill_intro.png"
+  },
+  {
+    "id": "book-art-004",
+    "label": "media 10 ill_009 · book-art-004",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-10-ill_009.png"
+  },
+  {
+    "id": "book-art-005",
+    "label": "media 11 ill_010 · book-art-005",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-11-ill_010.png"
+  },
+  {
+    "id": "book-art-006",
+    "label": "media 12 ill_ending · book-art-006",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-12-ill_ending.png"
+  },
+  {
+    "id": "book-art-007",
+    "label": "media 2 ill_001 · book-art-007",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-2-ill_001.png"
+  },
+  {
+    "id": "book-art-008",
+    "label": "media 3 ill_002 · book-art-008",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-3-ill_002.png"
+  },
+  {
+    "id": "book-art-009",
+    "label": "media 4 ill_003 · book-art-009",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-4-ill_003.png"
+  },
+  {
+    "id": "book-art-010",
+    "label": "media 5 ill_004 · book-art-010",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-5-ill_004.png"
+  },
+  {
+    "id": "book-art-011",
+    "label": "media 6 ill_005 · book-art-011",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-6-ill_005.png"
+  },
+  {
+    "id": "book-art-012",
+    "label": "media 7 ill_006 · book-art-012",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-7-ill_006.png"
+  },
+  {
+    "id": "book-art-013",
+    "label": "media 8 ill_007 · book-art-013",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-8-ill_007.png"
+  },
+  {
+    "id": "book-art-014",
+    "label": "media 9 ill_008 · book-art-014",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · flatland",
+    "url": "/library/flatland/media-9-ill_008.png"
+  },
+  {
+    "id": "book-art-015",
+    "label": "media 1 cover · book-art-015",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · frankenstein",
+    "url": "/library/frankenstein/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-016",
+    "label": "media 1 coverpage · book-art-016",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · illuminati",
+    "url": "/library/illuminati/media-1-coverpage.jpg"
+  },
+  {
+    "id": "book-art-017",
+    "label": "media 1 cover · book-art-017",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · necronomicon",
+    "url": "/library/necronomicon/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-018",
+    "label": "media 2 illus · book-art-018",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · necronomicon",
+    "url": "/library/necronomicon/media-2-illus.jpg"
+  },
+  {
+    "id": "book-art-019",
+    "label": "media 1 new cover · book-art-019",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-1-new-cover.jpg"
+  },
+  {
+    "id": "book-art-020",
+    "label": "media 10 p080 · book-art-020",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-10-p080.png"
+  },
+  {
+    "id": "book-art-021",
+    "label": "media 11 o099 · book-art-021",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-11-o099.png"
+  },
+  {
+    "id": "book-art-022",
+    "label": "media 12 o100 · book-art-022",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-12-o100.png"
+  },
+  {
+    "id": "book-art-023",
+    "label": "media 13 p103 · book-art-023",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-13-p103.png"
+  },
+  {
+    "id": "book-art-024",
+    "label": "media 14 o107 · book-art-024",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-14-o107.png"
+  },
+  {
+    "id": "book-art-025",
+    "label": "media 15 o121 · book-art-025",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-15-o121.png"
+  },
+  {
+    "id": "book-art-026",
+    "label": "media 16 o122 · book-art-026",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-16-o122.png"
+  },
+  {
+    "id": "book-art-027",
+    "label": "media 17 o141 · book-art-027",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-17-o141.png"
+  },
+  {
+    "id": "book-art-028",
+    "label": "media 18 o142 · book-art-028",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-18-o142.png"
+  },
+  {
+    "id": "book-art-029",
+    "label": "media 19 o151 · book-art-029",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-19-o151.png"
+  },
+  {
+    "id": "book-art-030",
+    "label": "media 2 frontispiece · book-art-030",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-2-frontispiece.png"
+  },
+  {
+    "id": "book-art-031",
+    "label": "media 20 o152 · book-art-031",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-20-o152.png"
+  },
+  {
+    "id": "book-art-032",
+    "label": "media 21 p153 · book-art-032",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-21-p153.png"
+  },
+  {
+    "id": "book-art-033",
+    "label": "media 22 o162 · book-art-033",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-22-o162.png"
+  },
+  {
+    "id": "book-art-034",
+    "label": "media 23 o186 · book-art-034",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-23-o186.png"
+  },
+  {
+    "id": "book-art-035",
+    "label": "media 24 rbrace4 · book-art-035",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-24-rbrace4.png"
+  },
+  {
+    "id": "book-art-036",
+    "label": "media 25 o208 · book-art-036",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-25-o208.png"
+  },
+  {
+    "id": "book-art-037",
+    "label": "media 26 o229 · book-art-037",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-26-o229.png"
+  },
+  {
+    "id": "book-art-038",
+    "label": "media 27 o230 · book-art-038",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-27-o230.png"
+  },
+  {
+    "id": "book-art-039",
+    "label": "media 28 p246 · book-art-039",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-28-p246.png"
+  },
+  {
+    "id": "book-art-040",
+    "label": "media 29 o254 · book-art-040",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-29-o254.png"
+  },
+  {
+    "id": "book-art-041",
+    "label": "media 3 titlepage · book-art-041",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-3-titlepage.png"
+  },
+  {
+    "id": "book-art-042",
+    "label": "media 30 o255 · book-art-042",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-30-o255.png"
+  },
+  {
+    "id": "book-art-043",
+    "label": "media 31 o260 · book-art-043",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-31-o260.png"
+  },
+  {
+    "id": "book-art-044",
+    "label": "media 4 o001 · book-art-044",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-4-o001.png"
+  },
+  {
+    "id": "book-art-045",
+    "label": "media 5 o012 · book-art-045",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-5-o012.png"
+  },
+  {
+    "id": "book-art-046",
+    "label": "media 6 o040 · book-art-046",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-6-o040.png"
+  },
+  {
+    "id": "book-art-047",
+    "label": "media 7 o041 · book-art-047",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-7-o041.png"
+  },
+  {
+    "id": "book-art-048",
+    "label": "media 8 o065 · book-art-048",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-8-o065.png"
+  },
+  {
+    "id": "book-art-049",
+    "label": "media 9 p079 · book-art-049",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · occult-spells",
+    "url": "/library/occult-spells/media-9-p079.png"
+  },
+  {
+    "id": "book-art-050",
+    "label": "media 1 cover · book-art-050",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-051",
+    "label": "media 10 front 5 large · book-art-051",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-10-front-5-large.jpg"
+  },
+  {
+    "id": "book-art-052",
+    "label": "media 11 front 5 · book-art-052",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-11-front-5.jpg"
+  },
+  {
+    "id": "book-art-053",
+    "label": "media 12 front 6 large · book-art-053",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-12-front-6-large.jpg"
+  },
+  {
+    "id": "book-art-054",
+    "label": "media 13 front 6 · book-art-054",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-13-front-6.jpg"
+  },
+  {
+    "id": "book-art-055",
+    "label": "media 14 front 7 large · book-art-055",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-14-front-7-large.jpg"
+  },
+  {
+    "id": "book-art-056",
+    "label": "media 15 front 7 · book-art-056",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-15-front-7.jpg"
+  },
+  {
+    "id": "book-art-057",
+    "label": "media 2 front 1 large · book-art-057",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-2-front-1-large.jpg"
+  },
+  {
+    "id": "book-art-058",
+    "label": "media 3 front 1 · book-art-058",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-3-front-1.jpg"
+  },
+  {
+    "id": "book-art-059",
+    "label": "media 4 front 2 large · book-art-059",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-4-front-2-large.jpg"
+  },
+  {
+    "id": "book-art-060",
+    "label": "media 5 front 2 · book-art-060",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-5-front-2.jpg"
+  },
+  {
+    "id": "book-art-061",
+    "label": "media 6 front 3 large · book-art-061",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-6-front-3-large.jpg"
+  },
+  {
+    "id": "book-art-062",
+    "label": "media 7 front 3 · book-art-062",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-7-front-3.jpg"
+  },
+  {
+    "id": "book-art-063",
+    "label": "media 8 front 4 large · book-art-063",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-8-front-4-large.jpg"
+  },
+  {
+    "id": "book-art-064",
+    "label": "media 9 front 4 · book-art-064",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · solomon",
+    "url": "/library/solomon/media-9-front-4.jpg"
+  },
+  {
+    "id": "book-art-065",
+    "label": "media 1 cover · book-art-065",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-1-cover.jpg"
+  },
+  {
+    "id": "book-art-066",
+    "label": "media 2 title · book-art-066",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-2-title.jpg"
+  },
+  {
+    "id": "book-art-067",
+    "label": "media 3 illo 358a · book-art-067",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-3-illo-358a.jpg"
+  },
+  {
+    "id": "book-art-068",
+    "label": "media 4 illo 358c · book-art-068",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-4-illo-358c.jpg"
+  },
+  {
+    "id": "book-art-069",
+    "label": "media 5 illo 358b · book-art-069",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-5-illo-358b.jpg"
+  },
+  {
+    "id": "book-art-070",
+    "label": "media 6 illo 358d · book-art-070",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-6-illo-358d.jpg"
+  },
+  {
+    "id": "book-art-071",
+    "label": "media 7 illo 536 · book-art-071",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-7-illo-536.jpg"
+  },
+  {
+    "id": "book-art-072",
+    "label": "media 8 illo 680 · book-art-072",
+    "category": "IMAGES",
+    "builder": "image",
+    "source": "Library · wwii",
+    "url": "/library/wwii/media-8-illo-680.jpg"
+  }
+]

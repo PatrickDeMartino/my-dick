@@ -1,0 +1,16 @@
+import * as T from 'three';
+import {fixture} from '../../world/models/fixtures';
+import {LIBRARY_BOOKS} from '../../world/library';
+import {textTexture} from './lab-art';
+import {makeLooseProp,ORGAN_KINDS,animateLoose} from './loose-props';
+import type {Solid} from './level';
+export const GARDEN_ENTRY=new T.Vector3(25,.5,-40);
+export function makeGraveyard(solids:Solid[]){const root=new T.Group();root.name='Crystal anatomy garden';root.position.set(26,0,-57);const books:T.Group[]=[],crystals:T.Group[]=[],floaters:T.Group[]=[];
+ const ground=new T.Mesh(new T.CylinderGeometry(15,15.5,.25,72),new T.MeshStandardMaterial({color:0x352942,roughness:.65,metalness:.2}));ground.position.y=-.08;root.add(ground);
+ for(let i=0;i<21;i++){const a=Math.PI*1.16+i/20*Math.PI*.68,r=14+Math.sin(i*2.7)*.8;const c=fixture('crystal');c.position.set(Math.cos(a)*r,0,Math.sin(a)*r);c.scale.set(1.6+(i%3)*.25,3.6+Math.sin(i*1.3)*1.1,1.6);c.rotation.y=i*2.4;root.add(c);crystals.push(c);solids.push({center:c.position.clone().add(root.position).add(new T.Vector3(0,3,0)),half:new T.Vector3(1,3,1)});}
+ for(let i=0;i<7;i++){const stone=fixture('tombstone');stone.position.set((i-3)*2.35,0,-1+Math.sin(i*1.1)*1.2);stone.rotation.y=Math.sin(i)*.18;const plaque=new T.Mesh(new T.PlaneGeometry(.83,.4),new T.MeshStandardMaterial({map:textTexture(['REST IN PIECES',String(i+1).padStart(3,'0')],'#e2d6f0','#4b4359'),roughness:.8}));plaque.position.set(0,.58,.3);stone.add(plaque);root.add(stone);}
+ LIBRARY_BOOKS.forEach((book,i)=>{const a=.18+i/12*Math.PI*.83,x=Math.cos(a)*11.5,z=Math.sin(a)*10-2;const altar=fixture('altar');altar.position.set(x,0,z);altar.rotation.y=-a-Math.PI/2;root.add(altar);const tome=fixture('book');tome.position.set(0,1.7,0);tome.rotation.x=-.18;tome.scale.setScalar(1.35);tome.userData.bookId=book.id;altar.add(tome);books.push(tome);const plaque=new T.Mesh(new T.PlaneGeometry(1.45,.6),new T.MeshStandardMaterial({map:textTexture([String(i+1).padStart(2,'0')+' / LIBRARY',book.title,book.subtitle],'#ffeac0','#2b123d'),emissive:0x50321d,emissiveIntensity:.3}));plaque.position.set(0,1.1,.71);altar.add(plaque);solids.push({center:altar.position.clone().add(root.position).add(new T.Vector3(0,.65,0)),half:new T.Vector3(.75,.65,.75)});});
+ const anatomy=['bone-skull','bone-ribcage','bone-spine','bone-pelvis','bone-humerus','bone-forearm','bone-femur','bone-hand','bone-foot'];anatomy.forEach((kind,i)=>{const o=fixture(kind);o.position.set((i%5-2)*1.5,1+(i%3)*.5,-5-Math.floor(i/5)*2);o.rotation.z=(i-4)*.15;root.add(o);floaters.push(o);});ORGAN_KINDS.forEach((kind,i)=>{const o=makeLooseProp(kind);o.position.set(Math.cos(i)*5,1.3+Math.sin(i)*.4,-4+Math.sin(i)*3);root.add(o);floaters.push(o);});floaters.forEach(o=>o.userData.restY=o.position.y);
+ const light=new T.PointLight(0x95ffc0,40,30,2);light.position.set(0,6,-4);root.add(light);const glow=new T.PointLight(0xd177ff,25,24,2);glow.position.set(0,4,4);root.add(glow);
+ return {root,books,update(t:number,dt:number){crystals.forEach((c,i)=>{c.rotation.z=Math.sin(t*.35+i)*.012;});floaters.forEach((o,i)=>{o.position.y=o.userData.restY+Math.sin(t*.7+i)*.16;o.rotation.y+=dt*.15;animateLoose(o,t,dt,1);});books.forEach((b,i)=>b.rotation.z=Math.sin(t*.4+i)*.018);}};
+}

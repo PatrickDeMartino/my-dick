@@ -1,0 +1,402 @@
+[
+  {
+    "file": "app/assets-room/page.tsx",
+    "function": "AssetsRoomPage"
+  },
+  {
+    "file": "app/bongo/OrangutanWidget.tsx",
+    "function": "OrangutanWidget"
+  },
+  {
+    "file": "app/brain-room/BrainWorld3D.tsx",
+    "function": "BrainWorld3D"
+  },
+  {
+    "file": "app/brain-room/lib/bongo.ts",
+    "function": "makeDrBongo"
+  },
+  {
+    "file": "app/brain-room/lib/cortex-shell.ts",
+    "function": "cortexShell"
+  },
+  {
+    "file": "app/brain-room/lib/cortex-shell.ts",
+    "function": "makeDreamTree"
+  },
+  {
+    "file": "app/brain-room/lib/cows.ts",
+    "function": "makeHerd"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "ellipsoid"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "joint"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "tube"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "sculptLimb"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "makeRat"
+  },
+  {
+    "file": "app/brain-room/lib/creatures.ts",
+    "function": "makeBrainCreature"
+  },
+  {
+    "file": "app/brain-room/lib/dreamscape.ts",
+    "function": "makeDreamscape"
+  },
+  {
+    "file": "app/brain-room/lib/environment-detail.ts",
+    "function": "detailFence"
+  },
+  {
+    "file": "app/brain-room/lib/evil-laser.ts",
+    "function": "makeEvilLaser"
+  },
+  {
+    "file": "app/brain-room/lib/graveyard.ts",
+    "function": "makeGraveyard"
+  },
+  {
+    "file": "app/brain-room/lib/laboratory.ts",
+    "function": "makeLab"
+  },
+  {
+    "file": "app/brain-room/lib/level.ts",
+    "function": "makeLevel"
+  },
+  {
+    "file": "app/brain-room/lib/loose-props.ts",
+    "function": "makeCanProp"
+  },
+  {
+    "file": "app/brain-room/lib/loose-props.ts",
+    "function": "makeLooseProp"
+  },
+  {
+    "file": "app/brain-room/lib/specimens.ts",
+    "function": "makeSpecimen"
+  },
+  {
+    "file": "app/components/Can3D.tsx",
+    "function": "Can3D"
+  },
+  {
+    "file": "app/components/HomeRoom3D.tsx",
+    "function": "HomeRoom3D"
+  },
+  {
+    "file": "app/lib/homeBrain.ts",
+    "function": "makeHomeBrain"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildCan"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildRatMeatCan"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildYoohooCan"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildBanana"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildOilDrum"
+  },
+  {
+    "file": "app/lib/props3d.ts",
+    "function": "buildPenguin"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "buildMountainPeak"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "buildMountainRange"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "buildPaintedBackdrop"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "buildGridOverlay"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "buildTerrainSlab"
+  },
+  {
+    "file": "app/penguin-town/PenguinTownScene3D.tsx",
+    "function": "PenguinTownScene3D"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildAlien"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildSatellite"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildSatelliteUpgrade"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildMoon"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildUfo"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "buildMeteorTrail"
+  },
+  {
+    "file": "app/urf-3d/globe3d.ts",
+    "function": "createGlobe3D"
+  },
+  {
+    "file": "app/urf-3d/grok/alien.ts",
+    "function": "createAlien"
+  },
+  {
+    "file": "app/urf-3d/grok/alien.ts",
+    "function": "makeGiraffeAntenna"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeAK47"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeRevolver"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeFlash"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeBulletMesh"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeTracerMesh"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeMagPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeAmmoPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeBow"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeFlyingCan"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeArrowMesh"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeBananaPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeMonsterCanPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makePepsiAmmoPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeGoldRatMeatPickup"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeJetpackProp"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makeUrfRoverProp"
+  },
+  {
+    "file": "app/urf-3d/grok/weapons.ts",
+    "function": "makePenguinBiplaneProp"
+  },
+  {
+    "file": "app/urf-3d/launch-island.ts",
+    "function": "buildLaunchIsland"
+  },
+  {
+    "file": "app/urf-3d/organic-terrain.ts",
+    "function": "organicTerrain"
+  },
+  {
+    "file": "app/urf-3d/organic-terrain.ts",
+    "function": "makeCityLights"
+  },
+  {
+    "file": "app/world/assetFactory.ts",
+    "function": "buildAsset"
+  },
+  {
+    "file": "app/world/models/fixtures.ts",
+    "function": "fixture"
+  },
+  {
+    "file": "app/world/models/hex-legacy.ts",
+    "function": "construct"
+  },
+  {
+    "file": "app/world/models/hex-legacy.ts",
+    "function": "makeHexAsset"
+  },
+  {
+    "file": "app/world/models/home.ts",
+    "function": "makeCrystalCluster"
+  },
+  {
+    "file": "app/world/models/home.ts",
+    "function": "makeJungleTree"
+  },
+  {
+    "file": "app/world/models/home.ts",
+    "function": "makeCan"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "bone"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildBongo"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildLabRat"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildAlienScout"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildPenguinCharacter"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildBeanbag"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildCow"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildPig"
+  },
+  {
+    "file": "app/world/models/legacy-brain.ts",
+    "function": "buildSheep"
+  },
+  {
+    "file": "app/world/models/legacy-sandbox.ts",
+    "function": "can"
+  },
+  {
+    "file": "app/world/models/legacy-sandbox.ts",
+    "function": "biplane"
+  },
+  {
+    "file": "app/world/models/legacy-sandbox.ts",
+    "function": "penguin"
+  },
+  {
+    "file": "app/world/models/legacy-sandbox.ts",
+    "function": "bongo"
+  },
+  {
+    "file": "app/world/models/legacy-sandbox.ts",
+    "function": "makeSandboxProp"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "box"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "cylinder"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "sphere"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildBunting"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildPlane"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildTelescope"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildCircus"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildIgloo"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildSweatshop"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildBoat"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildArena"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildBuildingModel"
+  },
+  {
+    "file": "app/world/models/town.ts",
+    "function": "buildPenguin"
+  }
+]

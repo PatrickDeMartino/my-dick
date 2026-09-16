@@ -1,0 +1,68 @@
+{
+  "generated": "2026-09-16T00:11:06.727Z",
+  "githubSource": "PatrickDeMartino/my-dick",
+  "recoveredFromRevision": "05f8cb5d381bbce7c2d88c5ba0e0e422ef9aaedf",
+  "counts": {
+    "files": 332,
+    "spawnEntries": 298
+  },
+  "duplicates": [
+    [
+      "public/alien-archer-game/favicon.svg",
+      "public/alien-game/favicon.svg"
+    ],
+    [
+      "public/alien-archer-game/land_mask.jpg",
+      "public/alien-game/land_mask.jpg"
+    ],
+    [
+      "public/alien-archer-game/og.jpg",
+      "public/alien-game/og.jpg"
+    ],
+    [
+      "public/alien-archer-game/rat-meat-gold-label.jpg",
+      "public/media/can-labels/rat-meat-gold.jpg",
+      "public/media/rat-meat-gold-label.jpg"
+    ],
+    [
+      "public/alien-archer-game/rat-meat-label.jpg",
+      "public/media/can-labels/rat-meat-classic.jpg",
+      "public/media/rat-meat-can.jpg",
+      "public/media/rat-meat-label.jpg"
+    ],
+    [
+      "public/alien-archer-game/rat-meat-silver-label.jpg",
+      "public/legacy/my-dick/media/rat-meat-label.jpg",
+      "public/media/can-labels/rat-meat-silver.jpg",
+      "public/media/rat-meat-silver-label.jpg"
+    ],
+    [
+      "public/alien-archer-game/yoohoo-label.png",
+      "public/media/can-labels/yoohoo-yellow.png",
+      "public/media/yoohoo-label.png"
+    ],
+    [
+      "public/brain-room/brain-room-desktop.jpg",
+      "public/brain-room/brain-room-overlay-wide.jpg"
+    ],
+    [
+      "public/brain-room/brain-room-mobile.jpg",
+      "public/brain-room/brain-room-overlay-mobile.jpg"
+    ],
+    [
+      "public/brain-room/brain-room-overlay-tablet.jpg",
+      "public/brain-room/brain-room-wide.jpg",
+      "public/brain-room/reference-art.jpg"
+    ],
+    [
+      "public/legacy/my-dick/media/yoohoo-label.png",
+      "public/media/can-labels/yoohoo-bottle.png"
+    ]
+  ],
+  "notes": [
+    "Hash-named files in game assets are generated code chunks. Their names are required by import references.",
+    "Original model variants retain their source and receive unique catalog IDs.",
+    "Original legacy sources are preserved in the offline Archive folder.",
+    "The hidden Israel territory is a locked selector entry; no separate room source was found."
+  ]
+}

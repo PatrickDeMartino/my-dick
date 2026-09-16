@@ -1,0 +1,401 @@
+{
+  "pages": 406,
+  "parts": [
+    {
+      "file": "/library/flight/pages-0001-0001.pdf",
+      "first": 1,
+      "last": 1,
+      "bytes": 7714110
+    },
+    {
+      "file": "/library/flight/pages-0002-0002.pdf",
+      "first": 2,
+      "last": 2,
+      "bytes": 73928
+    },
+    {
+      "file": "/library/flight/pages-0003-0005.pdf",
+      "first": 3,
+      "last": 5,
+      "bytes": 178535
+    },
+    {
+      "file": "/library/flight/pages-0006-0010.pdf",
+      "first": 6,
+      "last": 10,
+      "bytes": 484937
+    },
+    {
+      "file": "/library/flight/pages-0011-0020.pdf",
+      "first": 11,
+      "last": 20,
+      "bytes": 523795
+    },
+    {
+      "file": "/library/flight/pages-0021-0025.pdf",
+      "first": 21,
+      "last": 25,
+      "bytes": 6737684
+    },
+    {
+      "file": "/library/flight/pages-0026-0027.pdf",
+      "first": 26,
+      "last": 27,
+      "bytes": 5447261
+    },
+    {
+      "file": "/library/flight/pages-0028-0030.pdf",
+      "first": 28,
+      "last": 30,
+      "bytes": 3367509
+    },
+    {
+      "file": "/library/flight/pages-0031-0032.pdf",
+      "first": 31,
+      "last": 32,
+      "bytes": 2026468
+    },
+    {
+      "file": "/library/flight/pages-0033-0035.pdf",
+      "first": 33,
+      "last": 35,
+      "bytes": 6746810
+    },
+    {
+      "file": "/library/flight/pages-0036-0037.pdf",
+      "first": 36,
+      "last": 37,
+      "bytes": 4230733
+    },
+    {
+      "file": "/library/flight/pages-0038-0040.pdf",
+      "first": 38,
+      "last": 40,
+      "bytes": 5926693
+    },
+    {
+      "file": "/library/flight/pages-0041-0050.pdf",
+      "first": 41,
+      "last": 50,
+      "bytes": 7156883
+    },
+    {
+      "file": "/library/flight/pages-0051-0060.pdf",
+      "first": 51,
+      "last": 60,
+      "bytes": 6499211
+    },
+    {
+      "file": "/library/flight/pages-0061-0065.pdf",
+      "first": 61,
+      "last": 65,
+      "bytes": 6349370
+    },
+    {
+      "file": "/library/flight/pages-0066-0067.pdf",
+      "first": 66,
+      "last": 67,
+      "bytes": 3707969
+    },
+    {
+      "file": "/library/flight/pages-0068-0068.pdf",
+      "first": 68,
+      "last": 68,
+      "bytes": 7925239
+    },
+    {
+      "file": "/library/flight/pages-0069-0070.pdf",
+      "first": 69,
+      "last": 70,
+      "bytes": 4733724
+    },
+    {
+      "file": "/library/flight/pages-0071-0072.pdf",
+      "first": 71,
+      "last": 72,
+      "bytes": 4373534
+    },
+    {
+      "file": "/library/flight/pages-0073-0075.pdf",
+      "first": 73,
+      "last": 75,
+      "bytes": 5967045
+    },
+    {
+      "file": "/library/flight/pages-0076-0077.pdf",
+      "first": 76,
+      "last": 77,
+      "bytes": 6110778
+    },
+    {
+      "file": "/library/flight/pages-0078-0080.pdf",
+      "first": 78,
+      "last": 80,
+      "bytes": 3056284
+    },
+    {
+      "file": "/library/flight/pages-0081-0100.pdf",
+      "first": 81,
+      "last": 100,
+      "bytes": 6982977
+    },
+    {
+      "file": "/library/flight/pages-0101-0120.pdf",
+      "first": 101,
+      "last": 120,
+      "bytes": 5559675
+    },
+    {
+      "file": "/library/flight/pages-0121-0130.pdf",
+      "first": 121,
+      "last": 130,
+      "bytes": 4106979
+    },
+    {
+      "file": "/library/flight/pages-0131-0140.pdf",
+      "first": 131,
+      "last": 140,
+      "bytes": 4306349
+    },
+    {
+      "file": "/library/flight/pages-0141-0150.pdf",
+      "first": 141,
+      "last": 150,
+      "bytes": 6776007
+    },
+    {
+      "file": "/library/flight/pages-0151-0155.pdf",
+      "first": 151,
+      "last": 155,
+      "bytes": 4959619
+    },
+    {
+      "file": "/library/flight/pages-0156-0160.pdf",
+      "first": 156,
+      "last": 160,
+      "bytes": 5934798
+    },
+    {
+      "file": "/library/flight/pages-0161-0165.pdf",
+      "first": 161,
+      "last": 165,
+      "bytes": 5799843
+    },
+    {
+      "file": "/library/flight/pages-0166-0170.pdf",
+      "first": 166,
+      "last": 170,
+      "bytes": 5881817
+    },
+    {
+      "file": "/library/flight/pages-0171-0180.pdf",
+      "first": 171,
+      "last": 180,
+      "bytes": 5285174
+    },
+    {
+      "file": "/library/flight/pages-0181-0190.pdf",
+      "first": 181,
+      "last": 190,
+      "bytes": 4137959
+    },
+    {
+      "file": "/library/flight/pages-0191-0200.pdf",
+      "first": 191,
+      "last": 200,
+      "bytes": 6919996
+    },
+    {
+      "file": "/library/flight/pages-0201-0210.pdf",
+      "first": 201,
+      "last": 210,
+      "bytes": 5768566
+    },
+    {
+      "file": "/library/flight/pages-0211-0220.pdf",
+      "first": 211,
+      "last": 220,
+      "bytes": 5612681
+    },
+    {
+      "file": "/library/flight/pages-0221-0230.pdf",
+      "first": 221,
+      "last": 230,
+      "bytes": 4867642
+    },
+    {
+      "file": "/library/flight/pages-0231-0240.pdf",
+      "first": 231,
+      "last": 240,
+      "bytes": 5926871
+    },
+    {
+      "file": "/library/flight/pages-0241-0245.pdf",
+      "first": 241,
+      "last": 245,
+      "bytes": 3068118
+    },
+    {
+      "file": "/library/flight/pages-0246-0250.pdf",
+      "first": 246,
+      "last": 250,
+      "bytes": 5516545
+    },
+    {
+      "file": "/library/flight/pages-0251-0260.pdf",
+      "first": 251,
+      "last": 260,
+      "bytes": 5799950
+    },
+    {
+      "file": "/library/flight/pages-0261-0270.pdf",
+      "first": 261,
+      "last": 270,
+      "bytes": 4180868
+    },
+    {
+      "file": "/library/flight/pages-0271-0280.pdf",
+      "first": 271,
+      "last": 280,
+      "bytes": 6759752
+    },
+    {
+      "file": "/library/flight/pages-0281-0290.pdf",
+      "first": 281,
+      "last": 290,
+      "bytes": 4154397
+    },
+    {
+      "file": "/library/flight/pages-0291-0295.pdf",
+      "first": 291,
+      "last": 295,
+      "bytes": 5044346
+    },
+    {
+      "file": "/library/flight/pages-0296-0300.pdf",
+      "first": 296,
+      "last": 300,
+      "bytes": 4533596
+    },
+    {
+      "file": "/library/flight/pages-0301-0305.pdf",
+      "first": 301,
+      "last": 305,
+      "bytes": 3732883
+    },
+    {
+      "file": "/library/flight/pages-0306-0310.pdf",
+      "first": 306,
+      "last": 310,
+      "bytes": 4820956
+    },
+    {
+      "file": "/library/flight/pages-0311-0315.pdf",
+      "first": 311,
+      "last": 315,
+      "bytes": 5148814
+    },
+    {
+      "file": "/library/flight/pages-0316-0320.pdf",
+      "first": 316,
+      "last": 320,
+      "bytes": 3884255
+    },
+    {
+      "file": "/library/flight/pages-0321-0330.pdf",
+      "first": 321,
+      "last": 330,
+      "bytes": 6761615
+    },
+    {
+      "file": "/library/flight/pages-0331-0335.pdf",
+      "first": 331,
+      "last": 335,
+      "bytes": 4495456
+    },
+    {
+      "file": "/library/flight/pages-0336-0340.pdf",
+      "first": 336,
+      "last": 340,
+      "bytes": 5608388
+    },
+    {
+      "file": "/library/flight/pages-0341-0342.pdf",
+      "first": 341,
+      "last": 342,
+      "bytes": 3676342
+    },
+    {
+      "file": "/library/flight/pages-0343-0345.pdf",
+      "first": 343,
+      "last": 345,
+      "bytes": 5748652
+    },
+    {
+      "file": "/library/flight/pages-0346-0350.pdf",
+      "first": 346,
+      "last": 350,
+      "bytes": 6569447
+    },
+    {
+      "file": "/library/flight/pages-0351-0352.pdf",
+      "first": 351,
+      "last": 352,
+      "bytes": 3618900
+    },
+    {
+      "file": "/library/flight/pages-0353-0355.pdf",
+      "first": 353,
+      "last": 355,
+      "bytes": 4716751
+    },
+    {
+      "file": "/library/flight/pages-0356-0360.pdf",
+      "first": 356,
+      "last": 360,
+      "bytes": 1394557
+    },
+    {
+      "file": "/library/flight/pages-0361-0362.pdf",
+      "first": 361,
+      "last": 362,
+      "bytes": 1047587
+    },
+    {
+      "file": "/library/flight/pages-0363-0363.pdf",
+      "first": 363,
+      "last": 363,
+      "bytes": 1593946
+    },
+    {
+      "file": "/library/flight/pages-0364-0365.pdf",
+      "first": 364,
+      "last": 365,
+      "bytes": 7412220
+    },
+    {
+      "file": "/library/flight/pages-0366-0370.pdf",
+      "first": 366,
+      "last": 370,
+      "bytes": 3370580
+    },
+    {
+      "file": "/library/flight/pages-0371-0380.pdf",
+      "first": 371,
+      "last": 380,
+      "bytes": 1163645
+    },
+    {
+      "file": "/library/flight/pages-0381-0400.pdf",
+      "first": 381,
+      "last": 400,
+      "bytes": 1911323
+    },
+    {
+      "file": "/library/flight/pages-0401-0406.pdf",
+      "first": 401,
+      "last": 406,
+      "bytes": 596799
+    }
+  ]
+}

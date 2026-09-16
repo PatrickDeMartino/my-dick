@@ -1,3 +1,4 @@
+import {gravityAcceleration} from '../../world/physics';
 import * as T from 'three';
 import { collide, type Solid } from './level';
 type Node = { object:T.Object3D; p:T.Vector3; previous:T.Vector3; original:T.Vector3; quaternion:T.Quaternion; radius:number; neighbor:number };
@@ -28,7 +29,7 @@ export class Ragdoll {
     creature.visible=false;
   }
   step(dt:number, solids:Solid[]) {
-    for(const n of this.nodes){const v=n.p.clone().sub(n.previous).multiplyScalar(.985);n.previous.copy(n.p);n.p.add(v);n.p.y-=16*dt*dt;}
+    for(const n of this.nodes){const v=n.p.clone().sub(n.previous).multiplyScalar(.985);n.previous.copy(n.p);n.p.add(v);n.p.y-=gravityAcceleration()*dt*dt;}
     for(let pass=0;pass<9;pass++){
       for(const l of this.links){const a=this.nodes[l.a],b=this.nodes[l.b],delta=b.p.clone().sub(a.p),d=delta.length();if(d>.0001){delta.multiplyScalar((d-l.length)/d*.5);if(l.a!==this.grabbed)a.p.add(delta);if(l.b!==this.grabbed)b.p.sub(delta);}}
       if(this.grabbed!==null)this.nodes[this.grabbed].p.lerp(this.target,.8);
